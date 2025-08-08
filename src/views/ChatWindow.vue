@@ -105,6 +105,8 @@
         </div>
       </div>
     </div>
+    <!-- Typing indicator -->
+    <div aria-live="polite" class="text-center text-sm text-muted h-5">{{ typingLine }}</div>
     <!-- Messages list -->
     <div ref="messagesContainer" class="flex-1 p-6 overflow-y-auto space-y-4 bg-secondary">
       <!-- Drafts panel -->
@@ -171,11 +173,24 @@
         <div :class="messageBubbleClasses(msg.sender)">
           <p class="text-sm whitespace-pre-wrap">{{ msg.text }}</p>
           <span class="text-xs block mt-1">{{ formatMessageTime(msg.time) }}</span>
+          <span v-if="msg.outbox" class="text-xs block mt-1">
+            {{ statusLabelMsg(msg.outbox.status) }}
+            <button
+              v-if="msg.outbox.status === 'failed'"
+              class="underline ml-2"
+              @click="outboxStore.enqueue(chatId, msg.text)"
+            >
+              {{ langStore.t('retry') }}
+            </button>
+          </span>
         </div>
       </div>
     </div>
     <!-- Composer and actions -->
     <div class="p-4 border-t border-default bg-secondary">
+      <div v-if="outboxStore.state.isOffline" class="text-center text-xs mb-2" data-testid="offline-banner">
+        {{ langStore.t('offlineBanner') }}
+      </div>
       <div class="flex items-center mb-2">
         <input
           v-model="newMessage"
@@ -186,15 +201,18 @@
           @keyup.enter="sendMessage"
           @input="onType"
         />
-        <Button
-          variant="primary"
-          size="sm"
-          :disabled="!inputEnabled || !newMessage"
-          @click="sendMessage"
-        >
-          <span class="material-icons-outlined text-base mr-1">send</span>
-          {{ langStore.t('send') }}
-        </Button>
+        <div class="flex items-center gap-2">
+          <span v-if="savedTime" class="text-xs text-muted">{{ langStore.t('savedAt', { time: savedTime }) }}</span>
+          <Button
+            variant="primary"
+            size="sm"
+            :disabled="!inputEnabled || !newMessage"
+            @click="sendMessage"
+          >
+            <span class="material-icons-outlined text-base mr-1">send</span>
+            {{ langStore.t('send') }}
+          </Button>
+        </div>
       </div>
     </div>
   </div>
@@ -216,6 +234,10 @@ import {
 } from './chatsUtils.js';
 import { useStatusMenu } from './statusMenu.js';
 import { chatStore } from '@/stores/chatStore.js';
+import { typingStore } from '@/stores/typingStore.js';
+import { outboxStore } from '@/stores/outboxStore.js';
+import { composerStore } from '@/stores/composerStore.js';
+import { typingText } from '@/utils/typing.js';
 
 
 const presenceList = ref([]);
@@ -265,6 +287,7 @@ const chatId = route.params.id;
 
 const chat = ref(null);
 const newMessage = ref('');
+const savedAt = ref(null);
 const drafts = computed(() => chatStore.state.drafts[chatId] || []);
 const draftsExpanded = ref(false);
 watch(
@@ -274,12 +297,14 @@ watch(
   },
   { immediate: true },
 );
-const typing = ref(false);
-let typingTimer = null;
+let typingNotify;
 function onType() {
-  typing.value = true;
-  clearTimeout(typingTimer);
-  typingTimer = setTimeout(() => (typing.value = false), 1200);
+  if (!inputEnabled.value) return;
+  typingStore.startTyping(chatId, currentUser.id);
+  clearTimeout(typingNotify);
+  typingNotify = setTimeout(() => {
+    apiClient.post(`/chats/${chatId}/typing`).catch(() => {});
+  }, 0);
 }
 // control state
 const chatControl = computed(() => chatStore.state.chatControl[chatId] || 'agent');
@@ -293,6 +318,16 @@ const placeholderText = computed(() =>
     ? langStore.t('operatorInControl')
     : langStore.t('agentInControl')
 );
+
+const saveTimer = ref(null);
+const savedTime = computed(() => (savedAt.value ? new Date(savedAt.value).toLocaleTimeString() : null));
+watch(newMessage, () => {
+  clearTimeout(saveTimer.value);
+  saveTimer.value = setTimeout(() => {
+    composerStore.save(chatId, newMessage.value);
+    savedAt.value = Date.now();
+  }, 400);
+});
 
 const statusOptions = [
   { value: 'live', label: 'live' },
@@ -325,12 +360,26 @@ const headerStyle = computed(() => ({
   background: statusGradient(chat.value?.status || 'idle'),
 }));
 
+const typingLine = computed(() => {
+  const ids = typingStore.getTyping(chatId).filter((id) => id !== currentUser.id);
+  const names = ids
+    .map((id) => presenceList.value.find((p) => p.userId === Number(id))?.name)
+    .filter(Boolean);
+  if (typingStore.isAgentDrafting(chatId)) return langStore.t('agentDrafting');
+  return typingText(names);
+});
+
 async function fetchChat() {
   try {
     const res = await apiClient.get(`/chats/${chatId}`);
     chat.value = res.data;
     messages.value = res.data.messages || [];
     chatStore.setControl(chatId, res.data.control || 'agent');
+    const draft = composerStore.get(chatId);
+    if (draft) {
+      newMessage.value = draft.body;
+      savedAt.value = draft.updatedAt;
+    }
   } catch (err) {
     console.error(err);
   }
@@ -418,21 +467,17 @@ function formatMessageTime(timeStr) {
 
 async function sendMessage() {
   if (!newMessage.value.trim()) return;
-  try {
-    await apiClient.post(`/chats/${chatId}/messages`, {
-      sender: 'operator',
-      text: newMessage.value,
-    });
-    messages.value.push({
-      sender: 'operator',
-      text: newMessage.value,
-      time: new Date().toLocaleTimeString(),
-    });
-    newMessage.value = '';
-    showToast(langStore.t('messageSent'), 'success');
-  } catch (e) {
-    showToast(langStore.t('messageSendFailed'), 'error');
-  }
+  const body = newMessage.value.trim();
+  const msgRef = outboxStore.enqueue(chatId, body);
+  messages.value.push({
+    sender: 'operator',
+    text: body,
+    time: new Date().toLocaleTimeString(),
+    outbox: msgRef,
+  });
+  newMessage.value = '';
+  composerStore.remove(chatId);
+  savedAt.value = null;
 }
 
 let presenceTimer;
@@ -510,6 +555,12 @@ function rejectAllDrafts() {
   if (window.confirm(langStore.t('confirmRejectAllBody'))) {
     chatStore.rejectAll(chatId);
   }
+}
+
+function statusLabelMsg(s) {
+  if (s === 'failed') return langStore.t('failed');
+  if (s === 'sent') return langStore.t('sent');
+  return langStore.t('sending');
 }
 
 </script>
