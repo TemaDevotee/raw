@@ -141,6 +141,7 @@ import { useRoute } from 'vue-router';
 import apiClient from '@/api';
 import { showToast } from '@/stores/toastStore';
 import langStore from '@/stores/langStore';
+import { agentStore } from '@/stores/agentStore.js';
 import AgentForm from '@/components/AgentForm.vue';
 
 const route = useRoute();
@@ -163,6 +164,7 @@ async function fetchAgent() {
   try {
     const res = await apiClient.get(`/agents/${agentId}`);
     agent.value = res.data;
+    agentStore.setManualApprove(!!res.data.approveRequired);
   } catch (e) {
     console.error(e);
   }
@@ -227,6 +229,7 @@ async function toggleApproveMode(event) {
   try {
     await apiClient.patch(`/agents/${agentId}/approve_mode`, { approveRequired: checked });
     agent.value.approveRequired = checked;
+    agentStore.setManualApprove(checked);
     // Show a generic success message.  Use the existing statusUpdated key as
     // fallback if translation does not exist.
     showToast(langStore.t('requiresApproval') + ' ' + (langStore.t('statusUpdated') || 'updated'), 'success');

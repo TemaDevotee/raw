@@ -80,39 +80,58 @@
     <!-- Messages list -->
     <div ref="messagesContainer" class="flex-1 p-6 overflow-y-auto space-y-4 bg-secondary">
       <!-- Drafts panel -->
-      <div v-if="drafts.length" class="p-3 rounded-lg border border-default bg-white/5 mb-3">
-        <div class="flex items-center justify-between mb-2">
-          <strong>{{ langStore.t('draftsWaiting') || 'Drafts waiting approval' }}</strong>
-          <Button variant="secondary" size="sm" @click="simulateDraft">
-            {{ langStore.t('simulate') || 'Simulate' }}
-          </Button>
-        </div>
+      <div v-if="drafts.length" class="mb-3 rounded-lg border border-default bg-white/5">
         <div
-          v-for="d in drafts"
-          :key="d.id"
-          class="flex items-center justify-between py-2 border-b border-default last:border-b-0"
+          class="flex items-center justify-between px-3 py-2 cursor-pointer"
+          @click="draftsExpanded = !draftsExpanded"
         >
-          <span class="text-sm">{{ d.text }}</span>
-          <div class="flex gap-2">
-            <Button variant="primary" size="sm" @click="approveDraft(d)">
-              {{ langStore.t('approve') || 'Approve' }}
+          <strong>{{ langStore.t('drafts') }} ({{ drafts.length }})</strong>
+          <div class="flex items-center gap-2" v-if="draftsExpanded">
+            <Button
+              variant="primary"
+              size="sm"
+              :disabled="chatStore.state.isBulkSubmitting"
+              @click.stop="sendAllDrafts"
+            >
+              {{ langStore.t('sendAll') }}
             </Button>
-            <Button variant="secondary" size="sm" @click="discardDraft(d)">
-              {{ langStore.t('discard') || 'Discard' }}
+            <Button
+              variant="secondary"
+              size="sm"
+              :disabled="chatStore.state.isBulkSubmitting"
+              @click.stop="rejectAllDrafts"
+            >
+              {{ langStore.t('rejectAll') }}
             </Button>
+          </div>
+        </div>
+        <div v-if="draftsExpanded">
+          <div
+            v-for="d in drafts"
+            :key="d.id"
+            class="border-t border-default p-3"
+          >
+            <div v-if="editingDraft && editingDraft.id === d.id">
+              <textarea v-model="editBody" class="form-input w-full mb-2"></textarea>
+              <div class="flex gap-2">
+                <Button variant="primary" size="sm" @click="submitEdit">{{ langStore.t('editAndSend') }}</Button>
+                <Button variant="secondary" size="sm" @click="cancelEdit">{{ langStore.t('cancel') }}</Button>
+              </div>
+            </div>
+            <div v-else class="flex items-center justify-between">
+              <span class="text-sm max-w-xs truncate">{{ d.body || d.text }}</span>
+              <div class="flex gap-2">
+                <Button variant="primary" size="sm" @click="approveDraft(d)">{{ langStore.t('approveAndSend') }}</Button>
+                <Button variant="secondary" size="sm" @click="startEdit(d)">{{ langStore.t('editAndSend') }}</Button>
+                <Button variant="secondary" size="sm" @click="rejectDraft(d)">{{ langStore.t('reject') }}</Button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
       <!-- Placeholder when no chat selected -->
       <div v-if="!chat" class="text-center text-muted mt-10">
         {{ langStore.t('selectChat') }}
-      </div>
-      <!-- Approve mode toggle -->
-      <div class="px-6 py-3 border-b border-default flex items-center gap-3">
-        <label class="flex items-center gap-2 text-sm text-muted">
-          <input type="checkbox" :checked="approveRequired" @change="toggleApprove($event)">
-          <span>{{ langStore.t('requiresApproval') || 'Requires approval' }}</span>
-        </label>
       </div>
       <!-- Messages -->
       <div
@@ -161,6 +180,7 @@ import { useRoute, useRouter } from 'vue-router';
 import apiClient from '@/api';
 import { showToast } from '@/stores/toastStore';
 import { statusColor, badgeColor, statusGradient } from './chatsUtils.js';
+import { chatStore } from '@/stores/chatStore.js';
 
 
 const presenceList = ref([]);
@@ -181,15 +201,17 @@ const route = useRoute();
 const router = useRouter();
 const chatId = route.params.id;
 
-const approveRequired = ref(false);
 const chat = ref(null);
-const drafts = ref([]);
 const newMessage = ref('');
-const sendMode = ref('direct');
-const sendModeComputed = computed({
-  get: () => sendMode.value === 'approve',
-  set: (v) => (sendMode.value = v ? 'approve' : 'direct'),
-});
+const drafts = computed(() => chatStore.state.drafts[chatId] || []);
+const draftsExpanded = ref(false);
+watch(
+  () => drafts.value.length,
+  (len) => {
+    if (len > 0) draftsExpanded.value = true;
+  },
+  { immediate: true },
+);
 const typing = ref(false);
 let typingTimer = null;
 function onType() {
@@ -198,7 +220,7 @@ function onType() {
   typingTimer = setTimeout(() => (typing.value = false), 1200);
 }
 // control state
-const chatControl = ref('agent');
+const chatControl = computed(() => chatStore.state.chatControl[chatId] || 'agent');
 const inputEnabled = computed(() => chatControl.value === 'operator');
 // Agents list for resolving assigned agent names
 const agentsList = ref([]);
@@ -245,7 +267,7 @@ async function fetchChat() {
     const res = await apiClient.get(`/chats/${chatId}`);
     chat.value = res.data;
     messages.value = res.data.messages || [];
-    chatControl.value = res.data.control || 'agent';
+    chatStore.setControl(chatId, res.data.control || 'agent');
   } catch (err) {
     console.error(err);
   }
@@ -253,15 +275,9 @@ async function fetchChat() {
 
 onMounted(async () => {
   document.addEventListener('click', handleClickOutside);
-  // Load initial chat data, agents and drafts sequentially.
   await fetchChat();
   await fetchAgents();
   await fetchDrafts();
-  // Check if approval is required for this chat
-  try {
-    const r = await apiClient.get(`/chats/${chatId}/approve_mode`);
-    approveRequired.value = !!(r.data && r.data.require);
-  } catch {}
   // Presence: join and keepalive loop
   try {
     const user =
@@ -337,19 +353,6 @@ function formatMessageTime(timeStr) {
 
 async function sendMessage() {
   if (!newMessage.value.trim()) return;
-  if (sendMode.value === 'approve') {
-    try {
-      await apiClient.post(`/chats/${chatId}/drafts`, { sender: 'agent', text: newMessage.value });
-      showToast('Draft submitted for approval', 'success');
-    } catch (e) {
-      showToast('Failed to submit draft', 'error');
-    }
-    newMessage.value = '';
-    await fetchChat();
-    await fetchDrafts();
-  try{ const r = await apiClient.get(`/chats/${chatId}/approve_mode`); approveRequired.value = !!(r.data && r.data.require); }catch{}
-    return;
-  }
   try {
     await apiClient.post(`/chats/${chatId}/messages`, {
       sender: 'operator',
@@ -380,11 +383,9 @@ onBeforeUnmount(async () => {
 async function interfere() {
   try {
     await apiClient.post(`/chats/${chatId}/interfere`);
-    chatControl.value = 'operator';
-    // status unchanged by interfere
+    chatStore.setControl(chatId, 'operator');
     await fetchChat();
     await fetchDrafts();
-  try{ const r = await apiClient.get(`/chats/${chatId}/approve_mode`); approveRequired.value = !!(r.data && r.data.require); }catch{}
     showToast(langStore.t('joinedChat'), 'success');
   } catch (e) {
     showToast(langStore.t('failedInterfere'), 'error');
@@ -395,8 +396,8 @@ async function returnControl() {
   try {
     await apiClient.post(`/chats/${chatId}/return`);
   } catch {}
-  chatControl.value = 'agent';
-  // status unchanged by return
+  chatStore.setControl(chatId, 'agent');
+  await fetchDrafts();
   showToast(langStore.t('controlReturned'), 'success');
 }
 
@@ -412,42 +413,45 @@ async function setStatus(s) {
     showToast(langStore.t('statusChangeFailed') || 'Status update failed', 'error');
   }
 }
-
-async function approveDraft(d) {
-  try {
-    await apiClient.post(`/chats/${chatId}/drafts/${d.id}/approve`);
-    await fetchChat();
-    await fetchDrafts();
-  try{ const r = await apiClient.get(`/chats/${chatId}/approve_mode`); approveRequired.value = !!(r.data && r.data.require); }catch{}
-  } catch {}
-}
-async function discardDraft(d) {
-  try {
-    await apiClient.delete(`/chats/${chatId}/drafts/${d.id}`);
-    drafts.value = drafts.value.filter((x) => x.id !== d.id);
-  } catch {}
-}
-async function simulateDraft() {
-  try {
-    const t = `Draft at ${new Date().toLocaleTimeString()}`;
-    await apiClient.post(`/chats/${chatId}/drafts`, { sender: 'agent', text: t });
-    await fetchDrafts();
-  try{ const r = await apiClient.get(`/chats/${chatId}/approve_mode`); approveRequired.value = !!(r.data && r.data.require); }catch{}
-  } catch {}
-}
-
 async function fetchDrafts() {
-  try {
-    const res = await apiClient.get(`/chats/${chatId}/drafts`);
-    drafts.value = res.data || [];
-  } catch {}
+  await chatStore.fetchDrafts(chatId);
 }
 
+function approveDraft(d) {
+  chatStore.approveDraft(chatId, d.id);
+}
 
+function rejectDraft(d) {
+  chatStore.rejectDraft(chatId, d.id);
+}
 
-async function toggleApprove(e){
-  const require = !!e.target.checked;
-  try{ const r = await apiClient.patch(`/chats/${chatId}/approve_mode`, { require }); approveRequired.value = !!r.data.require; }catch{}
+const editingDraft = ref(null);
+const editBody = ref('');
+function startEdit(d) {
+  editingDraft.value = d;
+  editBody.value = d.body || d.text || '';
+}
+async function submitEdit() {
+  if (!editingDraft.value) return;
+  await chatStore.editAndSend(chatId, editingDraft.value.id, editBody.value);
+  editingDraft.value = null;
+  editBody.value = '';
+}
+function cancelEdit() {
+  editingDraft.value = null;
+  editBody.value = '';
+}
+
+function sendAllDrafts() {
+  if (window.confirm(langStore.t('confirmSendAllBody'))) {
+    chatStore.sendAll(chatId);
+  }
+}
+
+function rejectAllDrafts() {
+  if (window.confirm(langStore.t('confirmRejectAllBody'))) {
+    chatStore.rejectAll(chatId);
+  }
 }
 
 </script>
