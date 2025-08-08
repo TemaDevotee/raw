@@ -65,16 +65,25 @@
             {{ themeStore.isDarkMode ? 'dark_mode' : 'light_mode' }}
           </span>
         </button>
-        <a
-          href="/login.html"
+        <button
+          @click="attemptLogout"
           :title="t('logout')"
           class="h-10 w-10 p-2 rounded-full hover-bg-effect text-muted transition-colors flex items-center justify-center"
         >
           <span class="material-icons">logout</span>
-        </a>
+        </button>
       </div>
     </div>
   </div>
+  <ConfirmDialog
+    v-if="showConfirm"
+    :title="t('logoutConfirmTitle')"
+    :body="confirmBody"
+    :confirm-label="t('yes')"
+    :cancel-label="t('no')"
+    @confirm="doLogout"
+    @cancel="showConfirm = false"
+  />
 </template>
 
 <script setup>
@@ -87,6 +96,8 @@ import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 import WorkspaceSwitcher from '@/components/WorkspaceSwitcher.vue'
 import { workspaceStore } from '@/stores/workspaceStore'
 import BrandLogo from '@/assets/brand/3xtr.svg?component'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import { orchestratedLogout, getLogoutRisk } from '@/stores/logout.js'
 
 const collapsed = ref(false)
 const toggleCollapse = () => {
@@ -108,6 +119,39 @@ const isActiveRoute = (to) => {
 const t = langStore.t
 
 const showSwitcher = computed(() => workspaceStore.hasMultiple())
+
+const showConfirm = ref(false)
+const confirmBody = ref('')
+
+function attemptLogout() {
+  const { controlCount, draftCount } = getLogoutRisk()
+  if (controlCount || draftCount) {
+    const parts = []
+    if (controlCount) {
+      parts.push(
+        langStore
+          .t('logoutHoldChats')
+          .replace('{n}', String(controlCount)),
+      )
+    }
+    if (draftCount) {
+      parts.push(
+        langStore
+          .t('logoutDrafts')
+          .replace('{n}', String(draftCount)),
+      )
+    }
+    confirmBody.value = parts.join('\n')
+    showConfirm.value = true
+  } else {
+    doLogout()
+  }
+}
+
+function doLogout() {
+  showConfirm.value = false
+  orchestratedLogout()
+}
 </script>
 
 <style scoped>

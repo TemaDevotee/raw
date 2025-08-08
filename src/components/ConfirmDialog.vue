@@ -11,7 +11,7 @@
       ref="box"
     >
       <h2 class="text-lg font-semibold mb-2">{{ title }}</h2>
-      <p class="mb-4">{{ body }}</p>
+      <p class="mb-4 whitespace-pre-line">{{ body }}</p>
       <div class="flex justify-end gap-2">
         <button class="btn-secondary min-h-[44px]" @click="emit('cancel')">
           {{ cancelLabel }}

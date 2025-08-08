@@ -155,7 +155,7 @@
 
       <!-- Logout button -->
       <section class="p-6 rounded-xl bg-secondary border border-default">
-        <button class="btn-secondary" @click="logout">
+        <button class="btn-secondary" @click="attemptLogout">
           <span class="material-icons-outlined mr-1">logout</span>
           {{ langStore.t('logout') }}
         </button>
@@ -181,6 +181,7 @@ import langStore from '@/stores/langStore.js'
 import WorkspaceSwitcher from '@/components/WorkspaceSwitcher.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { workspaceStore } from '@/stores/workspaceStore'
+import { orchestratedLogout, getLogoutRisk } from '@/stores/logout.js'
 
 const account = ref({ name: '', email: '', plan: '', team: [] })
 const dangerOpen = ref(false)
@@ -246,16 +247,35 @@ function transferOwnership() {
 }
 
 // Log the user out by clearing stored state and redirecting to the login page
-function logout() {
-  try {
-    // Clear any persisted session
-    localStorage.clear()
-    sessionStorage.clear()
-  } catch (e) {
-    console.warn('Error clearing storage on logout', e)
+function attemptLogout() {
+  const { controlCount, draftCount } = getLogoutRisk()
+  if (controlCount || draftCount) {
+    const parts = []
+    if (controlCount)
+      parts.push(
+        langStore
+          .t('logoutHoldChats')
+          .replace('{n}', String(controlCount)),
+      )
+    if (draftCount)
+      parts.push(
+        langStore
+          .t('logoutDrafts')
+          .replace('{n}', String(draftCount)),
+      )
+    dialog.value = {
+      title: langStore.t('logoutConfirmTitle'),
+      body: parts.join('\n'),
+      confirmLabel: langStore.t('yes'),
+      cancelLabel: langStore.t('no'),
+      onConfirm: () => {
+        dialog.value = null
+        orchestratedLogout()
+      },
+    }
+  } else {
+    orchestratedLogout()
   }
-  // Navigate to the login page. Using window.location to bypass SPA routing
-  window.location.href = '/login.html'
 }
 </script>
 

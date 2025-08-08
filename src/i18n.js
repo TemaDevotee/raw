@@ -62,6 +62,13 @@ export const messages = {
     createWorkspace: 'Create workspace',
     renameWorkspace: 'Rename workspace',
     deleteWorkspace: 'Delete workspace',
+    logoutConfirmTitle: 'Log out now?',
+    logoutHoldChats: 'You\'re interfering in {n} chat(s). Return control and log out?',
+    logoutDrafts: 'You have {n} unsent drafts. Discard and log out?',
+    logoutUploads: 'Active upload in progress. Cancel and log out?',
+    loggingOut: 'Logging out…',
+    yes: 'Yes',
+    no: 'No',
     // ...добавьте другие английские ключи
   },
   ru: {
@@ -127,6 +134,13 @@ export const messages = {
     createWorkspace: 'Создать пространство',
     renameWorkspace: 'Переименовать пространство',
     deleteWorkspace: 'Удалить пространство',
+    logoutConfirmTitle: 'Выйти сейчас?',
+    logoutHoldChats: 'Вы вмешиваетесь в {n} чат(ов). Вернуть управление и выйти?',
+    logoutDrafts: 'У вас {n} черновик(ов). Отменить и выйти?',
+    logoutUploads: 'Есть активная загрузка. Отменить и выйти?',
+    loggingOut: 'Выход…',
+    yes: 'Да',
+    no: 'Нет',
     // ...добавьте другие русские ключи
   }
 }
