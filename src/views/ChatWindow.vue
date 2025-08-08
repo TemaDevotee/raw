@@ -43,37 +43,65 @@
           >
             {{ langStore.t('returnToAgent') }}
           </Button>
-          <div class="relative" ref="statusMenuRef" @keydown.escape="statusMenuOpen = false">
-            <Button variant="secondary" size="sm" data-testid="status-menu-btn" @click="statusMenuOpen = !statusMenuOpen">
+          <div class="relative" ref="statusMenuRoot">
+            <Button
+              ref="statusMenuButton"
+              variant="secondary"
+              size="sm"
+              data-testid="status-menu-btn"
+              :aria-expanded="statusMenuOpen"
+              aria-controls="status-menu"
+              @click="toggleStatusMenu"
+            >
               {{ langStore.t('changeStatus') }}
             </Button>
             <ul
               v-if="statusMenuOpen"
+              id="status-menu"
+              role="menu"
               data-testid="status-menu"
-              class="absolute right-0 mt-1 w-40 rounded-md border border-default bg-secondary z-10"
+              class="absolute left-full top-0 ml-1 w-40 rounded-md border border-default bg-secondary z-10"
+              @keydown="onStatusMenuKeydown"
             >
-              <li v-for="opt in statusOptions" :key="opt.value">
+              <li v-for="(opt, idx) in statusOptions" :key="opt.value">
                 <button
+                  :ref="el => statusMenuItems[idx] = el"
+                  role="menuitem"
                   class="flex items-center w-full px-3 py-2 text-left hover-bg-effect"
-                  @click="setStatus(opt.value)"
+                  :aria-label="langStore.t(`setStatus${opt.value.charAt(0).toUpperCase() + opt.value.slice(1)}`)"
+                  @click="selectStatus(idx)"
                 >
                   <span
                     class="w-2 h-2 rounded-full mr-2"
                     :style="{ backgroundColor: statusColor(opt.value) }"
                   ></span>
-                  {{ langStore.t(opt.label) }}
+                  <span class="flex-1">{{ langStore.t(opt.label) }}</span>
+                  <span v-if="chat?.status === opt.value" class="material-icons-outlined text-base ml-auto">check</span>
                 </button>
               </li>
             </ul>
           </div>
-          <span
-            v-if="presenceCount"
-            data-testid="presence-badge"
-            class="text-xs px-2 py-1 rounded-full"
-            :style="{ backgroundColor: badgeColor(chat?.status), color: statusColor(chat?.status) }"
-          >
-            {{ presenceCount }}
-          </span>
+          <div v-if="displayAvatars.length" class="flex -space-x-2 items-center" data-testid="presence-stack">
+            <button
+              v-for="p in displayAvatars"
+              :key="p.userId"
+              class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium border-2 border-white dark:border-gray-800"
+              :style="{ backgroundColor: p.color }"
+              :title="p.name"
+              :aria-label="`${langStore.t('present')}: ${p.name}`"
+            >
+              <img v-if="p.avatar" :src="p.avatar" alt="" class="w-full h-full rounded-full" />
+              <span v-else>{{ p.initials }}</span>
+            </button>
+            <div
+              v-if="extraCount > 0"
+              class="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 text-xs flex items-center justify-center font-medium border-2 border-white dark:border-gray-800"
+              :title="extraNames"
+              :aria-label="langStore.t('moreParticipants')"
+            >
+              +{{ extraCount }}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -179,18 +207,52 @@ import langStore from '@/stores/langStore.js';
 import { useRoute, useRouter } from 'vue-router';
 import apiClient from '@/api';
 import { showToast } from '@/stores/toastStore';
-import { statusColor, badgeColor, statusGradient } from './chatsUtils.js';
+import {
+  statusColor,
+  badgeColor,
+  statusGradient,
+  computePresenceDisplay,
+  updateChatStatus,
+} from './chatsUtils.js';
+import { useStatusMenu } from './statusMenu.js';
 import { chatStore } from '@/stores/chatStore.js';
 
 
 const presenceList = ref([]);
-const currentUser = JSON.parse(localStorage.getItem('auth.user') || sessionStorage.getItem('auth.user') || 'null') || { id: 1 };
-async function refreshPresence(){ try{ const res = await apiClient.get('/presence'); const list = res.data[String(chatId)] || []; presenceList.value = list; } catch{} }
-const busyByOthers = computed(() => presenceList.value.some(p => p.userId !== currentUser.id));
-const presenceCount = computed(() => presenceList.value.length);
+const currentUser =
+  JSON.parse(localStorage.getItem('auth.user') || sessionStorage.getItem('auth.user') || 'null') ||
+  { id: 1 };
+async function refreshPresence() {
+  try {
+    const res = await apiClient.get('/presence');
+    const list = res.data[String(chatId)] || [];
+    presenceList.value = list;
+  } catch {}
+}
+const busyByOthers = computed(() => presenceList.value.some((p) => p.userId !== currentUser.id));
+function avatarColor(id) {
+  const num = typeof id === 'number' ? id : Array.from(String(id)).reduce((a, c) => a + c.charCodeAt(0), 0);
+  const hue = (num * 47) % 360;
+  return `hsl(${hue},70%,55%)`;
+}
+const presenceDisplay = computed(() => computePresenceDisplay(presenceList.value, currentUser.id));
+const displayAvatars = computed(() =>
+  presenceDisplay.value.visible.map((p) => ({
+    ...p,
+    initials: (p.name || '?')
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase(),
+    color: avatarColor(p.userId),
+  })),
+);
+const extraCount = computed(() => presenceDisplay.value.extra);
+const extraNames = computed(() => presenceDisplay.value.others.map((p) => p.name).join(', '));
 const messages = ref([]);
 const messagesContainer = ref(null);
-setInterval(refreshPresence, 12000);
+let presenceInterval;
 watch(messages, () => {
   nextTick(() => {
     const el = messagesContainer.value;
@@ -232,7 +294,6 @@ const placeholderText = computed(() =>
     : langStore.t('agentInControl')
 );
 
-const statusMenuOpen = ref(false);
 const statusOptions = [
   { value: 'live', label: 'live' },
   { value: 'paused', label: 'paused' },
@@ -240,6 +301,14 @@ const statusOptions = [
   { value: 'resolved', label: 'resolved' },
   { value: 'ended', label: 'ended' },
 ];
+const statusMenu = useStatusMenu(statusOptions, (v) => setStatus(v));
+const statusMenuOpen = statusMenu.open;
+const toggleStatusMenu = statusMenu.toggle;
+const onStatusMenuKeydown = statusMenu.onKeydown;
+const statusMenuButton = statusMenu.triggerRef;
+const statusMenuRoot = statusMenu.menuRef;
+const statusMenuItems = statusMenu.itemRefs;
+const selectStatus = statusMenu.select;
 const statusLabel = computed(() => {
   if (!chat.value) return '';
   const map = {
@@ -255,12 +324,6 @@ const statusLabel = computed(() => {
 const headerStyle = computed(() => ({
   background: statusGradient(chat.value?.status || 'idle'),
 }));
-const statusMenuRef = ref(null);
-function handleClickOutside(e) {
-  if (statusMenuOpen.value && statusMenuRef.value && !statusMenuRef.value.contains(e.target)) {
-    statusMenuOpen.value = false;
-  }
-}
 
 async function fetchChat() {
   try {
@@ -274,10 +337,12 @@ async function fetchChat() {
 }
 
 onMounted(async () => {
-  document.addEventListener('click', handleClickOutside);
+  document.addEventListener('click', statusMenu.onDocumentClick);
   await fetchChat();
   await fetchAgents();
   await fetchDrafts();
+  await refreshPresence();
+  presenceInterval = setInterval(refreshPresence, 2000);
   // Presence: join and keepalive loop
   try {
     const user =
@@ -377,7 +442,8 @@ onBeforeUnmount(async () => {
     await apiClient.post('/presence/leave', { chatId, userId: user.id });
   } catch {}
   clearInterval(presenceTimer);
-  document.removeEventListener('click', handleClickOutside);
+  clearInterval(presenceInterval);
+  document.removeEventListener('click', statusMenu.onDocumentClick);
 });
 
 async function interfere() {
@@ -402,16 +468,8 @@ async function returnControl() {
 }
 
 async function setStatus(s) {
-  statusMenuOpen.value = false;
   if (!chat.value) return;
-  const prev = chat.value.status;
-  chat.value.status = s;
-  try {
-    await apiClient.post(`/chats/${chatId}/status`, { status: s });
-  } catch (e) {
-    chat.value.status = prev;
-    showToast(langStore.t('statusChangeFailed') || 'Status update failed', 'error');
-  }
+  await updateChatStatus(chat.value, s, apiClient, showToast, langStore.t);
 }
 async function fetchDrafts() {
   await chatStore.fetchDrafts(chatId);

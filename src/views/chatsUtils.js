@@ -96,3 +96,32 @@ export function presenceCount(map, id) {
   return arr.length
 }
 
+export function computePresenceDisplay(list = [], currentUserId) {
+  const unique = new Map()
+  list.forEach((p) => {
+    if (!unique.has(p.userId)) unique.set(p.userId, p)
+  })
+  const arr = Array.from(unique.values())
+  arr.sort((a, b) => {
+    if (a.userId === currentUserId) return -1
+    if (b.userId === currentUserId) return 1
+    return (a.name || '').localeCompare(b.name || '')
+  })
+  const visible = arr.slice(0, 3)
+  const others = arr.slice(3)
+  const extra = others.length
+  return { visible, extra, others }
+}
+
+export async function updateChatStatus(chat, status, api, toast, t) {
+  if (!chat || chat.status === status) return
+  const prev = chat.status
+  chat.status = status
+  try {
+    await api.post(`/chats/${chat.id}/status`, { status })
+  } catch {
+    chat.status = prev
+    toast(t('statusChangeFailed') || 'Status update failed', 'error')
+  }
+}
+

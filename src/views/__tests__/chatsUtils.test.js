@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   statusColor,
   badgeColor,
@@ -8,6 +8,8 @@ import {
   toggleGroupState,
   restoreGroupState,
   presenceCount,
+  computePresenceDisplay,
+  updateChatStatus,
   GROUPS_KEY,
 } from '../chatsUtils.js'
 import { readFileSync } from 'fs'
@@ -86,10 +88,41 @@ describe('chats utils', () => {
     expect(presenceCount(map, 2)).toBe(0)
   })
 
+  it('computes presence display with extras and ordering', () => {
+    const list = [
+      { userId: 1, name: 'Alice' },
+      { userId: 2, name: 'Bob' },
+      { userId: 3, name: 'Cara' },
+      { userId: 4, name: 'Dan' },
+      { userId: 2, name: 'Bob' },
+    ]
+    const { visible, extra } = computePresenceDisplay(list, 2)
+    expect(visible.map((p) => p.userId)).toEqual([2, 1, 3])
+    expect(extra).toBe(1)
+  })
+
+  it('optimistically updates status and rolls back on failure', async () => {
+    const chat = { id: 5, status: 'live' }
+    const api = { post: vi.fn().mockRejectedValue(new Error('fail')) }
+    const toast = vi.fn()
+    await updateChatStatus(chat, 'paused', api, toast, (k) => k)
+    expect(chat.status).toBe('live')
+    expect(toast).toHaveBeenCalled()
+    api.post.mockResolvedValue({})
+    await updateChatStatus(chat, 'paused', api, toast, (k) => k)
+    expect(chat.status).toBe('paused')
+  })
+
   it('template contains accessibility hooks', () => {
     const src = readFileSync(resolve('src/views/ChatsView.vue'), 'utf8')
     expect(src).toMatch(/role="button"/)
     expect(src).toMatch(/aria-label="`Status:/)
+  })
+
+  it('chat window template exposes menu and presence roles', () => {
+    const src = readFileSync(resolve('src/views/ChatWindow.vue'), 'utf8')
+    expect(src).toMatch(/role="menu"/)
+    expect(src).toMatch(/data-testid="presence-stack"/)
   })
 })
 
