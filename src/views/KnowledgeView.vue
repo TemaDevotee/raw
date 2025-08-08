@@ -43,23 +43,13 @@
               <td class="font-medium text-default px-6 py-4">{{ group.name }}</td>
               <td class="text-muted px-6 py-4 max-w-xs truncate">{{ group.description }}</td>
               <td class="text-muted px-6 py-4">{{ group.fileCount }}</td>
-              <td class="text-right px-6 py-4 relative">
-                <!-- Kebab menu for group actions -->
+              <td class="text-right px-6 py-4">
                 <div class="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button @click.stop="toggleMenu(group.id)" class="action-btn">
-                    <span class="material-icons-outlined text-base">more_vert</span>
-                  </button>
-                </div>
-                <div
-                  v-if="activeMenuId === group.id"
-                  class="absolute right-0 mt-2 w-32 bg-secondary border border-default rounded-lg shadow-lg z-50 group-menu"
-                >
-                  <button
-                    @click.stop="confirmDeleteGroup(group)"
-                    class="block w-full text-left px-4 py-2 hover:bg-hover text-red-600"
-                  >
-                    {{ langStore.t('delete') || 'Delete' }}
-                  </button>
+                  <ActionMenu :items="groupMenu(group)">
+                    <button class="action-btn">
+                      <span class="material-icons-outlined text-base">more_vert</span>
+                    </button>
+                  </ActionMenu>
                 </div>
               </td>
             </tr>
@@ -71,7 +61,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import apiClient from '@/api';
 import PageHeader from '@/components/PageHeader.vue';
@@ -79,25 +69,23 @@ import SkeletonLoader from '@/components/SkeletonLoader.vue';
 import KnowledgeGroupForm from '@/components/KnowledgeGroupForm.vue';
 import { sidePanelStore } from '@/stores/sidePanelStore';
 import langStore from '@/stores/langStore';
+import ActionMenu from '@/components/ui/ActionMenu.vue';
 
 const router = useRouter();
 const groups = ref([]);
 const loading = ref(true);
 
 // Track which group's menu is open.  Only one menu is shown at a time.
-const activeMenuId = ref(null);
-const toggleMenu = (id) => {
-  activeMenuId.value = activeMenuId.value === id ? null : id;
-};
-
-// Close menu when clicking outside of any group menu or action button
-function handleClickOutside(event) {
-  const target = event.target;
-  const menu = target.closest('.group-menu');
-  const actionBtn = target.closest('.action-btn');
-  if (!menu && !actionBtn) {
-    activeMenuId.value = null;
-  }
+function groupMenu(group) {
+  return [
+    {
+      id: 'delete',
+      labelKey: 'delete',
+      danger: true,
+      confirm: { titleKey: 'confirmDeleteTitle', bodyKey: 'confirmDeleteBody' },
+      onSelect: () => deleteGroup(group),
+    },
+  ];
 }
 
 const fetchGroups = async () => {
@@ -114,27 +102,18 @@ const fetchGroups = async () => {
 
 onMounted(fetchGroups);
 
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
-});
 
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
-});
 
 const openCreateForm = () => {
   sidePanelStore.open(KnowledgeGroupForm, { onSaveSuccess: fetchGroups });
 };
 
-const confirmDeleteGroup = async (group) => {
-  const message = `${langStore.t('delete')} "${group.name}"?`;
-  if (confirm(message)) {
-    try {
-      await apiClient.delete(`/knowledge_groups/${group.id}`);
-      await fetchGroups();
-    } catch (e) {
-      console.error('Failed to delete group:', e);
-    }
+const deleteGroup = async (group) => {
+  try {
+    await apiClient.delete(`/knowledge_groups/${group.id}`);
+    await fetchGroups();
+  } catch (e) {
+    console.error('Failed to delete group:', e);
   }
 };
 
@@ -142,11 +121,8 @@ const goToGroup = (id) => {
   router.push(`/knowledge/${id}`);
 };
 
-// Prevent navigation when action menu is open for this row
 const onGroupRowClick = (group) => {
-  if (activeMenuId.value !== group.id) {
-    goToGroup(group.id);
-  }
+  goToGroup(group.id);
 };
 </script>
 

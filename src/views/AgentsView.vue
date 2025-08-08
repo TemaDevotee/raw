@@ -84,30 +84,13 @@
                   {{ agent.isPublished ? langStore.t('statusPublished') : langStore.t('statusDraft') }}
                 </span>
               </td>
-              <td class="whitespace-nowrap px-6 py-4 text-right relative agent-menu-container">
-                <!-- Three‑dot action menu: only appears on hover.  Clicking the
-                     button toggles a small popover with edit/delete actions. -->
+              <td class="whitespace-nowrap px-6 py-4 text-right">
                 <div class="flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button @click.stop="toggleMenu(agent.id)" class="action-btn">
-                    <span class="material-icons-outlined text-base">more_vert</span>
-                  </button>
-                </div>
-                <div
-                  v-if="activeMenuRow === agent.id"
-                  class="absolute right-0 mt-2 w-32 bg-secondary border border-default rounded-lg shadow-lg z-50 agent-menu"
-                >
-                  <button
-                    @click.stop="openEditForm(agent.id)"
-                    class="block w-full text-left px-4 py-2 hover:bg-hover"
-                  >
-                    {{ langStore.t('edit') || 'Edit' }}
-                  </button>
-                  <button
-                    @click.stop="confirmDeleteAgent(agent)"
-                    class="block w-full text-left px-4 py-2 hover:bg-hover text-red-600"
-                  >
-                    {{ langStore.t('delete') || 'Delete' }}
-                  </button>
+                  <ActionMenu :items="agentMenu(agent)">
+                    <button class="action-btn">
+                      <span class="material-icons-outlined text-base">more_vert</span>
+                    </button>
+                  </ActionMenu>
                 </div>
               </td>
             </tr>
@@ -119,7 +102,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import apiClient from '@/api';
 import PageHeader from '@/components/PageHeader.vue';
@@ -127,33 +110,13 @@ import SkeletonLoader from '@/components/SkeletonLoader.vue';
 import { sidePanelStore } from '@/stores/sidePanelStore';
 import AgentForm from '@/components/AgentForm.vue';
 import langStore from '@/stores/langStore';
+import ActionMenu from '@/components/ui/ActionMenu.vue';
 
 const agents = ref([]);
 const knowledgeGroups = ref([]);
 const loading = ref(true);
 const router = useRouter();
 
-// Track which row's action menu is open.  Only one menu can be open at a
-// time.  Clicking the same row again closes it.  Clicking outside is
-// intentionally not handled here to avoid complexity; however, the menu
-// automatically closes when another menu is opened or an action is taken.
-const activeMenuRow = ref(null);
-const toggleMenu = (id) => {
-  activeMenuRow.value = activeMenuRow.value === id ? null : id;
-};
-
-// Handle closing of three‑dot menus when clicking outside of any menu or
-// action button.  We determine if the click target or one of its
-// ancestors has the 'agent-menu' or 'action-btn' classes; if not,
-// close the menu.
-function handleClickOutside(event) {
-  const target = event.target;
-  const menu = target.closest('.agent-menu');
-  const actionBtn = target.closest('.action-btn');
-  if (!menu && !actionBtn) {
-    activeMenuRow.value = null;
-  }
-}
 
 const fetchAgents = async () => {
   loading.value = true;
@@ -179,12 +142,8 @@ const fetchKnowledgeGroups = async () => {
 
 onMounted(async () => {
   await Promise.all([fetchAgents(), fetchKnowledgeGroups()]);
-  document.addEventListener('click', handleClickOutside);
 });
 
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
-});
 
 const getChannelIcon = (channel) => {
   switch (channel) {
@@ -218,30 +177,35 @@ const openCreateForm = () => {
 const openEditForm = (agentId) => {
   sidePanelStore.open(AgentForm, { agentId, onSaveSuccess: fetchAgents });
 };
-const confirmDeleteAgent = async (agent) => {
-  // Localised confirm message using the generic 'delete' label from langStore.
-  const msg = `${langStore.t('delete')} "${agent.name}"?`;
-  if (confirm(msg)) {
-    try {
-      await apiClient.delete(`/agents/${agent.id}`);
-      await fetchAgents();
-    } catch (e) {
-      console.error('Failed to delete agent', e);
-    }
+const deleteAgent = async (agent) => {
+  try {
+    await apiClient.delete(`/agents/${agent.id}`);
+    await fetchAgents();
+  } catch (e) {
+    console.error('Failed to delete agent', e);
   }
 };
+
+function agentMenu(agent) {
+  return [
+    { id: 'edit', labelKey: 'edit', onSelect: () => openEditForm(agent.id) },
+    {
+      id: 'delete',
+      labelKey: 'delete',
+      danger: true,
+      confirm: { titleKey: 'confirmDeleteTitle', bodyKey: 'confirmDeleteBody' },
+      onSelect: () => deleteAgent(agent),
+    },
+  ];
+}
 
 // переход на страницу деталей агента
 const viewAgent = (id) => {
   router.push(`/agents/${id}`);
 };
 
-// Only navigate when no action menu is open for this row.  Prevents
-// accidental navigation when the 3-dot menu is displayed.
 const onRowClick = (agent) => {
-  if (activeMenuRow.value !== agent.id) {
-    viewAgent(agent.id);
-  }
+  viewAgent(agent.id);
 };
 </script>
 

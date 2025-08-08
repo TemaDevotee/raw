@@ -58,23 +58,13 @@
                         </td>
                         <td class="text-muted capitalize px-6 py-4">{{ file.type }}</td>
                         <td class="text-muted px-6 py-4">{{ file.details }}</td>
-                        <td class="text-right px-6 py-4 relative file-menu-container">
-                            <!-- Action menu triggered by a three‑dot icon -->
+                        <td class="text-right px-6 py-4">
                             <div class="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button @click.stop="toggleFileMenu(file.id)" class="action-btn">
-                                    <span class="material-icons-outlined text-base">more_vert</span>
-                                </button>
-                            </div>
-                            <div
-                                v-if="activeFileMenu === file.id"
-                                class="absolute right-0 mt-2 w-32 bg-secondary border border-default rounded-lg shadow-lg z-50 file-menu"
-                            >
-                                <button
-                                    @click.stop="confirmDeleteFile(file)"
-                                    class="block w-full text-left px-4 py-2 hover:bg-hover text-red-600"
-                                >
-                                    {{ langStore.t('delete') || 'Delete' }}
-                                </button>
+                                <ActionMenu :items="fileMenu(file)">
+                                    <button class="action-btn">
+                                        <span class="material-icons-outlined text-base">more_vert</span>
+                                    </button>
+                                </ActionMenu>
                             </div>
                         </td>
                     </tr>
@@ -86,7 +76,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRoute, RouterLink } from 'vue-router';
 import apiClient from '@/api';
 import SkeletonLoader from '@/components/SkeletonLoader.vue';
@@ -94,26 +84,23 @@ import { sidePanelStore } from '@/stores/sidePanelStore';
 import KnowledgeFileForm from '@/components/KnowledgeFileForm.vue';
 import KnowledgeFileViewer from '@/components/KnowledgeFileViewer.vue';
 import langStore from '@/stores/langStore.js';
+import ActionMenu from '@/components/ui/ActionMenu.vue';
 
 const route = useRoute();
 const groupId = route.params.id;
 const group = ref({});
 const loading = ref(true);
 
-// Track which file's action menu is open.  Only one menu may be open at a time.
-const activeFileMenu = ref(null);
-const toggleFileMenu = (id) => {
-    activeFileMenu.value = activeFileMenu.value === id ? null : id;
-};
-
-// Close file action menu when clicking outside any menu or action button.
-function handleClickOutside(event) {
-    const target = event.target;
-    const menu = target.closest('.file-menu');
-    const actionBtn = target.closest('.action-btn');
-    if (!menu && !actionBtn) {
-        activeFileMenu.value = null;
-    }
+function fileMenu(file) {
+    return [
+        {
+            id: 'delete',
+            labelKey: 'delete',
+            danger: true,
+            confirm: { titleKey: 'confirmDeleteTitle', bodyKey: 'confirmDeleteBody' },
+            onSelect: () => deleteFile(file),
+        },
+    ];
 }
 
 const fetchGroupDetails = async () => {
@@ -128,14 +115,6 @@ const fetchGroupDetails = async () => {
 
 onMounted(fetchGroupDetails);
 
-// Register outside click handler when component mounts
-onMounted(() => {
-    document.addEventListener('click', handleClickOutside);
-});
-onUnmounted(() => {
-    document.removeEventListener('click', handleClickOutside);
-});
-
 const openFileForm = () => {
     sidePanelStore.open(KnowledgeFileForm, {
         groupId: groupId,
@@ -144,15 +123,12 @@ const openFileForm = () => {
 };
 
 
-const confirmDeleteFile = async (file) => {
-    const msg = `${langStore.t('delete')} "${file.name}"?`;
-    if (confirm(msg)) {
-        try {
-            await apiClient.delete(`/knowledge_groups/${groupId}/files/${file.id}`);
-            await fetchGroupDetails(); // Обновляем список файлов
-        } catch (e) {
-            console.error('Failed to delete file:', e);
-        }
+const deleteFile = async (file) => {
+    try {
+        await apiClient.delete(`/knowledge_groups/${groupId}/files/${file.id}`);
+        await fetchGroupDetails();
+    } catch (e) {
+        console.error('Failed to delete file:', e);
     }
 };
 
@@ -165,11 +141,8 @@ const openFile = (file) => {
     });
 };
 
-// Avoid opening the viewer when the action menu is open for this file
 const onFileRowClick = (file) => {
-    if (activeFileMenu.value !== file.id) {
-        openFile(file);
-    }
+    openFile(file);
 };
 
 // Determine icon based on file type
