@@ -13,7 +13,12 @@
 
   <body>
     <script>
-      if (localStorage.getItem('authenticated') !== 'true') {
+      const isAuthed =
+        (localStorage.getItem('authenticated') === 'true' &&
+          localStorage.getItem('auth.token')) ||
+        (sessionStorage.getItem('authenticated') === 'true' &&
+          sessionStorage.getItem('auth.token'));
+      if (!isAuthed) {
         window.location.href = '/login.html';
       }
     </script>
