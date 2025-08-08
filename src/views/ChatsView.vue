@@ -62,7 +62,7 @@
             v-for="chat in groupChats"
             :key="chat.id"
             @click="goToChat(chat.id)"
-            class="chat-item group"
+            :class="['chat-item group', { active: String(route.params.id) === String(chat.id) }]"
           >
             <span
               class="status-dot mr-3"
@@ -101,12 +101,13 @@
 
 <script setup>
 import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import apiClient from '@/api';
 import PageHeader from '@/components/PageHeader.vue';
 import langStore from '@/stores/langStore';
 
 const router = useRouter();
+const route = useRoute();
 const chats = ref([]);
 const loading = ref(true);
 const searchQuery = ref('');

@@ -67,7 +67,7 @@
       </div>
     </div>
     <!-- Messages list -->
-    <div class="flex-1 p-6 overflow-y-auto space-y-4 bg-secondary">
+    <div ref="messagesContainer" class="flex-1 p-6 overflow-y-auto space-y-4 bg-secondary">
       <!-- Drafts panel -->
       <div v-if="drafts.length" class="p-3 rounded-lg border border-default bg-white/5 mb-3">
         <div class="flex items-center justify-between mb-2">
@@ -124,7 +124,7 @@
           type="text"
           :disabled="!inputEnabled"
           :placeholder="placeholderText"
-          class="flex-1 form-input mr-3"
+          class="flex-1 form-input mr-3 rounded-full"
           @keyup.enter="sendMessage"
           @input="onType"
         />
@@ -134,6 +134,7 @@
           :disabled="!inputEnabled || !newMessage"
           @click="sendMessage"
         >
+          <span class="material-icons-outlined text-base mr-1">send</span>
           {{ langStore.t('send') }}
         </Button>
       </div>
@@ -164,7 +165,7 @@
 
 <script setup>
 import Button from '@/components/ui/Button.vue';
-import { ref, onMounted, computed, onBeforeUnmount } from 'vue';
+import { ref, onMounted, computed, onBeforeUnmount, watch, nextTick } from 'vue';
 import langStore from '@/stores/langStore.js';
 import { useRoute, useRouter } from 'vue-router';
 import apiClient from '@/api';
@@ -175,14 +176,21 @@ const presenceList = ref([]);
 const currentUser = JSON.parse(localStorage.getItem('auth.user') || sessionStorage.getItem('auth.user') || 'null') || { id: 1 };
 async function refreshPresence(){ try{ const res = await apiClient.get('/presence'); const list = res.data[String(chatId)] || []; presenceList.value = list; } catch{} }
 const busyByOthers = computed(()=> presenceList.value.some(p => p.userId !== currentUser.id));
+const messages = ref([]);
+const messagesContainer = ref(null);
 setInterval(refreshPresence, 12000);
+watch(messages, () => {
+  nextTick(() => {
+    const el = messagesContainer.value;
+    if (el) el.scrollTop = el.scrollHeight;
+  });
+});
 const route = useRoute();
 const router = useRouter();
 const chatId = route.params.id;
 
 const approveRequired = ref(false);
 const chat = ref(null);
-const messages = ref([]);
 const drafts = ref([]);
 const newMessage = ref('');
 const sendMode = ref('direct');
