@@ -1,0 +1,295 @@
+html {
+  /* Fluid typography across viewports */
+  font-size: clamp(14px, 1vw + 12px, 18px);
+}
+
+body {
+  background-color: var(--c-bg-primary);
+  color: var(--c-text-primary);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* Ensure touch targets are comfortable on small screens */
+@media (max-width: 640px) {
+  button,
+  input,
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
+    min-height: 44px;
+  }
+}
+
+/* Подключаем Tailwind base, components и utilities */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Global button styles
+ *
+ * In previous iterations of this project the various forms and views defined
+ * their own `.btn-primary`, `.btn-secondary` and `.btn-danger` classes.  This
+ * resulted in inconsistent padding, height, font sizes and hover states
+ * across the application.  According to the final design brief all buttons
+ * should have a consistent height (40 px), an 8 px border radius and use
+ * bold 14 px typography.  The classes below centralise those rules and
+ * apply sensible hover/active/disabled states.  Components that previously
+ * declared their own button styles have had those declarations removed so
+ * that these global definitions take effect.
+ */
+
+/* Primary actions use the current theme's brand colour for the background
+   and white text.  They grow slightly darker on hover and reduce opacity
+   when disabled. */
+.btn-primary {
+  @apply flex items-center justify-center px-4 h-10 rounded-lg font-bold text-sm transition-colors;
+  background-color: var(--c-text-brand);
+  color: white;
+}
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(0.9);
+}
+.btn-primary:active:not(:disabled) {
+  filter: brightness(0.8);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Secondary actions sit on the secondary background and adopt the primary
+   text colour.  A subtle border delineates them from the background. */
+.btn-secondary {
+  @apply flex items-center justify-center px-4 h-10 rounded-lg font-bold text-sm transition-colors;
+  background-color: var(--c-bg-secondary);
+  color: var(--c-text-primary);
+  border: 1px solid var(--c-border);
+}
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--c-bg-hover);
+  color: var(--c-text-accent);
+}
+.btn-secondary:active:not(:disabled) {
+  filter: brightness(0.97);
+}
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Dangerous actions (like deletions) use a red background to draw the eye.
+   They share the same dimensions and typography as other buttons. */
+.btn-danger {
+  @apply flex items-center justify-center px-4 h-10 rounded-lg font-bold text-sm transition-colors;
+  background-color: #dc2626; /* Tailwind red-600 */
+  color: white;
+}
+.btn-danger:hover:not(:disabled) {
+  filter: brightness(0.9);
+}
+.btn-danger:active:not(:disabled) {
+  filter: brightness(0.8);
+}
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/*
+ * Custom scrollbars to better match the modern aesthetic of the application.
+ * These rules style the scrollbars for browsers that support the
+ * `::-webkit-scrollbar` pseudo elements (Chromium and WebKit).  Other
+ * browsers will fall back to their default scrollbar styling.
+ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--c-bg-hover);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+  background-color: var(--c-bg-secondary);
+}
+
+/* Firefox scrollbar styling: apply a thin track and colour scheme derived
+   from the current theme.  Without this rule Firefox uses a bulky default
+   scrollbar that clashes with the design. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--c-bg-hover) var(--c-bg-secondary);
+}
+
+/* Далее — определения тем и ваши кастомные переменные */
+body {
+  background-color: var(--c-bg-primary);
+  color: var(--c-text-primary);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* …остальной файл без изменений… */
+
+
+/* Emerald — успокаивающая зелень и оранжевый (тёплый) акцент */
+body[data-theme="emerald"] {
+  --c-bg-primary: #ecfdf5;
+  --c-bg-secondary: #ffffff;
+  --c-bg-sidebar: #ffffff;
+  --c-bg-hover: #d1fae5;
+  --c-text-primary: #065f46;
+  --c-text-secondary: #047857;
+  --c-text-accent: #f97316; /* оранжевый акцент */
+  --c-text-brand: #059669;
+  --c-border: #a7f3d0;
+  --c-bg-input: #ffffff;
+}
+html.dark body[data-theme="emerald"] {
+  --c-bg-primary: #064e3b;
+  --c-bg-secondary: #042f23;
+  --c-bg-sidebar: #042f23;
+  --c-bg-hover: #065f46;
+  --c-text-primary: #d1fae5;
+  --c-text-secondary: #6ee7b7;
+  --c-text-accent: #fb923c;
+  --c-text-brand: #10b981;
+  --c-border: #047857;
+  --c-bg-input: #064e3b;
+}
+
+/* Wine — винный/оранжевый акцент (как в оригинале) */
+body[data-theme="wine"] {
+  --c-bg-primary: #fef2f2;
+  --c-bg-secondary: #ffffff;
+  --c-bg-sidebar: #ffffff;
+  --c-bg-hover: #ffe4e6;
+  --c-text-primary: #881337;
+  --c-text-secondary: #be123c;
+  --c-text-accent: #d97706; /* оранжевый */
+  --c-text-brand: #9f1239;
+  --c-border: #fecaca;
+  --c-bg-input: #ffffff;
+}
+html.dark body[data-theme="wine"] {
+  --c-bg-primary: #4c0519;
+  --c-bg-secondary: #570a21;
+  --c-bg-sidebar: #570a21;
+  --c-bg-hover: #7e173e;
+  --c-text-primary: #fecaca;
+  --c-text-secondary: #fda4af;
+  --c-text-accent: #fb923c;
+  --c-text-brand: #f43f5e;
+  --c-border: #881337;
+  --c-bg-input: #4c0519;
+}
+
+/* Classic – green primary with orange accent (light mode) */
+body[data-theme="classic"] {
+  --c-bg-primary: #f8fff0;
+  --c-bg-secondary: #ffffff;
+  --c-bg-sidebar: #ffffff;
+  --c-bg-hover: #f3fce8;
+  --c-text-primary: #365314;
+  --c-text-secondary: #639405;
+  --c-text-accent: #d97706;
+  --c-text-brand: #639405;
+  --c-border: #dbe4c7;
+  --c-bg-input: #ffffff;
+}
+html.dark body[data-theme="classic"] {
+  --c-bg-primary: #12161c;
+  --c-bg-secondary: #1a1d23;
+  --c-bg-sidebar: #1a1d23;
+  --c-bg-hover: #273036;
+  --c-text-primary: #d1d8d0;
+  --c-text-secondary: #a5b69e;
+  --c-text-accent: #d97706;
+  --c-text-brand: #85b744;
+  --c-border: #273036;
+  --c-bg-input: #12161c;
+}
+
+/* Graphite – cool grey palette with sky‑blue accent */
+body[data-theme="graphite"] {
+  --c-bg-primary: #f7fafc;
+  --c-bg-secondary: #ffffff;
+  --c-bg-sidebar: #ffffff;
+  --c-bg-hover: #e2e8f0;
+  --c-text-primary: #1e293b;
+  --c-text-secondary: #475569;
+  --c-text-accent: #0ea5e9;
+  --c-text-brand: #64748b;
+  --c-border: #cbd5e1;
+  --c-bg-input: #ffffff;
+}
+html.dark body[data-theme="graphite"] {
+  --c-bg-primary: #0f172a;
+  --c-bg-secondary: #152238;
+  --c-bg-sidebar: #152238;
+  --c-bg-hover: #1e3050;
+  --c-text-primary: #cbd5e1;
+  --c-text-secondary: #94a3b8;
+  --c-text-accent: #3b82f6;
+  --c-text-brand: #4e5d77;
+  --c-border: #1e3050;
+  --c-bg-input: #0f172a;
+}
+
+/* Sapphire – deep blues with lighter blue accent */
+body[data-theme="sapphire"] {
+  --c-bg-primary: #eff6ff;
+  --c-bg-secondary: #ffffff;
+  --c-bg-sidebar: #ffffff;
+  --c-bg-hover: #dbeafe;
+  --c-text-primary: #1e40af;
+  --c-text-secondary: #2563eb;
+  --c-text-accent: #3b82f6;
+  --c-text-brand: #2563eb;
+  --c-border: #bfdbfe;
+  --c-bg-input: #ffffff;
+}
+html.dark body[data-theme="sapphire"] {
+  --c-bg-primary: #0b1a32;
+  --c-bg-secondary: #11223b;
+  --c-bg-sidebar: #11223b;
+  --c-bg-hover: #18314b;
+  --c-text-primary: #c7d2fe;
+  --c-text-secondary: #93c5fd;
+  --c-text-accent: #2563eb;
+  --c-text-brand: #3b82f6;
+  --c-border: #18314b;
+  --c-bg-input: #0b1a32;
+}
+
+/* Violet – purple palette with violet accent */
+body[data-theme="violet"] {
+  --c-bg-primary: #f5f3ff;
+  --c-bg-secondary: #ffffff;
+  --c-bg-sidebar: #ffffff;
+  --c-bg-hover: #ede9fe;
+  --c-text-primary: #4c1d95;
+  --c-text-secondary: #7c3aed;
+  --c-text-accent: #8b5cf6;
+  --c-text-brand: #7c3aed;
+  --c-border: #ddd6fe;
+  --c-bg-input: #ffffff;
+}
+html.dark body[data-theme="violet"] {
+  --c-bg-primary: #1e1b2a;
+  --c-bg-secondary: #2c253a;
+  --c-bg-sidebar: #2c253a;
+  --c-bg-hover: #372a51;
+  --c-text-primary: #dcd6f7;
+  --c-text-secondary: #a78bfa;
+  --c-text-accent: #8b5cf6;
+  --c-text-brand: #7c3aed;
+  --c-border: #372a51;
+  --c-bg-input: #1e1b2a;
+}
+
+:root{--logo-green:#6bb10a;--logo-orange:#cd6502}.dark{--logo-green:#4cc38a;--logo-orange:#f59e0b}
+
+.menu-bg{ background-color: var(--c-bg-secondary); }
+
+.dropdown-panel{ pointer-events:auto; }

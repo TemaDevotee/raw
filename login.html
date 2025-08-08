@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <link rel="icon" type="image/svg+xml" href="/trickster.svg" />
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>Trickster – Sign in</title>
+    <!-- Google fonts and icons -->
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+    <!-- Tailwind via CDN (for this static page only) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        /* Accent colour for login page; can be customised */
+        --brand: #2563eb;
+        --brand-hover: #1d4ed8;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-950 flex items-center justify-center min-h-screen text-gray-100">
+    <div class="w-full max-w-lg px-8 py-10 bg-gray-900/80 rounded-2xl shadow-xl backdrop-blur-md">
+      <h1 class="text-center text-3xl font-extrabold mb-2">Trickster</h1>
+      <p class="text-center text-base font-semibold text-blue-400 mb-8 animate-pulse tracking-wide" style="animation-duration:1.8s">
+        Your agents – your rules
+      </p>
+
+      <!-- Login form -->
+      <form id="login-form" class="space-y-4">
+        <label class="block">
+          <span class="sr-only">Username</span>
+          <input
+            id="username"
+            name="username"
+            type="text"
+            placeholder="Username"
+            class="w-full h-14 px-4 rounded-xl bg-gray-800 border border-gray-700 placeholder-gray-500 text-gray-100 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] text-base"
+            required
+          />
+        </label>
+        <label class="block relative">
+          <span class="sr-only">Password</span>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            placeholder="Password"
+            class="w-full h-14 px-4 pr-10 rounded-xl bg-gray-800 border border-gray-700 placeholder-gray-500 text-gray-100 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] text-base"
+            required
+          />
+          <button
+            type="button"
+            id="togglePassword"
+            aria-label="Show password"
+            aria-pressed="false"
+            class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-200 focus:outline-none"
+          >
+            <span class="material-icons text-xl">visibility_off</span>
+          </button>
+        </label>
+        <!-- Remember me and forgot link row -->
+        <div class="flex items-center justify-between text-sm text-gray-400">
+          <label class="flex items-center gap-2">
+            <input type="checkbox" id="remember" class="h-4 w-4 rounded border-gray-600 bg-transparent text-[var(--brand)] focus:ring-0" />
+            Remember me
+          </label>
+          <button type="button" id="show-forgot" class="underline hover:text-gray-200">Forgot Password?</button>
+        </div>
+        <p id="error-msg" class="text-red-500 text-sm h-5"></p>
+        <button
+          type="submit"
+          id="login-btn"
+          class="w-full h-14 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white font-semibold rounded-full flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <span id="login-spinner" class="material-icons animate-spin mr-2 hidden">refresh</span>
+          <span>Login</span>
+        </button>
+        <div class="text-center text-sm text-gray-400 mt-2">
+          Don't have an account?
+          <button type="button" id="show-signup" class="underline hover:text-gray-200">Sign Up</button>
+        </div>
+      </form>
+
+      <!-- Sign-up form -->
+      <form id="signup-form" class="space-y-4 hidden">
+        <input
+          type="text"
+          placeholder="Name"
+          class="w-full h-14 px-4 rounded-xl bg-gray-800 border border-gray-700 placeholder-gray-500 text-gray-100 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] text-base"
+          required
+        />
+        <input
+          type="email"
+          placeholder="Email"
+          class="w-full h-14 px-4 rounded-xl bg-gray-800 border border-gray-700 placeholder-gray-500 text-gray-100 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] text-base"
+          required
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          class="w-full h-14 px-4 rounded-xl bg-gray-800 border border-gray-700 placeholder-gray-500 text-gray-100 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] text-base"
+          required
+        />
+        <button
+          type="submit"
+          class="w-full h-14 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white font-semibold rounded-full transition-colors"
+        >
+          Sign Up
+        </button>
+        <div class="text-center text-sm text-gray-400 mt-2">
+          <button type="button" id="show-login-from-signup" class="underline hover:text-gray-200">Back to Login</button>
+        </div>
+      </form>
+
+      <!-- Forgot password form -->
+      <form id="forgot-form" class="space-y-4 hidden">
+        <input
+          type="email"
+          placeholder="Enter your email"
+          class="w-full h-14 px-4 rounded-xl bg-gray-800 border border-gray-700 placeholder-gray-500 text-gray-100 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] text-base"
+          required
+        />
+        <button
+          type="submit"
+          class="w-full h-14 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white font-semibold rounded-full transition-colors"
+        >
+          Reset Password
+        </button>
+        <div class="text-center text-sm text-gray-400 mt-2">
+          <button type="button" id="show-login-from-forgot" class="underline hover:text-gray-200">Back to Login</button>
+        </div>
+      </form>
+    </div>
+    <div id="toast" role="status" aria-live="polite" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-red-600 text-white px-4 py-2 rounded-lg opacity-0 pointer-events-none transition-opacity"></div>
+
+    
+<script>
+  const loginForm = document.getElementById('login-form');
+  const signupForm = document.getElementById('signup-form');
+  const forgotForm = document.getElementById('forgot-form');
+  const passwordInput = document.getElementById('password');
+  const togglePassword = document.getElementById('togglePassword');
+  const toast = document.getElementById('toast');
+  const loginBtn = document.getElementById('login-btn');
+  const spinner = document.getElementById('login-spinner');
+
+  const showToast = (msg) => {
+    toast.textContent = msg;
+    toast.classList.remove('opacity-0');
+    setTimeout(() => toast.classList.add('opacity-0'), 2000);
+  };
+
+  // Toggle password visibility
+  togglePassword.addEventListener('click', () => {
+    const isVisible = passwordInput.type === 'text';
+    passwordInput.type = isVisible ? 'password' : 'text';
+    togglePassword.querySelector('span').textContent = isVisible ? 'visibility_off' : 'visibility';
+    togglePassword.setAttribute('aria-label', isVisible ? 'Show password' : 'Hide password');
+    togglePassword.setAttribute('aria-pressed', (!isVisible).toString());
+  });
+
+  // Navigation between forms
+  document.getElementById('show-signup').onclick = () => {
+    loginForm.classList.add('hidden');
+    signupForm.classList.remove('hidden');
+  };
+  document.getElementById('show-login-from-signup').onclick = () => {
+    signupForm.classList.add('hidden');
+    loginForm.classList.remove('hidden');
+  };
+  document.getElementById('show-forgot').onclick = () => {
+    loginForm.classList.add('hidden');
+    forgotForm.classList.remove('hidden');
+  };
+  document.getElementById('show-login-from-forgot').onclick = () => {
+    forgotForm.classList.add('hidden');
+    loginForm.classList.remove('hidden');
+  };
+
+  // Redirect only if a valid token exists; prevent false 'authenticated' flag loops
+  const hasToken = !!(localStorage.getItem('auth.token') || sessionStorage.getItem('auth.token'));
+  if (hasToken) {
+    window.location.href = '/#/'
+  } else {
+    // Clean up inconsistent flags that can cause bouncing
+    if (localStorage.getItem('authenticated') === 'true' && !localStorage.getItem('auth.token')) {
+      localStorage.removeItem('authenticated');
+    }
+    if (sessionStorage.getItem('authenticated') === 'true' && !sessionStorage.getItem('auth.token')) {
+      sessionStorage.removeItem('authenticated');
+    }
+  }
+
+  // Handle login form submission
+  loginForm.onsubmit = (e) => {
+    e.preventDefault();
+    const username = loginForm.username.value.trim();
+    const password = loginForm.password.value;
+    document.getElementById('error-msg').textContent = '';
+    if (!username || !password) {
+      showToast('Please fill in both fields');
+      return;
+    }
+    // Disable button and show spinner
+    loginBtn.disabled = true;
+    spinner.classList.remove('hidden');
+    const remember = document.getElementById('remember').checked;
+    // Use relative path so dev proxy or same-origin requests work
+    const __DEFAULT_API_BASE__ = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:3001/api' : '/api';
+const API_BASE = (localStorage.getItem('api.base') || __DEFAULT_API_BASE__).replace(/\/$/, '');
+fetch(API_BASE + '/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Invalid credentials');
+        return res.json();
+      })
+      .then(({ token, user }) => {
+        if (remember) {
+          localStorage.setItem('auth.token', token);
+          localStorage.setItem('auth.user', JSON.stringify(user));
+          localStorage.setItem('authenticated', 'true');
+          sessionStorage.removeItem('auth.token');
+          sessionStorage.removeItem('auth.user');
+          sessionStorage.removeItem('authenticated');
+        } else {
+          sessionStorage.setItem('auth.token', token);
+          sessionStorage.setItem('auth.user', JSON.stringify(user));
+          sessionStorage.setItem('authenticated', 'true');
+          localStorage.removeItem('auth.token');
+          localStorage.removeItem('auth.user');
+          localStorage.removeItem('authenticated');
+        }
+        window.location.href = '/#/'
+      })
+      .catch(() => {
+        document.getElementById('error-msg').textContent = 'Invalid credentials';
+        loginBtn.disabled = false;
+        spinner.classList.add('hidden');
+      });
+  };
+
+  // Dummy sign-up and forgot password handlers
+  signupForm.onsubmit = (e) => {
+    e.preventDefault();
+    alert('Sign-up successful. You can now log in.');
+    signupForm.classList.add('hidden');
+    loginForm.classList.remove('hidden');
+  };
+  forgotForm.onsubmit = (e) => {
+    e.preventDefault();
+    alert('A reset link has been sent to your email.');
+    forgotForm.classList.add('hidden');
+    loginForm.classList.remove('hidden');
+  };
+</script>
+
+  </body>
+</html>
