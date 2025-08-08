@@ -11,7 +11,7 @@ const routes = [
   { path: '/knowledge', name: 'knowledge-list', component: () => import('@/views/KnowledgeView.vue') },
   { path: '/knowledge/:id', name: 'knowledge-detail', component: () => import('@/views/KnowledgeGroupDetailView.vue'), props: true },
   { path: '/account', name: 'account', component: () => import('@/views/AccountView.vue') },
-  { path: '/account/plan', name: 'account-plan', component: () => import('@/views/PricingPlans.vue') },
+  { path: '/account/plan', name: 'account-plan', component: () => import('@/views/PricingView.vue') },
   { path: '/:pathMatch(.*)*', name: 'not-found', component: () => import('@/views/NotFoundView.vue') },
 ];
 
