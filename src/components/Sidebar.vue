@@ -5,15 +5,9 @@
   >
     <!-- Top: brand (ссылка на home) и collapse toggle -->
     <div class="flex items-center justify-between py-4 pl-6 pr-4">
-      <router-link to="/" class="flex items-center space-x-3"><Logo :height="18"/>
-        
-        <template v-if="collapsed">
-          <!-- When collapsed display an icon instead of the brand name -->
-          <span class="material-icons text-2xl">psychology</span>
-        </template>
-        <template v-else>
-          <span class="text-2xl font-bold whitespace-nowrap">Trickster</span>
-        </template>
+      <router-link to="/" class="flex items-center space-x-3" data-testid="brand-link">
+        <BrandLogo class="h-6 w-6 text-accent" data-testid="brand-logo" />
+        <span v-if="!collapsed" class="text-2xl font-bold whitespace-nowrap">Trickster</span>
       </router-link>
       <button
         @click="toggleCollapse"
@@ -49,10 +43,7 @@
     </nav>
 
     <!-- Workspace switcher displayed only when multiple workspaces exist -->
-    <div
-      
-      class="px-4 mt-4"
-    >
+    <div v-if="showSwitcher" class="px-4 mt-4">
       <WorkspaceSwitcher />
     </div>
 
@@ -87,7 +78,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { themeStore } from '@/stores/ThemingStore.js'
 import { langStore } from '@/stores/langStore.js'
@@ -95,6 +86,7 @@ import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 import WorkspaceSwitcher from '@/components/WorkspaceSwitcher.vue'
 import { workspaceStore } from '@/stores/workspaceStore'
+import BrandLogo from '@/assets/brand/3xtr.svg?component'
 
 const collapsed = ref(false)
 const toggleCollapse = () => {
@@ -114,6 +106,8 @@ const isActiveRoute = (to) => {
 }
 
 const t = langStore.t
+
+const showSwitcher = computed(() => workspaceStore.hasMultiple())
 </script>
 
 <style scoped>

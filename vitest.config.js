@@ -1,10 +1,9 @@
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vitest/config'
+import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
   test: {
-    // Use Node environment to avoid requiring jsdom.  Our tests stub
-    // fetch and do not depend on the DOM.
     environment: 'node',
   },
   resolve: {
@@ -12,4 +11,5 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  plugins: [vue()],
 })

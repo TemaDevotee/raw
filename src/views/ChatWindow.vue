@@ -1,68 +1,79 @@
 <template>
   <div class="flex flex-col h-full">
-    <!-- Header with gradient background controlled via CSS variables -->
-    <div class="chat-header px-0" :style="headerStyle">
-      <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-default">
-        <!-- Left side: back button and chat title/agent info -->
-        <div class="flex items-center space-x-4">
-          <!-- Back to chat list -->
+    <!-- Gradient header with controls -->
+    <div class="chat-header shadow-sm" :style="headerStyle">
+      <div class="flex items-center justify-between px-6 py-4">
+        <div class="flex items-center gap-4">
           <router-link to="/chats">
             <Button variant="secondary" size="sm">
               <span class="material-icons-outlined mr-1">arrow_back</span>
               {{ langStore.t('backToAll') }}
             </Button>
           </router-link>
-          <div>
-            <h2 class="text-xl font-bold">
-              {{ chat?.clientName || langStore.t('chat') }}
-            </h2>
-            <!-- Subtitle: assigned agent or fallback ID -->
-            <p class="text-sm text-muted" v-if="chat">
-              <template v-if="assignedAgent">
-                <span>{{ langStore.t('assignedAgent') }}:</span>
-                <router-link
-                  :to="`/agents/${assignedAgent.id}`"
-                  class="text-link ml-1 hover:underline"
-                >
-                  {{ assignedAgent.name }}
-                </router-link>
-              </template>
-              <template v-else>
-                {{ subtitle }}
-              </template>
-            </p>
-          </div>
+          <h2 class="text-xl font-bold">{{ chat?.clientName || langStore.t('chat') }}</h2>
+          <span
+            v-if="chat"
+            class="ml-2 text-xs px-2 py-0.5 rounded-full flex items-center"
+            :style="{ backgroundColor: badgeColor(chat.status), color: statusColor(chat.status) }"
+          >
+            <span
+              class="w-2 h-2 rounded-full mr-1"
+              :style="{ backgroundColor: statusColor(chat.status) }"
+            ></span>
+            {{ statusLabel }}
+          </span>
         </div>
-        <!-- Change status control -->
-          <div class="ml-2">
-            <select class="form-input text-sm" :value="chat?.status" @change="onChangeStatus($event)">
-              <option value="live">{{ langStore.t('live') }}</option>
-              <option value="paused">{{ langStore.t('paused') }}</option>
-              <option value="attention">{{ langStore.t('attention') }}</option>
-              <option value="resolved">{{ langStore.t('resolved') }}</option>
-              <option value="ended">{{ langStore.t('ended') }}</option>
-            </select>
+        <div class="flex items-center gap-2">
+          <Button
+            v-if="!inputEnabled"
+            data-testid="interfere-btn"
+            :disabled="busyByOthers"
+            variant="primary"
+            size="sm"
+            @click="interfere"
+          >
+            {{ langStore.t('interfere') }}
+          </Button>
+          <Button
+            v-else
+            data-testid="return-btn"
+            variant="secondary"
+            size="sm"
+            @click="returnControl"
+          >
+            {{ langStore.t('returnToAgent') }}
+          </Button>
+          <div class="relative" ref="statusMenuRef" @keydown.escape="statusMenuOpen = false">
+            <Button variant="secondary" size="sm" data-testid="status-menu-btn" @click="statusMenuOpen = !statusMenuOpen">
+              {{ langStore.t('changeStatus') }}
+            </Button>
+            <ul
+              v-if="statusMenuOpen"
+              data-testid="status-menu"
+              class="absolute right-0 mt-1 w-40 rounded-md border border-default bg-secondary z-10"
+            >
+              <li v-for="opt in statusOptions" :key="opt.value">
+                <button
+                  class="flex items-center w-full px-3 py-2 text-left hover-bg-effect"
+                  @click="setStatus(opt.value)"
+                >
+                  <span
+                    class="w-2 h-2 rounded-full mr-2"
+                    :style="{ backgroundColor: statusColor(opt.value) }"
+                  ></span>
+                  {{ langStore.t(opt.label) }}
+                </button>
+              </li>
+            </ul>
           </div>
-<!-- Right side: resolve and end actions -->
-        <div v-if="chat" class="flex items-center space-x-1">
-          <Button
-            variant="secondary"
-            size="sm"
-            v-if="chat.status === 'live'"
-            @click="resolveIssue"
+          <span
+            v-if="presenceCount"
+            data-testid="presence-badge"
+            class="text-xs px-2 py-1 rounded-full"
+            :style="{ backgroundColor: badgeColor(chat?.status), color: statusColor(chat?.status) }"
           >
-            <span class="material-icons-outlined mr-1">check_circle</span>
-            <span>{{ langStore.t('resolve') }}</span>
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            v-if="chat.status === 'live' || chat.status === 'resolved'"
-            @click="endChat"
-          >
-            <span class="material-icons-outlined mr-1">highlight_off</span>
-            <span>{{ langStore.t('end') }}</span>
-          </Button>
+            {{ presenceCount }}
+          </span>
         </div>
       </div>
     </div>
@@ -138,27 +149,6 @@
           {{ langStore.t('send') }}
         </Button>
       </div>
-      <!-- Interfere / Return control buttons -->
-      <div v-if="chat" class="flex space-x-2">
-        <Button
-          :variant="inputEnabled ? 'secondary' : 'primary'"
-          size="sm"
-          :disabled="inputEnabled || busyByOthers"
-          @click="interfere"
-        >
-          <span class="material-icons-outlined text-base mr-1">psychology</span>
-          <span>{{ langStore.t('interfere') }}</span>
-        </Button>
-        <Button
-          :variant="inputEnabled ? 'primary' : 'secondary'"
-          size="sm"
-          :disabled="!inputEnabled"
-          @click="returnControl"
-        >
-          <span class="material-icons-outlined text-base mr-1">undo</span>
-          <span>{{ langStore.t('returnToAgent') }}</span>
-        </Button>
-      </div>
     </div>
   </div>
 </template>
@@ -170,12 +160,14 @@ import langStore from '@/stores/langStore.js';
 import { useRoute, useRouter } from 'vue-router';
 import apiClient from '@/api';
 import { showToast } from '@/stores/toastStore';
+import { statusColor, badgeColor, statusGradient } from './chatsUtils.js';
 
 
 const presenceList = ref([]);
 const currentUser = JSON.parse(localStorage.getItem('auth.user') || sessionStorage.getItem('auth.user') || 'null') || { id: 1 };
 async function refreshPresence(){ try{ const res = await apiClient.get('/presence'); const list = res.data[String(chatId)] || []; presenceList.value = list; } catch{} }
-const busyByOthers = computed(()=> presenceList.value.some(p => p.userId !== currentUser.id));
+const busyByOthers = computed(() => presenceList.value.some(p => p.userId !== currentUser.id));
+const presenceCount = computed(() => presenceList.value.length);
 const messages = ref([]);
 const messagesContainer = ref(null);
 setInterval(refreshPresence, 12000);
@@ -205,31 +197,62 @@ function onType() {
   clearTimeout(typingTimer);
   typingTimer = setTimeout(() => (typing.value = false), 1200);
 }
-// Indicates whether the operator has taken control of the chat.
-const inputEnabled = ref(false);
+// control state
+const chatControl = ref('agent');
+const inputEnabled = computed(() => chatControl.value === 'operator');
 // Agents list for resolving assigned agent names
 const agentsList = ref([]);
 const subtitle = computed(() => (chat.value ? `ID: ${chatId}` : ''));
 
-const placeholderText = computed(() => {
-  if (inputEnabled.value) {
-    return langStore.t('typeMessage');
-  }
-  return langStore.t('pressInterfere');
+const placeholderText = computed(() =>
+  inputEnabled.value
+    ? langStore.t('operatorInControl')
+    : langStore.t('agentInControl')
+);
+
+const statusMenuOpen = ref(false);
+const statusOptions = [
+  { value: 'live', label: 'live' },
+  { value: 'paused', label: 'paused' },
+  { value: 'attention', label: 'attention' },
+  { value: 'resolved', label: 'resolved' },
+  { value: 'ended', label: 'ended' },
+];
+const statusLabel = computed(() => {
+  if (!chat.value) return '';
+  const map = {
+    live: 'live',
+    paused: 'paused',
+    attention: 'attention',
+    resolved: 'resolved',
+    ended: 'ended',
+    idle: 'idle',
+  };
+  return langStore.t(map[chat.value.status] || map.idle);
 });
+const headerStyle = computed(() => ({
+  background: statusGradient(chat.value?.status || 'idle'),
+}));
+const statusMenuRef = ref(null);
+function handleClickOutside(e) {
+  if (statusMenuOpen.value && statusMenuRef.value && !statusMenuRef.value.contains(e.target)) {
+    statusMenuOpen.value = false;
+  }
+}
 
 async function fetchChat() {
   try {
     const res = await apiClient.get(`/chats/${chatId}`);
     chat.value = res.data;
     messages.value = res.data.messages || [];
-    inputEnabled.value = chat.value.status === 'live';
+    chatControl.value = res.data.control || 'agent';
   } catch (err) {
     console.error(err);
   }
 }
 
 onMounted(async () => {
+  document.addEventListener('click', handleClickOutside);
   // Load initial chat data, agents and drafts sequentially.
   await fetchChat();
   await fetchAgents();
@@ -351,12 +374,13 @@ onBeforeUnmount(async () => {
     await apiClient.post('/presence/leave', { chatId, userId: user.id });
   } catch {}
   clearInterval(presenceTimer);
+  document.removeEventListener('click', handleClickOutside);
 });
 
 async function interfere() {
   try {
     await apiClient.post(`/chats/${chatId}/interfere`);
-    inputEnabled.value = true;
+    chatControl.value = 'operator';
     // status unchanged by interfere
     await fetchChat();
     await fetchDrafts();
@@ -371,9 +395,22 @@ async function returnControl() {
   try {
     await apiClient.post(`/chats/${chatId}/return`);
   } catch {}
-  inputEnabled.value = false;
+  chatControl.value = 'agent';
   // status unchanged by return
   showToast(langStore.t('controlReturned'), 'success');
+}
+
+async function setStatus(s) {
+  statusMenuOpen.value = false;
+  if (!chat.value) return;
+  const prev = chat.value.status;
+  chat.value.status = s;
+  try {
+    await apiClient.post(`/chats/${chatId}/status`, { status: s });
+  } catch (e) {
+    chat.value.status = prev;
+    showToast(langStore.t('statusChangeFailed') || 'Status update failed', 'error');
+  }
 }
 
 async function approveDraft(d) {
@@ -398,29 +435,6 @@ async function simulateDraft() {
   try{ const r = await apiClient.get(`/chats/${chatId}/approve_mode`); approveRequired.value = !!(r.data && r.data.require); }catch{}
   } catch {}
 }
-async function resolveIssue() {
-  try {
-    await apiClient.post(`/chats/${chatId}/resolve`);
-    inputEnabled.value = false;
-    chat.value.status = 'resolved';
-    await fetchChat();
-    await fetchDrafts();
-  try{ const r = await apiClient.get(`/chats/${chatId}/approve_mode`); approveRequired.value = !!(r.data && r.data.require); }catch{}
-    showToast(langStore.t('issueResolvedMsg'), 'success');
-  } catch (e) {
-    showToast(langStore.t('failedResolve'), 'error');
-  }
-}
-
-async function endChat() {
-  try {
-    await apiClient.post(`/chats/${chatId}/end`);
-    showToast(langStore.t('chatEndedMsg'), 'success');
-    router.push('/chats');
-  } catch (e) {
-    showToast(langStore.t('failedEndChat'), 'error');
-  }
-}
 
 async function fetchDrafts() {
   try {
@@ -429,55 +443,6 @@ async function fetchDrafts() {
   } catch {}
 }
 
-// Compute gradient style for chat header based on status
-const headerStyle = computed(() => {
-  if (!chat.value) return {};
-  let gradFrom = '';
-  let gradTo = '';
-  let opacity = 0.25;
-  const status = chat.value.status || '';
-  switch (status) {
-    case 'live':
-      gradFrom = '#22c55e';
-      gradTo = '#4ade80';
-      opacity = 0.4;
-      break;
-    case 'resolved':
-      gradFrom = '#84cc16';
-      gradTo = '#bef264';
-      opacity = 0.3;
-      break;
-    case 'ended':
-      gradFrom = '#ef4444';
-      gradTo = '#fda4af';
-      opacity = 0.25;
-      break;
-    case 'attention':
-      gradFrom = '#f59e0b';
-      gradTo = '#fbbf24';
-      opacity = 0.35;
-      break;
-    default:
-      gradFrom = '#64748b';
-      gradTo = '#94a3b8';
-      opacity = 0.2;
-      break;
-  }
-  return {
-    '--chat-grad-from': gradFrom,
-    '--chat-grad-to': gradTo,
-    '--chat-grad-opacity': opacity,
-  };
-});
-
-async function onChangeStatus(e){
-  const val = e.target.value;
-  try{
-    await apiClient.patch(`/chats/${chatId}/status`, { status: val });
-    if (chat.value) chat.value.status = val;
-    showToast(langStore.t('statusUpdated') || 'Status updated', 'success');
-  } catch {}
-}
 
 
 async function toggleApprove(e){

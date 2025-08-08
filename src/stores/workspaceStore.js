@@ -1,145 +1,123 @@
 import { reactive } from 'vue'
-import { showToast } from '@/stores/toastStore'
 import apiClient from '@/api'
+import { showToast } from '@/stores/toastStore'
 
 const STORAGE_KEY = 'app.state.v2'
+const VERSION = 2
+const DEFAULT_WORKSPACE = { id: 'ws_default', name: 'Default' }
 
-function createDefaultWorkspace() {
-  return {
-    id: crypto.randomUUID(),
-    name: 'Workspace 1',
-    createdAt: Date.now(),
-    isDefault: true,
-    connections: [],
-    access: {},
+const state = reactive({
+  workspaces: [],
+  currentWorkspaceId: null,
+})
+
+function persist() {
+  const data = {
+    workspaces: state.workspaces.map((w) => ({ id: w.id, name: w.name })),
+    currentWorkspaceId: state.currentWorkspaceId,
+    version: VERSION,
   }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
 }
 
-function loadState() {
+function hydrate() {
   const raw = localStorage.getItem(STORAGE_KEY)
   if (raw) {
     try {
       const parsed = JSON.parse(raw)
-      if (parsed.workspaces) {
-        return parsed
+      let workspaces = Array.isArray(parsed.workspaces)
+        ? parsed.workspaces.filter((w) => w && w.id && w.name)
+        : []
+      if (workspaces.length === 0 && parsed.workspace) {
+        // v1 single-workspace shape
+        workspaces = [parsed.workspace]
       }
-      // legacy single-workspace data migration
-      const def = createDefaultWorkspace()
-      return {
-        currentWorkspaceId: def.id,
-        workspaces: [def],
-        chatsByWs: { [def.id]: parsed.chats || [] },
-        teamsByWs: { [def.id]: parsed.teams || [] },
-        bots: parsed.bots || [],
-        knowledge: parsed.knowledge || [],
-        __version: 2,
+      if (!workspaces.some((w) => w.id === DEFAULT_WORKSPACE.id)) {
+        workspaces.unshift({ ...DEFAULT_WORKSPACE })
       }
+      state.workspaces = workspaces
+      state.currentWorkspaceId = workspaces.some(
+        (w) => w.id === parsed.currentWorkspaceId,
+      )
+        ? parsed.currentWorkspaceId
+        : workspaces[0].id
+      persist()
+      return
     } catch (e) {
-      console.warn('Failed to parse state', e)
+      console.warn('Failed to parse workspace state', e)
     }
   }
-  const def = createDefaultWorkspace()
-  return {
-    currentWorkspaceId: def.id,
-    workspaces: [def],
-    chatsByWs: { [def.id]: [] },
-    teamsByWs: { [def.id]: [] },
-    bots: [],
-    knowledge: [],
-    __version: 2,
-  }
-}
-
-const state = reactive(loadState())
-
-function persist() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-}
-
-function switchWorkspace(id) {
-  state.currentWorkspaceId = id
+  state.workspaces = [{ ...DEFAULT_WORKSPACE }]
+  state.currentWorkspaceId = DEFAULT_WORKSPACE.id
   persist()
 }
 
-async function createWorkspace(name) {
-  const ws = {
-    id: crypto.randomUUID(),
-    name: name || `Workspace ${state.workspaces.length + 1}`,
-    createdAt: Date.now(),
-    connections: [],
-    access: {},
-  }
+function currentWorkspace() {
+  return state.workspaces.find((w) => w.id === state.currentWorkspaceId) || null
+}
+
+function hasMultiple() {
+  return state.workspaces.length > 1
+}
+
+function createWorkspace(name) {
+  const trimmed = (name || '').trim()
+  if (!trimmed) throw new Error('Workspace name required')
+  const ws = { id: crypto.randomUUID(), name: trimmed }
   state.workspaces.push(ws)
-  state.chatsByWs[ws.id] = []
-  state.teamsByWs[ws.id] = []
-  switchWorkspace(ws.id)
+  state.currentWorkspaceId = ws.id
   persist()
-  // Persist to the backend.  We send the name only so that the
-  // server generates its own identifier; we ignore the response as
-  // the local ID is already used in the UI.  Errors are swallowed
-  // silently but logged to the console.
-  try {
-    const res = await apiClient.post('/workspaces', { name: ws.name });
-    const serverId = res.data && res.data.id ? res.data.id : ws.id;
-    if (serverId !== ws.id){
-      // rekey state maps to server id
-      state.chatsByWs[serverId] = state.chatsByWs[ws.id] || [];
-      state.teamsByWs[serverId] = state.teamsByWs[ws.id] || [];
-      delete state.chatsByWs[ws.id];
-      delete state.teamsByWs[ws.id];
-      ws.id = serverId;
-      state.currentWorkspaceId = serverId;
-    }
-  } catch(e){ console.warn('Failed to persist new workspace', e); }
-  persist();
+  void apiClient.post('/workspaces', { name: trimmed }).catch(() => {})
   showToast(`Workspace "${ws.name}" создан`, 'success')
   return ws
 }
 
 function renameWorkspace(id, name) {
+  const trimmed = (name || '').trim()
+  if (!trimmed) throw new Error('Workspace name required')
   const ws = state.workspaces.find((w) => w.id === id)
-  if (ws) {
-    ws.name = name
-    persist()
-    // Attempt to persist the rename to the backend.  We fire and
-    // forget to avoid blocking the UI.  Any error will be logged.
-    apiClient
-      .patch(`/workspaces/${id}`, { name })
-      .catch((e) => console.warn('Failed to rename workspace', e))
-  }
+  if (!ws) throw new Error('Workspace not found')
+  ws.name = trimmed
+  persist()
+  void apiClient.patch(`/workspaces/${id}`, { name: trimmed }).catch(() => {})
 }
 
 function deleteWorkspace(id) {
+  if (id === DEFAULT_WORKSPACE.id) throw new Error('Cannot delete default workspace')
   const index = state.workspaces.findIndex((w) => w.id === id)
   if (index === -1) return
-  if (state.workspaces[index].isDefault) return
-  const wsId = state.workspaces[index].id
   state.workspaces.splice(index, 1)
-  delete state.chatsByWs[id]
-  delete state.teamsByWs[id]
   if (state.currentWorkspaceId === id) {
-    const def = state.workspaces.find((w) => w.isDefault) || state.workspaces[0]
-    state.currentWorkspaceId = def.id
+    const fallback =
+      state.workspaces[index] ||
+      state.workspaces[index - 1] ||
+      state.workspaces.find((w) => w.id === DEFAULT_WORKSPACE.id) ||
+      null
+    state.currentWorkspaceId = fallback ? fallback.id : null
   }
   persist()
-  // Attempt to delete on backend.  If the server forbids
-  // deletion of the default workspace it will return an error; we
-  // ignore errors here as the UI already prevents deleting the
-  // default workspace.
-  apiClient
-    .delete(`/workspaces/${wsId}`)
-    .catch((e) => console.warn('Failed to delete workspace', e))
+  void apiClient.delete(`/workspaces/${id}`).catch(() => {})
 }
 
-function workspaceName(id) {
-  return state.workspaces.find((w) => w.id === id)?.name || ''
+function selectWorkspace(id) {
+  if (!state.workspaces.some((w) => w.id === id)) {
+    throw new Error('Workspace not found')
+  }
+  state.currentWorkspaceId = id
+  persist()
 }
+
+hydrate()
 
 export const workspaceStore = {
   state,
+  DEFAULT_WORKSPACE_ID: DEFAULT_WORKSPACE.id,
+  hydrate,
+  persist,
+  currentWorkspace,
+  hasMultiple,
   createWorkspace,
   renameWorkspace,
   deleteWorkspace,
-  switchWorkspace,
-  workspaceName,
+  selectWorkspace,
 }
