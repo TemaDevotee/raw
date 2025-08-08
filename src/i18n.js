@@ -82,6 +82,9 @@ export const messages = {
     discard: 'Discard',
     savedAt: 'Saved {time}',
     sentQueuedMessages: 'Sent {count} queued messages',
+    reconnecting: 'Reconnecting…',
+    offlineQueued: "You're offline. Messages will be queued.",
+    loading: 'Loading…',
     // ...добавьте другие английские ключи
   },
   ru: {
@@ -167,6 +170,9 @@ export const messages = {
     discard: 'Отменить',
     savedAt: 'Сохранено {time}',
     sentQueuedMessages: 'Отправлено {count} сообщений из очереди',
+    reconnecting: 'Повторное подключение…',
+    offlineQueued: 'Вы не в сети. Сообщения будут поставлены в очередь.',
+    loading: 'Загрузка…',
     // ...добавьте другие русские ключи
   }
 }

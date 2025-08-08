@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-full">
     <!-- Left column: chat list with search/filter and groups -->
-    <div class="w-full max-w-md border-r border-default flex flex-col overflow-y-auto">
+    <div class="w-full max-w-md border-r border-default flex flex-col">
       <PageHeader :title="langStore.t('chats')" />
 
       <!-- Search and filter controls -->
@@ -26,70 +26,67 @@
         </select>
       </div>
 
-      <!-- Chat groups -->
-      <div>
-        <div
-          v-for="status in groupOrder"
-          :key="status"
-          class="border-t border-default"
-        >
-          <button
-            class="w-full flex justify-between items-center px-6 py-3 text-sm font-medium text-default hover:bg-hover focus:outline-none"
-            @click="toggleGroup(status)"
-            :aria-expanded="isGroupOpen(status).toString()"
-            :aria-controls="`chat-group-${status}`"
-          >
-            <span class="uppercase text-xs tracking-wide">
-              {{ statusLabel(status) }} ({{ groupedChats[status].length }})
-            </span>
-            <span
-              class="material-icons transition-transform duration-300 ease-in-out"
-              :class="{ 'rotate-180': isGroupOpen(status) }"
-              >expand_more</span
+      <SkeletonLoader v-if="isLoading" class="flex-1" />
+      <VirtualList
+        v-else
+        class="flex-1 border-t border-default"
+        :items="virtualItems"
+        :item-height="ITEM_HEIGHT"
+      >
+        <template #default="{ item }">
+          <div v-if="item.type === 'header'" class="border-t border-default">
+            <button
+              class="w-full flex justify-between items-center px-6 py-3 text-sm font-medium text-default hover:bg-hover focus:outline-none"
+              @click="toggleGroup(item.status)"
+              :aria-expanded="isGroupOpen(item.status).toString()"
             >
-          </button>
-          <div :id="`chat-group-${status}`" v-show="isGroupOpen(status)">
-            <div v-if="groupedChats[status].length">
-              <div
-                v-for="chat in groupedChats[status]"
-                :key="chat.id"
-                @click="goToChat(chat.id)"
-                @keydown.enter="goToChat(chat.id)"
-                role="button"
-                tabindex="0"
-                :class="['chat-item group', { active: String(route.params.id) === String(chat.id) }]"
-                :style="{ '--status-color': statusColor(chat.status) }"
+              <span class="uppercase text-xs tracking-wide">
+                {{ statusLabel(item.status) }} ({{ groupedChats[item.status].length }})
+              </span>
+              <span
+                class="material-icons transition-transform duration-300 ease-in-out"
+                :class="{ 'rotate-180': isGroupOpen(item.status) }"
+                >expand_more</span
               >
-                <span
-                  class="status-dot mr-3"
-                  :style="{ backgroundColor: statusColor(chat.status) }"
-                  :aria-label="`Status: ${statusLabel(chat.status)}`"
-                ></span>
-                <div class="flex-1 min-w-0">
-                  <p class="font-medium text-default truncate">
-                    {{ chat.clientName }}
-                  </p>
-                  <p class="text-xs text-muted truncate">
-                    {{ chat.lastMessage }}
-                  </p>
-                </div>
-                <div class="flex items-center space-x-2">
-                  <span
-                    v-if="presenceCount(chat.id)"
-                    class="presence-badge"
-                    :style="{ backgroundColor: badgeColor(chat.status) }"
-                    >{{ presenceCount(chat.id) }}</span
-                  >
-                  <span class="text-xs text-muted">{{ formatChatTime(chat.time) }}</span>
-                </div>
-              </div>
-            </div>
-            <div v-else class="px-6 py-4 text-xs text-muted">
+            </button>
+            <div v-if="isGroupOpen(item.status) && groupedChats[item.status].length === 0" class="px-6 py-4 text-xs text-muted">
               {{ langStore.t('noChats') }}
             </div>
           </div>
-        </div>
-      </div>
+          <div
+            v-else
+            @click="goToChat(item.chat.id)"
+            @keydown.enter="goToChat(item.chat.id)"
+            role="button"
+            tabindex="0"
+            :class="['chat-item group', { active: String(route.params.id) === String(item.chat.id) }]"
+            :style="{ '--status-color': statusColor(item.chat.status) }"
+          >
+            <span
+              class="status-dot mr-3"
+              :style="{ backgroundColor: statusColor(item.chat.status) }"
+              :aria-label="`Status: ${statusLabel(item.chat.status)}`"
+            ></span>
+            <div class="flex-1 min-w-0">
+              <p class="font-medium text-default truncate">
+                {{ item.chat.clientName }}
+              </p>
+              <p class="text-xs text-muted truncate">
+                {{ item.chat.lastMessage }}
+              </p>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span
+                v-if="presenceCount(item.chat.id)"
+                class="presence-badge"
+                :style="{ backgroundColor: badgeColor(item.chat.status) }"
+                >{{ presenceCount(item.chat.id) }}</span
+              >
+              <span class="text-xs text-muted">{{ formatChatTime(item.chat.time) }}</span>
+            </div>
+          </div>
+        </template>
+      </VirtualList>
     </div>
 
     <!-- Right column: chat window (router-view) -->
@@ -108,6 +105,8 @@ import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import apiClient from '@/api';
 import PageHeader from '@/components/PageHeader.vue';
+import VirtualList from '@/components/VirtualList.vue';
+import SkeletonLoader from '@/components/SkeletonLoader.vue';
 import langStore from '@/stores/langStore';
 import {
   statusColor,
@@ -122,6 +121,7 @@ const route = useRoute();
 
 // raw chat data
 const chats = ref([]);
+const isLoading = ref(true);
 
 // search & filter
 const searchQuery = ref('');
@@ -154,6 +154,7 @@ async function fetchChats() {
   } catch (e) {
     console.error(e);
   }
+  isLoading.value = false;
 }
 
 onMounted(async () => {
@@ -199,6 +200,26 @@ const groupedChats = computed(() => {
     groups[k].sort((a, b) => chatTimestamp(b) - chatTimestamp(a));
   });
   return groups;
+});
+
+const ITEM_HEIGHT = 64;
+const virtualItems = computed(() => {
+  const items = [];
+  for (const status of groupOrder) {
+    items.push({ type: 'header', status, key: `h-${status}` });
+    if (isGroupOpen(status)) {
+      const list = groupedChats.value[status];
+      if (list.length === 0) {
+        // placeholder for empty group so skeleton keeps space
+        // handled in template
+      } else {
+        for (const chat of list) {
+          items.push({ type: 'chat', chat, key: `c-${chat.id}` });
+        }
+      }
+    }
+  }
+  return items;
 });
 
 // collapsible groups state
