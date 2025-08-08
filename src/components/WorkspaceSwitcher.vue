@@ -50,7 +50,10 @@
             @click="select(ws.id)"
           >
             <span class="truncate">{{ ws.name }}</span>
-            <span v-if="!ws.isDefault" class="flex gap-1 ml-2">
+            <span
+              v-if="ws.id !== workspaceStore.DEFAULT_WORKSPACE_ID"
+              class="flex gap-1 ml-2"
+            >
               <span
                 class="material-icons text-base hover:text-brand"
                 @click.stop="promptRename(ws)"
@@ -146,15 +149,19 @@ function toggle() {
 }
 
 function select(id) {
-  workspaceStore.switchWorkspace(id)
+  workspaceStore.selectWorkspace(id)
   closeList()
 }
 
 
-function createWs(){
-  const name = prompt(langStore.t('workspaceName') || 'Workspace name', 'Workspace ' + (workspaces.length+1));
-  const ws = workspaceStore.createWorkspace(name && name.trim() ? name.trim() : undefined);
-  closeList();
+function createWs() {
+  const name = prompt(
+    langStore.t('workspaceName') || 'Workspace name',
+    'Workspace ' + (workspaces.length + 1),
+  )
+  if (!name || !name.trim()) return
+  workspaceStore.createWorkspace(name.trim())
+  closeList()
 }
 // Rename workspace via prompt
 function promptRename(ws) {
