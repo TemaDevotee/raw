@@ -7,10 +7,10 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('login page renders and app loads', async ({ page }) => {
-  await page.goto('/login.html');
-  await page.waitForLoadState('networkidle');
+  await page.goto('/login.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('form').waitFor();
   await expect(page.locator('form')).toBeVisible();
-  await page.goto('/');
-  await page.waitForLoadState('networkidle');
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.getByTestId('sidebar').waitFor();
   await expect(page.getByTestId('sidebar')).toBeVisible();
 });

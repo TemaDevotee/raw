@@ -8,11 +8,14 @@ export async function seedAppState(page: Page) {
   }
   const user = { id: 'u1', name: 'Test User' }
   await page.addInitScript((payload) => {
+    localStorage.setItem('__e2e__', '1')
     localStorage.setItem('app.state.v2', JSON.stringify(payload.state))
     localStorage.setItem('authenticated', 'true')
     localStorage.setItem('auth.user', JSON.stringify(payload.user))
+    localStorage.setItem('auth.token', 'e2e')
     localStorage.setItem('skipAuth', 'true')
     sessionStorage.setItem('authenticated', 'true')
     sessionStorage.setItem('auth.user', JSON.stringify(payload.user))
+    sessionStorage.setItem('auth.token', 'e2e')
   }, { state, user })
 }

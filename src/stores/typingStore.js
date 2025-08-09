@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import { isE2E } from '@/utils/e2e'
 
 const TYPING_TTL = 2500
 
@@ -26,7 +27,7 @@ function clearExpired() {
     }
   }
 }
-setInterval(clearExpired, 1000)
+if (!isE2E) setInterval(clearExpired, 1000)
 
 function setAgentDrafting(chatId, val) {
   state.agentDrafting[chatId] = val

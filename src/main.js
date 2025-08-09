@@ -1,4 +1,5 @@
 import './main.css'
+import { isE2E } from '@/utils/e2e'
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
@@ -6,6 +7,10 @@ import { showToast } from '@/stores/toastStore'
 import { workspaceStore } from '@/stores/workspaceStore'
 import accountStore from '@/stores/accountStore'
 import { initLogoutListener } from '@/stores/logout.js'
+
+if (isE2E) {
+  window.__E2E__ = true
+}
 
 const app = createApp(App)
 

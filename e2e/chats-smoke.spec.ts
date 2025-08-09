@@ -7,8 +7,8 @@ test.beforeEach(async ({ page }) => {
 })
 
 test('renders chat list with groups and rows', async ({ page }) => {
-  await page.goto('/#/chats')
-  await page.waitForLoadState('networkidle')
+  await page.goto('/#/chats', { waitUntil: 'domcontentloaded' })
+  await page.getByTestId('chats-groups').waitFor()
   await expect(page.getByTestId('chats-view')).toBeVisible()
   const groups = page.getByTestId('chats-groups')
   await expect(groups).toBeVisible()
@@ -16,8 +16,8 @@ test('renders chat list with groups and rows', async ({ page }) => {
 })
 
 test('collapsing and expanding groups works', async ({ page }) => {
-  await page.goto('/#/chats')
-  await page.waitForLoadState('networkidle')
+  await page.goto('/#/chats', { waitUntil: 'domcontentloaded' })
+  await page.getByTestId('group-live').waitFor()
   const group = page.getByTestId('group-live')
   const row = page.getByTestId('chat-row-1')
   await expect(row).toBeVisible()

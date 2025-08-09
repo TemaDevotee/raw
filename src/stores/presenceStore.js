@@ -1,6 +1,7 @@
 import { reactive } from 'vue'
 import { listPresence, joinChat, leaveChat } from '@/api/presence.js'
 import { sortParticipants } from '@/utils/presence.js'
+import { isE2E } from '@/utils/e2e'
 
 const state = reactive({
   byChatId: {},
@@ -51,6 +52,7 @@ async function hydrate(chatIds) {
 }
 
 async function poll() {
+  if (isE2E) return
   clearInterval(timer)
   timer = setInterval(async () => {
     const ids = Object.keys(state.byChatId)
