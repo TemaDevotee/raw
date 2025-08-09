@@ -2,14 +2,17 @@ import { Page } from '@playwright/test'
 
 export async function seedAppState(page: Page) {
   const state = {
-    app: { language: 'ru', theme: 'forest' },
-    workspace: { workspaces: [{ id: 'w1', name: 'Default' }], selectedId: 'w1' },
-    agent: { settings: { manualApprove: false, autoReturnMinutes: 0 } }
+    workspaces: [],
+    currentWorkspaceId: 'ws_default',
+    version: 2,
+    chats: {},
   }
   const user = { id: 'e2e', name: 'E2E' }
   await page.addInitScript((payload) => {
     localStorage.setItem('__e2e__', '1')
     localStorage.setItem('app.state.v2', JSON.stringify(payload.state))
+    localStorage.setItem('lang', 'ru')
+    localStorage.setItem('appTheme', 'forest')
     localStorage.setItem('authenticated', 'true')
     localStorage.setItem('auth.user', JSON.stringify(payload.user))
     localStorage.setItem('auth.token', 'e2e')

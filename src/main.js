@@ -1,5 +1,6 @@
 import './main.css'
 import { isE2E } from '@/utils/e2e'
+import { installE2EStubs } from '@/utils/e2eFetchStub'
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
@@ -10,6 +11,7 @@ import { initLogoutListener } from '@/stores/logout.js'
 import { authStore } from '@/stores/authStore'
 
 if (isE2E) {
+  installE2EStubs()
   window.__E2E__ = true
 }
 
@@ -59,7 +61,18 @@ app.directive('tooltip', {
   },
   unmounted(el){ el.removeEventListener('mouseenter', el.__ttEnter__); el.removeEventListener('mouseleave', el.__ttLeave__); el.removeEventListener('focus', el.__ttEnter__); el.removeEventListener('blur', el.__ttLeave__) }
 })
-if (location.pathname !== '/login.html') { app.mount('#app') }
+if (location.pathname !== '/login.html') {
+  app.mount('#app')
+  if (typeof document !== 'undefined') {
+    document.documentElement.setAttribute('data-testid-app-ready', '1')
+  }
+}
+
+router.isReady().then(() => {
+  if (isE2E && !router.currentRoute.value.path.startsWith('/chats')) {
+    router.replace('/chats?skipAuth=1')
+  }
+})
 
 
 // ensure workspace store initializes and persists

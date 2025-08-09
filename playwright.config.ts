@@ -6,7 +6,9 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   use: {
     baseURL: 'http://127.0.0.1:5173',
-    trace: 'retain-on-failure',
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
   },
   reporter: [['list'], ['html', { open: 'never' }]],
   webServer: {
