@@ -4,6 +4,7 @@ import { seedAppState } from './utils/session'
 
 test.beforeEach(async ({ page }) => {
   await seedAppState(page)
+  await page.unroute('**/presence*')
 })
 
 test('presence stacks update after participant leaves', async ({ page }) => {
@@ -21,6 +22,9 @@ test('presence stacks update after participant leaves', async ({ page }) => {
   ]
   await page.route('**/presence/list', (route) => {
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) })
+  })
+  await page.route('**/presence/join', (route) => {
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload[0]) })
   })
   await page.goto('/#/chats/1', { waitUntil: 'domcontentloaded' })
   await page.getByTestId('presence-stack-header').waitFor()

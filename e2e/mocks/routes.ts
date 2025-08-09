@@ -15,9 +15,17 @@ export async function mockRoutes(page, opts = {}) {
   await page.route('**/api/chats*', (route) => {
     route.fulfill({
       json: [
-        { id: '1', title: 'Chat 1', status: 'live' },
-        { id: '2', title: 'Chat 2', status: 'attention' },
-        { id: '3', title: 'Chat 3', status: 'paused' },
+        { id: '1', clientName: 'Chat 1', lastMessage: 'Hello', time: '1m ago', status: 'live', channels: ['web'], agentId: 1 },
+        {
+          id: '2',
+          clientName: 'Chat 2',
+          lastMessage: 'Hi',
+          time: '2m ago',
+          status: 'attention',
+          channels: ['web'],
+          agentId: 1,
+        },
+        { id: '3', clientName: 'Chat 3', lastMessage: 'Yo', time: '3m ago', status: 'paused', channels: ['web'], agentId: 1 },
       ],
     });
   });
@@ -27,7 +35,7 @@ export async function mockRoutes(page, opts = {}) {
   });
 
   await page.route('**/presence*', (route) => {
-    route.fulfill({ json: {} });
+    route.fulfill({ json: [] });
   });
 
   await page.route('**/api/**', (route) => {
