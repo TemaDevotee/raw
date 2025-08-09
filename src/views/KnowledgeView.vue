@@ -21,55 +21,143 @@
         </li>
       </ul>
     </div>
-    <div class="flex-1">
-      <div v-if="selected">
-        <div class="flex justify-between items-center mb-2">
-          <h2 class="font-semibold text-default">{{ t('knowledgeSources') }}</h2>
-          <button class="btn-secondary" @click="addUrl">{{ t('knowledgeAddUrl') }}</button>
+    <div class="flex-1" v-if="selected">
+      <div class="flex justify-between items-center mb-2">
+        <h2 class="font-semibold text-default">{{ t('knowledgeSources') }}</h2>
+        <ActionMenu :items="addMenu">
+          <button class="btn-secondary">{{ t('knowledgeAdd') }}</button>
+        </ActionMenu>
+      </div>
+      <div class="flex gap-4 mb-2 items-end">
+        <div>
+          <label class="block text-xs mb-1">{{ t('knowledgeType') }}</label>
+          <select v-model="typeFilter" class="border rounded p-1 text-sm">
+            <option value="all">{{ t('commonAll') }}</option>
+            <option value="file">File</option>
+            <option value="url">URL</option>
+            <option value="qa">Q&A</option>
+          </select>
         </div>
-        <ul v-if="sources.length">
-          <li v-for="s in sources" :key="s.id" class="p-2 border-b border-default">{{ s.name }}</li>
-        </ul>
-        <div v-else class="text-muted py-8 text-center">
-          {{ t('knowledgeNoSources') }}
+        <div>
+          <label class="block text-xs mb-1">{{ t('knowledgeStatus') }}</label>
+          <select v-model="statusFilter" class="border rounded p-1 text-sm">
+            <option value="all">{{ t('commonAll') }}</option>
+            <option value="queued">{{ t('knowledgeStatusQueued') }}</option>
+            <option value="processing">{{ t('knowledgeStatusProcessing') }}</option>
+            <option value="ready">{{ t('knowledgeStatusReady') }}</option>
+            <option value="error">{{ t('knowledgeStatusError') }}</option>
+            <option value="paused">{{ t('knowledgeStatusPaused') }}</option>
+          </select>
+        </div>
+        <div class="flex-1">
+          <label class="block text-xs mb-1">{{ t('knowledgeSearch') }}</label>
+          <input v-model="search" type="search" class="border rounded p-1 w-full" />
+        </div>
+        <div class="flex items-center ml-auto" v-if="selection.size">
+          <button class="btn-secondary mr-2" @click="batch('reindex')">{{ t('knowledgeBatchReindex') }}</button>
+          <button class="btn-secondary mr-2" @click="batch('pause')">{{ t('knowledgeBatchPause') }}</button>
+          <button class="btn-secondary mr-2" @click="batch('resume')">{{ t('knowledgeBatchResume') }}</button>
+          <button class="btn-danger" @click="batch('delete')">{{ t('knowledgeBatchDelete') }}</button>
         </div>
       </div>
-      <div v-else class="text-muted py-8 text-center">{{ t('knowledgeNoSources') }}</div>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left border-b border-default">
+            <th class="p-2 w-8"><input type="checkbox" :checked="allSelected" @change="toggleAll($event.target.checked)" /></th>
+            <th class="p-2">{{ t('name') }}</th>
+            <th class="p-2">{{ t('knowledgeStatus') }}</th>
+            <th class="p-2">{{ t('updatedAt') }}</th>
+            <th class="p-2"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="s in filtered" :key="s.id" class="border-b border-default">
+            <td class="p-2"><input type="checkbox" :checked="selection.has(s.id)" @change="store.selectSource(selected.id, s.id, $event.target.checked)" /></td>
+            <td class="p-2">{{ s.name }}</td>
+            <td class="p-2">{{ t('knowledgeStatus.' + s.status) }}</td>
+            <td class="p-2">{{ s.updatedAt }}</td>
+            <td class="p-2 text-right">
+              <ActionMenu :items="sourceMenu(s)">
+                <button class="action-btn"><span class="material-icons-outlined text-base">more_vert</span></button>
+              </ActionMenu>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-if="!filtered.length" class="text-muted py-8 text-center">
+        {{ t('knowledgeNoResults') }}
+      </div>
+    </div>
+    <div v-else class="flex-1 text-muted py-8 text-center">{{ t('knowledgeNoSources') }}</div>
+  </div>
+  <div v-if="showUpload" class="fixed inset-0 bg-black/40 flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-800 p-6 rounded shadow-lg w-96">
+      <SourceUpload :collection-id="selected.id" @uploaded="afterAdd" @close="showUpload=false" />
     </div>
   </div>
+  <div v-if="showQA" class="fixed inset-0 bg-black/40 flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-800 p-6 rounded shadow-lg w-96">
+      <SourceFormQA :collection-id="selected.id" @added="afterAdd" @close="showQA=false" />
+    </div>
+  </div>
+  <SourcePreviewDrawer v-if="previewId" :collection-id="selected.id" :source-id="previewId" @close="previewId=null" />
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { knowledgeStore } from '@/stores/knowledgeStore'
+import { ref, computed, onMounted, watch } from 'vue'
+import { knowledgeStore as store } from '@/stores/knowledgeStore'
 import langStore from '@/stores/langStore'
 import ActionMenu from '@/components/ui/ActionMenu.vue'
+import SourceUpload from '@/components/SourceUpload.vue'
+import SourceFormQA from '@/components/SourceFormQA.vue'
+import SourcePreviewDrawer from '@/components/SourcePreviewDrawer.vue'
 
-const store = knowledgeStore
 const t = langStore.t
 const selectedId = ref(null)
+const typeFilter = ref('all')
+const statusFilter = ref('all')
+const search = ref('')
+const showUpload = ref(false)
+const showQA = ref(false)
+const previewId = ref(null)
 
 onMounted(() => {
   store.fetchCollections()
 })
 
-const selected = computed(() =>
-  store.state.collections.find((c) => c.id === selectedId.value)
-)
-const sources = computed(
-  () => store.state.sourcesByCollection[selectedId.value] || []
-)
+const selected = computed(() => store.state.collections.find((c) => c.id === selectedId.value))
+const sources = computed(() => store.state.sourcesByCollection[selectedId.value] || [])
+const selection = computed(() => store.state.selectionByCollection[selectedId.value] || new Set())
 
-function select(c) {
-  selectedId.value = c.id
-  store.fetchSources(c.id)
+watch(selectedId, (id) => {
+  if (id) store.fetchSources(id)
+})
+
+const filtered = computed(() => {
+  const q = search.value.toLowerCase()
+  return sources.value.filter((s) => {
+    const matchesType = typeFilter.value === 'all' || s.type === typeFilter.value
+    const matchesStatus = statusFilter.value === 'all' || s.status === statusFilter.value
+    const matchesSearch =
+      !q ||
+      s.name.toLowerCase().includes(q) ||
+      (s.url || '').toLowerCase().includes(q) ||
+      (s.qa?.question || '').toLowerCase().includes(q) ||
+      (s.qa?.answer || '').toLowerCase().includes(q)
+    return matchesType && matchesStatus && matchesSearch
+  })
+})
+
+const allSelected = computed(() => filtered.value.length && filtered.value.every((s) => selection.value.has(s.id)))
+
+function toggleAll(val) {
+  if (val) store.selectAll(selectedId.value, filtered.value.map((s) => s.id))
+  else store.clearSelection(selectedId.value)
 }
 
 function createCollection() {
   const name = prompt(t('name'))
-  if (name) {
-    store.createCollection(name)
-  }
+  if (name) store.createCollection(name)
 }
 
 function collectionMenu(c) {
@@ -95,9 +183,36 @@ function collectionMenu(c) {
   ]
 }
 
+function sourceMenu(s) {
+  return [
+    { id: 'reindex', labelKey: 'knowledgeReindex', onSelect: () => store.reindexSource(selected.id, s.id) },
+    s.status === 'paused'
+      ? { id: 'resume', labelKey: 'knowledgeResume', onSelect: () => store.resumeSource(selected.id, s.id) }
+      : { id: 'pause', labelKey: 'knowledgePause', onSelect: () => store.pauseSource(selected.id, s.id) },
+    { id: 'preview', labelKey: 'knowledgePreview', onSelect: () => (previewId.value = s.id) },
+    {
+      id: 'delete',
+      labelKey: 'knowledgeDelete',
+      danger: true,
+      confirm: { titleKey: 'confirmDeleteTitle', bodyKey: 'confirmDeleteBody' },
+      onSelect: () => store.deleteSources(selected.id, [s.id]),
+    },
+  ]
+}
+
+const addMenu = [
+  { id: 'file', labelKey: 'knowledgeAddFile', onSelect: () => (showUpload.value = true) },
+  { id: 'url', labelKey: 'knowledgeAddUrl', onSelect: () => addUrl() },
+  { id: 'qa', labelKey: 'knowledgeAddQA', onSelect: () => (showQA.value = true) },
+]
+
 function addUrl() {
   const url = prompt('URL')
   if (url) store.addUrlSource(selectedId.value, url)
+}
+
+function select(c) {
+  selectedId.value = c.id
 }
 
 function rowClass(id) {
@@ -105,6 +220,18 @@ function rowClass(id) {
     'p-2 rounded flex justify-between items-center cursor-pointer',
     selectedId.value === id ? 'bg-selected' : 'hover:bg-hover',
   ]
+}
+
+function batch(action) {
+  const ids = Array.from(selection.value)
+  if (action === 'delete' && !confirm(t('knowledgeDeleteConfirmTitle'))) return
+  store.batchAction(selectedId.value, ids, action)
+}
+
+function afterAdd() {
+  showUpload.value = false
+  showQA.value = false
+  store.fetchSources(selectedId.value)
 }
 </script>
 
