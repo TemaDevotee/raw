@@ -4,6 +4,7 @@ const STORAGE_KEY = 'agent.settings.v1'
 
 const state = reactive({
   manualApprove: false,
+  autoReturnMinutes: 0,
   knowledgeLinks: [],
 })
 
@@ -13,11 +14,13 @@ function hydrate() {
     try {
       const parsed = JSON.parse(raw)
       state.manualApprove = !!parsed.manualApprove
+      state.autoReturnMinutes = Number(parsed.autoReturnMinutes) || 0
       state.knowledgeLinks = Array.isArray(parsed.knowledgeLinks)
         ? parsed.knowledgeLinks
         : []
     } catch {
       state.manualApprove = false
+      state.autoReturnMinutes = 0
       state.knowledgeLinks = []
     }
   }
@@ -28,6 +31,7 @@ function persist() {
     STORAGE_KEY,
     JSON.stringify({
       manualApprove: state.manualApprove,
+      autoReturnMinutes: state.autoReturnMinutes,
       knowledgeLinks: state.knowledgeLinks,
     }),
   )
@@ -35,6 +39,11 @@ function persist() {
 
 function setManualApprove(val) {
   state.manualApprove = !!val
+  persist()
+}
+
+function setAutoReturnMinutes(val) {
+  state.autoReturnMinutes = Number(val) || 0
   persist()
 }
 
@@ -99,6 +108,7 @@ export const agentStore = {
   hydrate,
   persist,
   setManualApprove,
+  setAutoReturnMinutes,
   setKnowledgeLinks,
   addKnowledgeLink,
   updateKnowledgeLink,

@@ -35,6 +35,24 @@ export const messages = {
       breached: 'SLA time exceeded',
       mmss: '{mm}:{ss}',
     },
+    assign: {
+      assignedTo: 'Assigned to {name}',
+      unassigned: 'Unassigned',
+      claim: 'Claim chat',
+      unassign: 'Unassign',
+      transfer: 'Transfer to…',
+      toMe: 'Assigned to me',
+      cannotInterfere: 'Assigned to {name}',
+      transferredTo: 'Transferred to {name}',
+      claimed: 'You claimed this chat',
+      unassignedToast: 'Chat unassigned',
+    },
+    autoReturn: {
+      title: 'Auto-return',
+      warn: 'Returning control to agent in 60s',
+      cancel: 'Cancel',
+      returned: 'Control returned to agent',
+    },
     // ...добавьте другие английские ключи
   },
   ru: {
@@ -72,6 +90,24 @@ export const messages = {
       remaining: 'SLA: осталось {time}',
       breached: 'Превышено время SLA',
       mmss: '{mm}:{ss}',
+    },
+    assign: {
+      assignedTo: 'Назначено: {name}',
+      unassigned: 'Не назначен',
+      claim: 'Назначить на себя',
+      unassign: 'Снять назначение',
+      transfer: 'Передать…',
+      toMe: 'Назначены мне',
+      cannotInterfere: 'Назначено: {name}',
+      transferredTo: 'Передано: {name}',
+      claimed: 'Чат назначен на вас',
+      unassignedToast: 'Назначение снято',
+    },
+    autoReturn: {
+      title: 'Автовозврат',
+      warn: 'Через 60 сек управление вернётся агенту',
+      cancel: 'Отмена',
+      returned: 'Управление возвращено агенту',
     },
     // ...добавьте другие русские ключи
   }

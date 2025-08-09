@@ -24,6 +24,10 @@
           <option value="resolved">{{ langStore.t('resolved') }}</option>
           <option value="idle">{{ langStore.t('idle') }}</option>
         </select>
+        <label class="flex items-center gap-1 text-sm">
+          <input type="checkbox" v-model="onlyMine" data-testid="filter-mine" />
+          {{ langStore.t('assign.toMe') }}
+        </label>
       </div>
 
       <SkeletonLoader v-if="isLoading" class="flex-1" />
@@ -76,6 +80,13 @@
               </p>
             </div>
             <div class="flex items-center space-x-2">
+              <span
+                v-if="item.chat.assignedTo"
+                class="assignee-badge"
+                :aria-label="langStore.t('assign.assignedTo', { name: item.chat.assignedTo.name })"
+              >
+                {{ initials(item.chat.assignedTo.name) }}
+              </span>
               <span
                 v-if="chatStore.isSlaActive(item.chat)"
                 class="sla-chip"
@@ -142,6 +153,8 @@ watch(searchQuery, (v) => {
   searchTimer = setTimeout(() => (liveSearch.value = v), 200);
 });
 const selectedStatus = ref('');
+const onlyMine = ref(false);
+const meId = JSON.parse(localStorage.getItem('auth.user') || 'null')?.id || 'op1';
 
 // presence map
 const presenceMap = ref({});
@@ -187,7 +200,8 @@ const filteredChats = computed(() => {
       c.clientName.toLowerCase().includes(q) ||
       c.lastMessage.toLowerCase().includes(q);
     const matchStatus = !selectedStatus.value || c.status === selectedStatus.value;
-    return matchSearch && matchStatus;
+    const matchMine = !onlyMine.value || c.assignedTo?.id === meId;
+    return matchSearch && matchStatus && matchMine;
   });
 });
 
@@ -294,6 +308,14 @@ function presenceCount(id) {
   return utilPresenceCount(presenceMap.value, id);
 }
 
+function initials(name) {
+  return name
+    .split(' ')
+    .map((s) => s.charAt(0).toUpperCase())
+    .slice(0, 2)
+    .join('');
+}
+
 function formatSla(chat) {
   chatStore.slaTick.value;
   return chatStore.formatSla(chatStore.getSlaRemainingMs(chat, slaMinutes.value));
@@ -355,6 +377,17 @@ function formatChatTime(timeStr) {
 .chat-item.active {
   background-color: var(--c-bg-hover);
   border-left-color: var(--status-color);
+}
+.assignee-badge {
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background-color: var(--c-bg-tertiary, #e5e7eb);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
 }
 .status-dot {
   width: 8px;

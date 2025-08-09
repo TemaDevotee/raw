@@ -32,12 +32,23 @@
           >
             {{ slaText }}
           </span>
+          <span
+            v-if="chat?.assignedTo"
+            class="assignee-chip ml-2"
+            :aria-label="langStore.t('assign.assignedTo', { name: chat.assignedTo.name })"
+          >
+            {{ initials(chat.assignedTo.name) }}
+          </span>
+          <span v-else class="assignee-chip ml-2" aria-label="langStore.t('assign.unassigned')">
+            {{ langStore.t('assign.unassigned') }}
+          </span>
         </div>
         <div class="flex items-center gap-2">
           <Button
             v-if="!inputEnabled"
             data-testid="interfere-btn"
-            :disabled="busyByOthers"
+            :disabled="!canInterfere"
+            :title="!canInterfere ? langStore.t('assign.cannotInterfere', { name: chat?.assignedTo?.name }) : ''"
             variant="primary"
             size="sm"
             @click="interfere"
@@ -91,6 +102,9 @@
               </li>
             </ul>
           </div>
+          <ActionMenu :items="assignMenu">
+            <Button variant="secondary" size="sm" data-testid="assign-menu-btn">⋮</Button>
+          </ActionMenu>
           <div v-if="displayAvatars.length" class="flex -space-x-2 items-center" data-testid="presence-stack">
             <button
               v-for="p in displayAvatars"
@@ -269,6 +283,8 @@ import { typingStore } from '@/stores/typingStore.js';
 import { outboxStore } from '@/stores/outboxStore.js';
 import { composerStore } from '@/stores/composerStore.js';
 import { typingText } from '@/utils/typing.js';
+import ActionMenu from '@/components/ui/ActionMenu.vue';
+import { presenceStore } from '@/stores/presenceStore.js';
 
 
 const presenceList = ref([]);
@@ -285,10 +301,18 @@ async function refreshPresence() {
   } catch {}
 }
 const busyByOthers = computed(() => presenceList.value.some((p) => p.userId !== currentUser.id));
+const canInterfere = computed(() => chat.value && chatStore.canInterfere(chat.value, currentUser.id) && !busyByOthers.value);
 function avatarColor(id) {
   const num = typeof id === 'number' ? id : Array.from(String(id)).reduce((a, c) => a + c.charCodeAt(0), 0);
   const hue = (num * 47) % 360;
   return `hsl(${hue},70%,55%)`;
+}
+function initials(name) {
+  return name
+    .split(' ')
+    .map((s) => s.charAt(0).toUpperCase())
+    .slice(0, 2)
+    .join('');
 }
 const presenceDisplay = computed(() => computePresenceDisplay(presenceList.value, currentUser.id));
 const displayAvatars = computed(() =>
@@ -305,6 +329,25 @@ const displayAvatars = computed(() =>
 );
 const extraCount = computed(() => presenceDisplay.value.extra);
 const extraNames = computed(() => presenceDisplay.value.others.map((p) => p.name).join(', '));
+const assignMenu = computed(() => {
+  const items = [];
+  if (chat.value) {
+    if (!chat.value.assignedTo) {
+      items.push({ id: 'claim', labelKey: 'assign.claim', onSelect: () => chatStore.claim(chat.value.id, currentUser) });
+    } else if (chatStore.isAssignedToMe(chat.value, currentUser.id)) {
+      items.push({ id: 'unassign', labelKey: 'assign.unassign', onSelect: () => chatStore.unassign(chat.value.id) });
+    }
+    items.push({
+      id: 'transfer',
+      labelKey: 'assign.transfer',
+      onSelect: () => {
+        const target = presenceStore.state.operators.find((o) => o.id !== currentUser.id);
+        if (target) chatStore.transfer(chat.value.id, target);
+      },
+    });
+  }
+  return items;
+});
 const messages = ref([]);
 const messagesContainer = ref(null);
 let presenceInterval;
@@ -561,23 +604,23 @@ onBeforeUnmount(async () => {
 
 async function interfere() {
   try {
-    await apiClient.post(`/chats/${chatId}/interfere`);
-    chatStore.setControl(chatId, 'operator');
-    await fetchChat();
-    await fetchDrafts();
-    showToast(langStore.t('joinedChat'), 'success');
+    await chatStore.interfere(chatId, currentUser)
+    await fetchChat()
+    await fetchDrafts()
+    showToast(langStore.t('joinedChat'), 'success')
   } catch (e) {
-    showToast(langStore.t('failedInterfere'), 'error');
+    if (e.message === 'ERR_ASSIGNED') {
+      showToast(langStore.t('assign.cannotInterfere', { name: chat.value?.assignedTo?.name }), 'error')
+    } else {
+      showToast(langStore.t('failedInterfere'), 'error')
+    }
   }
 }
 
 async function returnControl() {
-  try {
-    await apiClient.post(`/chats/${chatId}/return`);
-  } catch {}
-  chatStore.setControl(chatId, 'agent');
-  await fetchDrafts();
-  showToast(langStore.t('controlReturned'), 'success');
+  await chatStore.returnToAgentAction(chatId)
+  await fetchDrafts()
+  showToast(langStore.t('controlReturned'), 'success')
 }
 
 async function setStatus(s) {
@@ -665,6 +708,17 @@ function statusLabelMsg(s) {
 .sla-chip.danger {
   background-color: var(--status-color-attention);
   color: #fff;
+}
+.assignee-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  background-color: var(--c-bg-tertiary, #e5e7eb);
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 </style>
 
