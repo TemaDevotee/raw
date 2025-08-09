@@ -12,11 +12,9 @@ export default defineConfig({
   },
   reporter: [['list'], ['html', { open: 'never' }]],
   webServer: {
-    command: process.env.USE_PREVIEW ? 'npm run preview:e2e' : 'npm run dev:e2e',
+    command: 'npm run dev:e2e',
     url: 'http://127.0.0.1:5173',
     reuseExistingServer: true,
-    stdout: 'pipe',
-    stderr: 'pipe',
     timeout: 120_000,
   },
 });
