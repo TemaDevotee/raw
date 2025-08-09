@@ -2,6 +2,12 @@
 
 This repository contains the complete front‑end and mock API server for the **Trickster** application.  The app is built with [Vue 3](https://vuejs.org/), [Vite](https://vitejs.dev/) and a lightweight Express server for development.  It features a polished login screen, multi‑workspace support with delightful micro‑interactions, a premium pricing page and numerous quality improvements.
 
+## For developers
+
+- [AGENTS.md](AGENTS.md) – ground rules for contributors
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md) – project structure and key flows
+- [FEATURE_MATRIX.md](docs/FEATURE_MATRIX.md) – map of features to files
+
 ## Getting started
 
 1. **Install dependencies** for both the front‑end and the mock back‑end:

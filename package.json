@@ -19,7 +19,8 @@
     "e2e": "node scripts/run-e2e.cjs",
     "e2e:ui": "playwright test --ui",
     "e2e:headed": "playwright test --headed",
-    "e2e:report": "playwright show-report"
+    "e2e:report": "playwright show-report",
+    "docs:open": "xdg-open docs/ARCHITECTURE.md || open docs/ARCHITECTURE.md || start docs/ARCHITECTURE.md"
   },
   "dependencies": {
     "vue": "^3.4.21",
