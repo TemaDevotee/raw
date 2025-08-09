@@ -1,6 +1,9 @@
 <template>
   <ActionMenu :items="menuItems">
-    <button class="h-10 w-10 p-2 rounded-full text-muted hover:bg-[var(--c-bg-hover)] hover:text-[var(--c-text-accent)] focus-visible:outline-none">
+    <button
+      class="h-10 w-10 p-2 rounded-full text-muted hover:bg-[var(--c-bg-hover)] hover:text-[var(--c-text-accent)] focus-visible:outline-none"
+      data-testid="theme-switcher"
+    >
       <span class="material-icons-outlined">palette</span>
     </button>
   </ActionMenu>

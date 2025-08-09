@@ -1,6 +1,9 @@
 <template>
   <ActionMenu :items="items">
-    <button class="h-10 w-10 p-2 rounded-full text-muted hover:bg-[var(--c-bg-hover)] hover:text-[var(--c-text-accent)] focus-visible:outline-none">
+    <button
+      class="h-10 w-10 p-2 rounded-full text-muted hover:bg-[var(--c-bg-hover)] hover:text-[var(--c-text-accent)] focus-visible:outline-none"
+      data-testid="language-switcher"
+    >
       <span class="material-icons-outlined">language</span>
     </button>
   </ActionMenu>

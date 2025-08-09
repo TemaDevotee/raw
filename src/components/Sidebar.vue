@@ -2,11 +2,12 @@
   <div
     :class="collapsed ? 'w-20' : 'w-72'"
     class="sidebar h-full flex flex-col transition-all duration-300 overflow-hidden"
+    data-testid="sidebar"
   >
     <!-- Top: brand (ссылка на home) и collapse toggle -->
     <div class="flex items-center justify-between py-4 pl-6 pr-4">
       <router-link to="/" class="flex items-center space-x-3" data-testid="brand-link">
-        <BrandLogo class="h-6 w-6 text-accent" data-testid="brand-logo" />
+        <BrandLogo class="h-6 w-6 text-accent" data-testid="logo-3xtr" />
         <span v-if="!collapsed" class="text-2xl font-bold whitespace-nowrap">Trickster</span>
       </router-link>
       <button
@@ -43,7 +44,7 @@
     </nav>
 
     <!-- Workspace switcher displayed only when multiple workspaces exist -->
-    <div v-if="showSwitcher" class="px-4 mt-4">
+    <div v-if="showSwitcher" class="px-4 mt-4" data-testid="workspace-switcher">
       <WorkspaceSwitcher />
     </div>
 
@@ -69,6 +70,7 @@
           @click="attemptLogout"
           :title="t('logout')"
           class="h-10 w-10 p-2 rounded-full hover-bg-effect text-muted transition-colors flex items-center justify-center"
+          data-testid="btn-logout"
         >
           <span class="material-icons">logout</span>
         </button>
@@ -83,6 +85,7 @@
     :cancel-label="t('no')"
     @confirm="doLogout"
     @cancel="showConfirm = false"
+    data-testid="logout-confirm"
   />
 </template>
 
