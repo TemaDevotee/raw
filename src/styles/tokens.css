@@ -26,6 +26,12 @@
 
   --motion-fast: 120ms;
   --motion-normal: 160ms;
+
+  --agent-badge-size: 16px;
+  --agent-badge-size-sm: 14px;
+  --agent-badge-radius: 4px;
+  --agent-badge-border: 1px;
+  --agent-badge-shadow: var(--shadow-sm);
 }
 
 /* Trickster logo palettes */

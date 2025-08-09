@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import apiClient from '@/api'
 
 const STORAGE_KEY = 'agent.settings.v1'
 
@@ -6,6 +7,7 @@ const state = reactive({
   manualApprove: false,
   autoReturnMinutes: 0,
   knowledgeLinks: [],
+  agentsById: {},
 })
 
 function hydrate() {
@@ -101,6 +103,22 @@ function effectiveKnowledge() {
     .sort((a, b) => (a.params.priority ?? 0) - (b.params.priority ?? 0))
 }
 
+async function fetchAgents() {
+  try {
+    const res = await apiClient.get('/agents')
+    state.agentsById = {}
+    ;(res.data || []).forEach((a) => {
+      state.agentsById[a.id] = a
+    })
+  } catch {
+    state.agentsById = {}
+  }
+}
+
+function agentById(id) {
+  return state.agentsById[id]
+}
+
 hydrate()
 
 export const agentStore = {
@@ -115,4 +133,6 @@ export const agentStore = {
   removeKnowledgeLink,
   reorderKnowledgeLinks,
   effectiveKnowledge,
+  fetchAgents,
+  agentById,
 }

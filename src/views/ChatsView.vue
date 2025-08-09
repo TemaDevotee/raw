@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-full">
+  <div class="flex h-full" data-testid="chats-view">
     <!-- Left column: chat list with search/filter and groups -->
     <div class="w-full max-w-md border-r border-default flex flex-col">
       <PageHeader :title="langStore.t('chats')" />
@@ -43,6 +43,7 @@
               class="w-full flex justify-between items-center px-6 py-3 text-sm font-medium text-default hover:bg-hover focus:outline-none"
               @click="toggleGroup(item.status)"
               :aria-expanded="isGroupOpen(item.status).toString()"
+              :data-testid="`group-${item.status}`"
             >
               <span class="uppercase text-xs tracking-wide">
                 {{ statusLabel(item.status) }} ({{ groupedChats[item.status].length }})
@@ -63,9 +64,16 @@
             @keydown.enter="goToChat(item.chat.id)"
             role="button"
             tabindex="0"
-            :class="['chat-item group', { active: String(route.params.id) === String(item.chat.id) }]"
+            :data-testid="`chat-row-${item.chat.id}`"
+            :class="['chat-item group relative', { active: String(route.params.id) === String(item.chat.id) }]"
             :style="{ '--status-color': statusColor(item.chat.status) }"
           >
+            <AgentBadge
+              v-if="agentsById[item.chat.agentId]"
+              :agent="agentsById[item.chat.agentId]"
+              class="absolute top-1.5 right-1.5"
+              data-testid="agent-badge"
+            />
             <span
               class="status-dot mr-3"
               :style="{ backgroundColor: statusColor(item.chat.status) }"
@@ -126,9 +134,11 @@ import apiClient from '@/api';
 import PageHeader from '@/components/PageHeader.vue';
 import VirtualList from '@/components/VirtualList.vue';
 import SkeletonLoader from '@/components/SkeletonLoader.vue';
+import AgentBadge from '@/components/AgentBadge.vue';
 import langStore from '@/stores/langStore';
 import { chatStore } from '@/stores/chatStore.js';
 import { settingsStore } from '@/stores/settingsStore.js';
+import { agentStore } from '@/stores/agentStore.js';
 import {
   statusColor,
   badgeColor,
@@ -143,6 +153,7 @@ const route = useRoute();
 // chats from store
 const chats = computed(() => chatStore.state.chats);
 const isLoading = ref(true);
+const agentsById = computed(() => agentStore.state.agentsById);
 
 // search & filter
 const searchQuery = ref('');
@@ -181,6 +192,7 @@ async function fetchChats() {
 }
 
 onMounted(async () => {
+  await agentStore.fetchAgents();
   await fetchChats();
   await refreshPresence();
   presenceTimer = setInterval(refreshPresence, 2000);
@@ -195,10 +207,13 @@ onBeforeUnmount(() => {
 const filteredChats = computed(() => {
   const q = liveSearch.value.trim().toLowerCase();
   return chats.value.filter((c) => {
+    const agentName = agentsById.value[c.agentId]?.name?.toLowerCase() || '';
     const matchSearch =
       !q ||
       c.clientName.toLowerCase().includes(q) ||
-      c.lastMessage.toLowerCase().includes(q);
+      c.lastMessage.toLowerCase().includes(q) ||
+      String(c.id).toLowerCase().includes(q) ||
+      agentName.includes(q);
     const matchStatus = !selectedStatus.value || c.status === selectedStatus.value;
     const matchMine = !onlyMine.value || c.assignedTo?.id === meId;
     return matchSearch && matchStatus && matchMine;
@@ -370,6 +385,7 @@ function formatChatTime(timeStr) {
   cursor: pointer;
   transition: background-color 0.15s ease;
   border-left: 2px solid transparent;
+  position: relative;
 }
 .chat-item:hover {
   background-color: var(--c-bg-hover);

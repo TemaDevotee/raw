@@ -36,7 +36,9 @@
       "isPublished": true,
       "channels": [
         "web"
-      ]
+      ],
+      "avatarUrl": "https://placekitten.com/32/32",
+      "color": "#3366FF"
     },
     {
       "id": 2,
@@ -49,7 +51,8 @@
       "isPublished": true,
       "channels": [
         "web"
-      ]
+      ],
+      "color": "#FF6600"
     }
   ],
   "chats": [
@@ -61,7 +64,8 @@
       "status": "attention",
       "channels": [
         "web"
-      ]
+      ],
+      "agentId": 1
     },
     {
       "id": 2,
@@ -71,7 +75,8 @@
       "status": "attention",
       "channels": [
         "telegram"
-      ]
+      ],
+      "agentId": 2
     },
     {
       "id": 3,
@@ -81,7 +86,8 @@
       "status": "attention",
       "channels": [
         "whatsapp"
-      ]
+      ],
+      "agentId": 1
     },
     {
       "id": 4,
@@ -91,7 +97,8 @@
       "status": "attention",
       "channels": [
         "web"
-      ]
+      ],
+      "agentId": 2
     },
     {
       "id": 5,
@@ -101,7 +108,8 @@
       "status": "live",
       "channels": [
         "web"
-      ]
+      ],
+      "agentId": 1
     },
     {
       "id": 6,
@@ -111,7 +119,8 @@
       "status": "live",
       "channels": [
         "telegram"
-      ]
+      ],
+      "agentId": 2
     },
     {
       "id": 7,
@@ -121,7 +130,8 @@
       "status": "live",
       "channels": [
         "whatsapp"
-      ]
+      ],
+      "agentId": 1
     },
     {
       "id": 8,
@@ -131,7 +141,8 @@
       "status": "live",
       "channels": [
         "web"
-      ]
+      ],
+      "agentId": 2
     },
     {
       "id": 9,
@@ -141,7 +152,8 @@
       "status": "paused",
       "channels": [
         "web"
-      ]
+      ],
+      "agentId": 1
     },
     {
       "id": 10,
@@ -151,7 +163,8 @@
       "status": "paused",
       "channels": [
         "telegram"
-      ]
+      ],
+      "agentId": 2
     },
     {
       "id": 11,
@@ -161,7 +174,8 @@
       "status": "paused",
       "channels": [
         "web"
-      ]
+      ],
+      "agentId": 1
     },
     {
       "id": 12,
@@ -171,7 +185,8 @@
       "status": "paused",
       "channels": [
         "whatsapp"
-      ]
+      ],
+      "agentId": 2
     },
     {
       "id": 13,
@@ -181,7 +196,8 @@
       "status": "idle",
       "channels": [
         "web"
-      ]
+      ],
+      "agentId": 1
     },
     {
       "id": 14,
@@ -191,7 +207,8 @@
       "status": "idle",
       "channels": [
         "telegram"
-      ]
+      ],
+      "agentId": 2
     },
     {
       "id": 15,
@@ -201,7 +218,8 @@
       "status": "idle",
       "channels": [
         "web"
-      ]
+      ],
+      "agentId": 1
     },
     {
       "id": 16,
@@ -211,7 +229,8 @@
       "status": "idle",
       "channels": [
         "whatsapp"
-      ]
+      ],
+      "agentId": 2
     },
     {
       "id": 17,
@@ -221,7 +240,8 @@
       "status": "resolved",
       "channels": [
         "web"
-      ]
+      ],
+      "agentId": 1
     },
     {
       "id": 18,
@@ -231,7 +251,8 @@
       "status": "resolved",
       "channels": [
         "telegram"
-      ]
+      ],
+      "agentId": 2
     },
     {
       "id": 19,
@@ -241,7 +262,8 @@
       "status": "resolved",
       "channels": [
         "web"
-      ]
+      ],
+      "agentId": 1
     },
     {
       "id": 20,
@@ -251,7 +273,8 @@
       "status": "resolved",
       "channels": [
         "whatsapp"
-      ]
+      ],
+      "agentId": 2
     }
   ],
   "chatDetails": {

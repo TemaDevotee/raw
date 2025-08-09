@@ -27,9 +27,13 @@ function hydrate() {
     if (raw) {
       const data = JSON.parse(raw)
       persisted = data.chats || {}
+      return
     }
   } catch {
     /* ignore */
+  }
+  if (globalThis.__persistedChats) {
+    persisted = globalThis.__persistedChats
   }
 }
 
@@ -48,12 +52,14 @@ function persist() {
       if (Object.keys(entry).length) data.chats[c.id] = entry
     })
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+    globalThis.__persistedChats = data.chats
   } catch {
-    /* ignore */
+    globalThis.__persistedChats = {}
   }
 }
 
 function mergePersisted(list) {
+  if (!Object.keys(persisted).length) hydrate()
   list.forEach((c) => {
     const p = persisted[c.id]
     if (p) Object.assign(c, p)
