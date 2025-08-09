@@ -44,7 +44,6 @@
     </nav>
 
     <!-- Workspace switcher displayed only when multiple workspaces exist -->
-    <div v-if="showSwitcher" class="px-4 mt-4" data-testid="workspace-switcher">
       <WorkspaceSwitcher />
     </div>
 
@@ -122,39 +121,6 @@ const isActiveRoute = (to) => {
 const t = langStore.t
 
 const showSwitcher = computed(() => workspaceStore.hasMultiple())
-
-const showConfirm = ref(false)
-const confirmBody = ref('')
-
-function attemptLogout() {
-  const { controlCount, draftCount } = getLogoutRisk()
-  if (controlCount || draftCount) {
-    const parts = []
-    if (controlCount) {
-      parts.push(
-        langStore
-          .t('logoutHoldChats')
-          .replace('{n}', String(controlCount)),
-      )
-    }
-    if (draftCount) {
-      parts.push(
-        langStore
-          .t('logoutDrafts')
-          .replace('{n}', String(draftCount)),
-      )
-    }
-    confirmBody.value = parts.join('\n')
-    showConfirm.value = true
-  } else {
-    doLogout()
-  }
-}
-
-function doLogout() {
-  showConfirm.value = false
-  orchestratedLogout()
-}
 </script>
 
 <style scoped>
