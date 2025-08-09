@@ -29,6 +29,12 @@ export const messages = {
     createWorkspace: 'Create workspace',
     renameWorkspace: 'Rename workspace',
     deleteWorkspace: 'Delete workspace',
+    sla: {
+      title: 'SLA',
+      remaining: 'SLA: {time} remaining',
+      breached: 'SLA time exceeded',
+      mmss: '{mm}:{ss}',
+    },
     // ...добавьте другие английские ключи
   },
   ru: {
@@ -61,6 +67,12 @@ export const messages = {
     createWorkspace: 'Создать пространство',
     renameWorkspace: 'Переименовать пространство',
     deleteWorkspace: 'Удалить пространство',
+    sla: {
+      title: 'SLA',
+      remaining: 'SLA: осталось {time}',
+      breached: 'Превышено время SLA',
+      mmss: '{mm}:{ss}',
+    },
     // ...добавьте другие русские ключи
   }
 }

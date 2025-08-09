@@ -77,6 +77,14 @@
             </div>
             <div class="flex items-center space-x-2">
               <span
+                v-if="chatStore.isSlaActive(item.chat)"
+                class="sla-chip"
+                :class="slaClass(item.chat)"
+                :aria-label="slaAria(item.chat)"
+              >
+                {{ formatSla(item.chat) }}
+              </span>
+              <span
                 v-if="presenceCount(item.chat.id)"
                 class="presence-badge"
                 :style="{ backgroundColor: badgeColor(item.chat.status) }"
@@ -108,6 +116,8 @@ import PageHeader from '@/components/PageHeader.vue';
 import VirtualList from '@/components/VirtualList.vue';
 import SkeletonLoader from '@/components/SkeletonLoader.vue';
 import langStore from '@/stores/langStore';
+import { chatStore } from '@/stores/chatStore.js';
+import { settingsStore } from '@/stores/settingsStore.js';
 import {
   statusColor,
   badgeColor,
@@ -119,8 +129,8 @@ import {
 const router = useRouter();
 const route = useRoute();
 
-// raw chat data
-const chats = ref([]);
+// chats from store
+const chats = computed(() => chatStore.state.chats);
 const isLoading = ref(true);
 
 // search & filter
@@ -150,7 +160,7 @@ let presenceTimer;
 async function fetchChats() {
   try {
     const res = await apiClient.get('/chats');
-    chats.value = res.data || [];
+    chatStore.mergePersisted(res.data || []);
   } catch (e) {
     console.error(e);
   }
@@ -183,7 +193,10 @@ const filteredChats = computed(() => {
 
 // grouping & sorting
 const groupOrder = ['live', 'attention', 'paused', 'resolved', 'idle'];
+const slaMinutes = computed(() => settingsStore.state.workspaceSettings.attentionSLA);
+
 const groupedChats = computed(() => {
+  chatStore.slaTick.value;
   const groups = {
     live: [],
     attention: [],
@@ -200,7 +213,16 @@ const groupedChats = computed(() => {
     groups[key].push(chat);
   });
   Object.keys(groups).forEach((k) => {
-    groups[k].sort((a, b) => chatTimestamp(b) - chatTimestamp(a));
+    if (k === 'attention') {
+      groups[k].sort((a, b) => {
+        const ra = chatStore.getSlaRemainingMs(a, slaMinutes.value);
+        const rb = chatStore.getSlaRemainingMs(b, slaMinutes.value);
+        if (!!b.slaBreached !== !!a.slaBreached) return a.slaBreached ? -1 : 1;
+        return ra - rb;
+      });
+    } else {
+      groups[k].sort((a, b) => chatTimestamp(b) - chatTimestamp(a));
+    }
   });
   return groups;
 });
@@ -272,6 +294,22 @@ function presenceCount(id) {
   return utilPresenceCount(presenceMap.value, id);
 }
 
+function formatSla(chat) {
+  chatStore.slaTick.value;
+  return chatStore.formatSla(chatStore.getSlaRemainingMs(chat, slaMinutes.value));
+}
+
+function slaClass(chat) {
+  const ms = chatStore.getSlaRemainingMs(chat, slaMinutes.value);
+  if (chat.slaBreached || ms === 0) return 'danger';
+  if (ms <= 60_000) return 'warning';
+  return 'neutral';
+}
+
+function slaAria(chat) {
+  return langStore.t('sla.remaining', { time: formatSla(chat) });
+}
+
 function goToChat(id) {
   router.push(`/chats/${id}`);
 }
@@ -330,6 +368,18 @@ function formatChatTime(timeStr) {
   padding: 0.125rem 0.375rem;
   border-radius: 9999px;
   color: currentColor;
+}
+.sla-chip {
+  padding: 0 0.25rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+}
+.sla-chip.warning {
+  background-color: var(--status-color-paused);
+}
+.sla-chip.danger {
+  background-color: var(--status-color-attention);
+  color: #fff;
 }
 .bg-input {
   background-color: var(--c-bg-secondary);

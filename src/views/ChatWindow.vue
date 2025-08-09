@@ -23,6 +23,15 @@
             ></span>
             {{ statusLabel }}
           </span>
+          <span
+            v-if="slaActive"
+            class="sla-chip ml-2"
+            :class="slaClass"
+            :aria-label="slaAria"
+            aria-live="polite"
+          >
+            {{ slaText }}
+          </span>
         </div>
         <div class="flex items-center gap-2">
           <Button
@@ -255,6 +264,7 @@ import {
 } from './chatsUtils.js';
 import { useStatusMenu } from './statusMenu.js';
 import { chatStore } from '@/stores/chatStore.js';
+import { settingsStore } from '@/stores/settingsStore.js';
 import { typingStore } from '@/stores/typingStore.js';
 import { outboxStore } from '@/stores/outboxStore.js';
 import { composerStore } from '@/stores/composerStore.js';
@@ -388,6 +398,21 @@ function statusAria(s) {
   return `${langStore.t('statusLabel')}: ${tStatus(s)}`
 }
 
+const slaMinutes = computed(() => settingsStore.state.workspaceSettings.attentionSLA);
+const slaRemaining = computed(() => {
+  chatStore.slaTick.value;
+  return chat.value ? chatStore.getSlaRemainingMs(chat.value, slaMinutes.value) : 0;
+});
+const slaText = computed(() => chatStore.formatSla(slaRemaining.value));
+const slaActive = computed(() => (chat.value ? chatStore.isSlaActive(chat.value) : false));
+const slaClass = computed(() => {
+  const ms = slaRemaining.value;
+  if (chat.value?.slaBreached || ms === 0) return 'danger';
+  if (ms <= 60_000) return 'warning';
+  return 'neutral';
+});
+const slaAria = computed(() => langStore.t('sla.remaining', { time: slaText.value }));
+
 function snooze(minutes) {
   if (!chat.value) return
   chatStore.snoozeChat(chat.value, minutes)
@@ -414,6 +439,8 @@ async function fetchChat() {
   try {
     const res = await apiClient.get(`/chats/${chatId}`);
     chat.value = res.data;
+    chatStore.updateChat(res.data);
+    chatStore.handleStatusChange(chat.value, chat.value.status);
     messages.value = res.data.messages || [];
     chatStore.setControl(chatId, res.data.control || 'agent');
     const draft = composerStore.get(chatId);
@@ -555,7 +582,9 @@ async function returnControl() {
 
 async function setStatus(s) {
   if (!chat.value) return;
+  const prev = chat.value.status;
   await updateChatStatus(chat.value, s, apiClient, showToast, langStore.t);
+  chatStore.handleStatusChange(chat.value, prev);
 }
 async function fetchDrafts() {
   await chatStore.fetchDrafts(chatId);
@@ -624,6 +653,18 @@ function statusLabelMsg(s) {
 .form-input:focus {
   @apply ring-2 border-transparent outline-none;
   --tw-ring-color: var(--c-text-brand);
+}
+.sla-chip {
+  padding: 0 0.25rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+}
+.sla-chip.warning {
+  background-color: var(--status-color-paused);
+}
+.sla-chip.danger {
+  background-color: var(--status-color-attention);
+  color: #fff;
 }
 </style>
 
