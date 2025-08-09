@@ -8,13 +8,18 @@
     "dev": "vite",
     "build": "vite build",
     "postbuild": "node scripts/after-build.cjs",
-    "preview": "vite preview",
+    "postinstall": "npx playwright install --with-deps || true",
+    "preview": "vite preview --port 5173 --strictPort",
     "lint": "eslint . --ext .js,.vue",
     "lint:fix": "eslint . --ext .js,.vue --fix",
     "format": "prettier --write .",
     "test": "vitest run",
     "dev:backend": "npm --prefix mock_backend start",
-    "dev:all": "concurrently \"npm run dev\" \"npm run dev:backend\""
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:backend\"",
+    "e2e": "node scripts/run-e2e.cjs",
+    "e2e:ui": "playwright test --ui",
+    "e2e:headed": "playwright test --headed",
+    "e2e:report": "playwright show-report"
   },
   "dependencies": {
     "vue": "^3.4.21",
@@ -32,6 +37,7 @@
     "prettier": "^3.2.5",
     "eslint-config-prettier": "^9.1.0",
     "vitest": "^1.6.0",
-    "concurrently": "^9.0.0"
+    "concurrently": "^9.0.0",
+    "@playwright/test": "^1.46.0"
   }
 }

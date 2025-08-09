@@ -1,3 +1,5 @@
+@import './styles/tokens.css';
+
 html {
   /* Fluid typography across viewports */
   font-size: clamp(14px, 1vw + 12px, 18px);
@@ -7,6 +9,12 @@ body {
   background-color: var(--c-bg-primary);
   color: var(--c-text-primary);
   transition: background-color 0.2s, color 0.2s;
+}
+
+/* Unified focus ring */
+:focus-visible {
+  outline: 2px solid var(--c-text-brand);
+  outline-offset: 2px;
 }
 
 /* Ensure touch targets are comfortable on small screens */

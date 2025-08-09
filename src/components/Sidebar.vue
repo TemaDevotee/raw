@@ -2,18 +2,13 @@
   <div
     :class="collapsed ? 'w-20' : 'w-72'"
     class="sidebar h-full flex flex-col transition-all duration-300 overflow-hidden"
+    data-testid="sidebar"
   >
     <!-- Top: brand (ссылка на home) и collapse toggle -->
     <div class="flex items-center justify-between py-4 pl-6 pr-4">
-      <router-link to="/" class="flex items-center space-x-3"><Logo :height="18"/>
-        
-        <template v-if="collapsed">
-          <!-- When collapsed display an icon instead of the brand name -->
-          <span class="material-icons text-2xl">psychology</span>
-        </template>
-        <template v-else>
-          <span class="text-2xl font-bold whitespace-nowrap">Trickster</span>
-        </template>
+      <router-link to="/" class="flex items-center space-x-3" data-testid="brand-link">
+        <BrandLogo class="h-6 w-6 text-accent" data-testid="logo-3xtr" />
+        <span v-if="!collapsed" class="text-2xl font-bold whitespace-nowrap">Trickster</span>
       </router-link>
       <button
         @click="toggleCollapse"
@@ -49,7 +44,6 @@
     </nav>
 
     <!-- Workspace switcher displayed only when multiple workspaces exist -->
-    <div v-if="showSwitcher" class="px-4 mt-4">
       <WorkspaceSwitcher />
     </div>
 
@@ -71,16 +65,27 @@
             {{ themeStore.isDarkMode ? 'dark_mode' : 'light_mode' }}
           </span>
         </button>
-        <a
-          href="/login.html"
+        <button
+          @click="attemptLogout"
           :title="t('logout')"
           class="h-10 w-10 p-2 rounded-full hover-bg-effect text-muted transition-colors flex items-center justify-center"
+          data-testid="btn-logout"
         >
           <span class="material-icons">logout</span>
-        </a>
+        </button>
       </div>
     </div>
   </div>
+  <ConfirmDialog
+    v-if="showConfirm"
+    :title="t('logoutConfirmTitle')"
+    :body="confirmBody"
+    :confirm-label="t('yes')"
+    :cancel-label="t('no')"
+    @confirm="doLogout"
+    @cancel="showConfirm = false"
+    data-testid="logout-confirm"
+  />
 </template>
 
 <script setup>
@@ -92,6 +97,9 @@ import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 import WorkspaceSwitcher from '@/components/WorkspaceSwitcher.vue'
 import { workspaceStore } from '@/stores/workspaceStore'
+import BrandLogo from '@/assets/brand/3xtr.svg?component'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import { orchestratedLogout, getLogoutRisk } from '@/stores/logout.js'
 
 const collapsed = ref(false)
 const toggleCollapse = () => {

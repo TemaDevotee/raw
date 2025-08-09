@@ -77,6 +77,27 @@ npm run lint
 npm test
 ```
 
+## End-to-End tests
+
+Playwright tests provide a small smoke suite that runs against the built application.
+
+```bash
+# run once to build the app
+npm run build
+
+# execute the headless suite
+npm run e2e
+
+# debug with UI or headed browsers
+npm run e2e:ui
+npm run e2e:headed
+
+# open the last HTML report
+npm run e2e:report
+```
+
+On install the required browsers are downloaded automatically; no manual `npx playwright install` step is needed.
+
 ## Resetting state
 
 If you wish to start from scratch, stop the dev servers and delete `localStorage['app.state.v2']` in your browser.  You can also reset the mock database by replacing `mock_backend/db.json` with `mock_backend/db.json.backup`.

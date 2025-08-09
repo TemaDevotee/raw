@@ -1,156 +1,308 @@
 <template>
-  <div>
-    <PageHeader
-      :title="langStore.t('knowledgeTitle')"
-      :subtitle="langStore.t('knowledgeSubtitle')"
-    >
-      <button @click="openCreateForm" class="btn-primary">
-        <span class="material-icons-outlined mr-2 text-base">add</span>
-        {{ langStore.t('createGroup') }}
-      </button>
-    </PageHeader>
-
-    <div class="px-10">
-      <div v-if="loading" class="table-container">
-        <SkeletonLoader />
+  <div class="px-6 py-4 flex gap-8">
+    <div class="w-1/3">
+      <div class="flex justify-between items-center mb-2">
+        <h2 class="font-semibold text-default">{{ t('knowledgeCollections') }}</h2>
+        <button class="btn-primary" @click="createCollection">{{ t('knowledgeAdd') }}</button>
       </div>
-      <div v-else-if="groups.length === 0" class="text-center py-16">
-        <span class="material-icons-outlined text-7xl text-gray-400 dark:text-gray-600">folder_open</span>
-        <h3 class="mt-4 text-xl font-semibold text-default">
-          {{ langStore.t('noKnowledgeGroups') }}
-        </h3>
-        <p class="mt-1 text-muted">
-          {{ langStore.t('clickCreateGroup') }}
-        </p>
+      <ul>
+        <li
+          v-for="c in store.state.collections"
+          :key="c.id"
+          @click="select(c)"
+          :class="rowClass(c.id)"
+        >
+          <span>{{ c.name }}</span>
+          <ActionMenu :items="collectionMenu(c)">
+            <button class="action-btn">
+              <span class="material-icons-outlined text-base">more_vert</span>
+            </button>
+          </ActionMenu>
+        </li>
+      </ul>
+    </div>
+    <div class="flex-1" v-if="selected">
+      <div class="flex justify-between items-center mb-2">
+        <h2 class="font-semibold text-default">{{ t('knowledgeSources') }}</h2>
+        <ActionMenu :items="addMenu">
+          <button class="btn-secondary">{{ t('knowledgeAdd') }}</button>
+        </ActionMenu>
       </div>
-      <div v-else class="table-container">
-        <table class="min-w-full text-left text-sm">
-          <thead class="border-b border-default">
-            <tr>
-              <th class="px-6 py-4 font-medium text-default">{{ langStore.t('name') }}</th>
-              <th class="px-6 py-4 font-medium text-default">{{ langStore.t('description') }}</th>
-              <th class="px-6 py-4 font-medium text-default">{{ langStore.t('files') }}</th>
-              <th class="px-6 py-4"></th>
-            </tr>
-          </thead>
-          <tbody class="divide-y border-default">
-            <tr
-              v-for="group in groups"
-              :key="group.id"
-              class="table-row group cursor-pointer"
-              @click="onGroupRowClick(group)"
-            >
-              <td class="font-medium text-default px-6 py-4">{{ group.name }}</td>
-              <td class="text-muted px-6 py-4 max-w-xs truncate">{{ group.description }}</td>
-              <td class="text-muted px-6 py-4">{{ group.fileCount }}</td>
-              <td class="text-right px-6 py-4 relative">
-                <!-- Kebab menu for group actions -->
-                <div class="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button @click.stop="toggleMenu(group.id)" class="action-btn">
-                    <span class="material-icons-outlined text-base">more_vert</span>
-                  </button>
-                </div>
-                <div
-                  v-if="activeMenuId === group.id"
-                  class="absolute right-0 mt-2 w-32 bg-secondary border border-default rounded-lg shadow-lg z-50 group-menu"
-                >
-                  <button
-                    @click.stop="confirmDeleteGroup(group)"
-                    class="block w-full text-left px-4 py-2 hover:bg-hover text-red-600"
-                  >
-                    {{ langStore.t('delete') || 'Delete' }}
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="flex gap-4 mb-2 items-end">
+        <div>
+          <label class="block text-xs mb-1">{{ t('knowledgeType') }}</label>
+          <select v-model="typeFilter" class="border rounded p-1 text-sm">
+            <option value="all">{{ t('commonAll') }}</option>
+            <option value="file">File</option>
+            <option value="url">URL</option>
+            <option value="qa">Q&A</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs mb-1">{{ t('knowledgeStatus') }}</label>
+          <select v-model="statusFilter" class="border rounded p-1 text-sm">
+            <option value="all">{{ t('commonAll') }}</option>
+            <option value="queued">{{ t('knowledgeStatusQueued') }}</option>
+            <option value="processing">{{ t('knowledgeStatusProcessing') }}</option>
+            <option value="ready">{{ t('knowledgeStatusReady') }}</option>
+            <option value="error">{{ t('knowledgeStatusError') }}</option>
+            <option value="paused">{{ t('knowledgeStatusPaused') }}</option>
+          </select>
+        </div>
+        <div class="flex-1">
+          <label class="block text-xs mb-1">{{ t('knowledgeSearch') }}</label>
+          <input v-model="search" type="search" class="border rounded p-1 w-full" />
+        </div>
+        <div class="flex items-center ml-auto" v-if="selection.size">
+          <button class="btn-secondary mr-2" @click="batch('reindex')">{{ t('knowledgeBatchReindex') }}</button>
+          <button class="btn-secondary mr-2" @click="batch('pause')">{{ t('knowledgeBatchPause') }}</button>
+          <button class="btn-secondary mr-2" @click="batch('resume')">{{ t('knowledgeBatchResume') }}</button>
+          <button class="btn-danger" @click="batch('delete')">{{ t('knowledgeBatchDelete') }}</button>
+        </div>
+      </div>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left border-b border-default">
+            <th class="p-2 w-8"><input type="checkbox" :checked="allSelected" @change="toggleAll($event.target.checked)" /></th>
+            <th class="p-2">{{ t('name') }}</th>
+            <th class="p-2">{{ t('knowledgeStatus') }}</th>
+            <th class="p-2">{{ t('updatedAt') }}</th>
+            <th class="p-2"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="s in filtered" :key="s.id" class="border-b border-default">
+            <td class="p-2"><input type="checkbox" :checked="selection.has(s.id)" @change="store.selectSource(selected.id, s.id, $event.target.checked)" /></td>
+            <td class="p-2">{{ s.name }}</td>
+            <td class="p-2">{{ t('knowledgeStatus.' + s.status) }}</td>
+            <td class="p-2">{{ s.updatedAt }}</td>
+            <td class="p-2 text-right">
+              <ActionMenu :items="sourceMenu(s)">
+                <button class="action-btn"><span class="material-icons-outlined text-base">more_vert</span></button>
+              </ActionMenu>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-if="!filtered.length" class="text-muted py-8 text-center">
+        {{ t('knowledgeNoResults') }}
+      </div>
+    </div>
+    <div v-else class="flex-1 text-muted py-8 text-center">{{ t('knowledgeNoSources') }}</div>
+  </div>
+  <div v-if="showUpload" class="fixed inset-0 bg-black/40 flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-800 p-6 rounded shadow-lg w-96">
+      <SourceUpload :collection-id="selected.id" @uploaded="afterAdd" @close="showUpload=false" />
+    </div>
+  </div>
+  <div v-if="showQA" class="fixed inset-0 bg-black/40 flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-800 p-6 rounded shadow-lg w-96">
+      <SourceFormQA :collection-id="selected.id" @added="afterAdd" @close="showQA=false" />
+    </div>
+  </div>
+  <div v-if="showPerms" class="fixed inset-0 bg-black/40 flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-800 p-6 rounded shadow-lg w-96">
+      <h3 class="font-semibold mb-2">{{ t('permissions') }}</h3>
+      <div class="space-y-2">
+        <div>
+          <label class="block text-xs mb-1">{{ t('visibility') }}</label>
+          <select v-model="permVisibility" class="form-select w-full">
+            <option value="private">{{ t('visibilityPrivate') }}</option>
+            <option value="workspace">{{ t('visibilityWorkspace') }}</option>
+            <option value="public">{{ t('visibilityPublic') }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs mb-1">{{ t('editors') }}</label>
+          <input v-model="permEditors" class="form-input w-full" />
+        </div>
+      </div>
+      <div class="flex justify-end mt-4 space-x-2">
+        <button class="btn-secondary" @click="showPerms=false">{{ t('cancel') }}</button>
+        <button class="btn-primary" @click="savePerms">{{ t('save') }}</button>
       </div>
     </div>
   </div>
+  <SourcePreviewDrawer v-if="previewId" :collection-id="selected.id" :source-id="previewId" @close="previewId=null" />
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
-import apiClient from '@/api';
-import PageHeader from '@/components/PageHeader.vue';
-import SkeletonLoader from '@/components/SkeletonLoader.vue';
-import KnowledgeGroupForm from '@/components/KnowledgeGroupForm.vue';
-import { sidePanelStore } from '@/stores/sidePanelStore';
-import langStore from '@/stores/langStore';
+import { ref, computed, onMounted, watch } from 'vue'
+import { knowledgeStore as store } from '@/stores/knowledgeStore'
+import langStore from '@/stores/langStore'
+import ActionMenu from '@/components/ui/ActionMenu.vue'
+import SourceUpload from '@/components/SourceUpload.vue'
+import SourceFormQA from '@/components/SourceFormQA.vue'
+import SourcePreviewDrawer from '@/components/SourcePreviewDrawer.vue'
 
-const router = useRouter();
-const groups = ref([]);
-const loading = ref(true);
-
-// Track which group's menu is open.  Only one menu is shown at a time.
-const activeMenuId = ref(null);
-const toggleMenu = (id) => {
-  activeMenuId.value = activeMenuId.value === id ? null : id;
-};
-
-// Close menu when clicking outside of any group menu or action button
-function handleClickOutside(event) {
-  const target = event.target;
-  const menu = target.closest('.group-menu');
-  const actionBtn = target.closest('.action-btn');
-  if (!menu && !actionBtn) {
-    activeMenuId.value = null;
-  }
-}
-
-const fetchGroups = async () => {
-  loading.value = true;
-  try {
-    const response = await apiClient.get('/knowledge_groups');
-    groups.value = response.data;
-  } catch (e) {
-    console.error('Failed to load knowledge groups:', e);
-  } finally {
-    loading.value = false;
-  }
-};
-
-onMounted(fetchGroups);
+const t = langStore.t
+const selectedId = ref(null)
+const typeFilter = ref('all')
+const statusFilter = ref('all')
+const search = ref('')
+const showUpload = ref(false)
+const showQA = ref(false)
+const previewId = ref(null)
+const showPerms = ref(false)
+const permCollection = ref(null)
+const permVisibility = ref('workspace')
+const permEditors = ref('')
 
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
-});
+  store.fetchCollections()
+})
 
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
-});
+const selected = computed(() => store.state.collections.find((c) => c.id === selectedId.value))
+const sources = computed(() => store.state.sourcesByCollection[selectedId.value] || [])
+const selection = computed(() => store.state.selectionByCollection[selectedId.value] || new Set())
 
-const openCreateForm = () => {
-  sidePanelStore.open(KnowledgeGroupForm, { onSaveSuccess: fetchGroups });
-};
+watch(selectedId, (id) => {
+  if (id) store.fetchSources(id)
+})
 
-const confirmDeleteGroup = async (group) => {
-  const message = `${langStore.t('delete')} "${group.name}"?`;
-  if (confirm(message)) {
-    try {
-      await apiClient.delete(`/knowledge_groups/${group.id}`);
-      await fetchGroups();
-    } catch (e) {
-      console.error('Failed to delete group:', e);
+const filtered = computed(() => {
+  const q = search.value.toLowerCase()
+  return sources.value.filter((s) => {
+    const matchesType = typeFilter.value === 'all' || s.type === typeFilter.value
+    const matchesStatus = statusFilter.value === 'all' || s.status === statusFilter.value
+    const matchesSearch =
+      !q ||
+      s.name.toLowerCase().includes(q) ||
+      (s.url || '').toLowerCase().includes(q) ||
+      (s.qa?.question || '').toLowerCase().includes(q) ||
+      (s.qa?.answer || '').toLowerCase().includes(q)
+    return matchesType && matchesStatus && matchesSearch
+  })
+})
+
+const allSelected = computed(() => filtered.value.length && filtered.value.every((s) => selection.value.has(s.id)))
+
+function toggleAll(val) {
+  if (val) store.selectAll(selectedId.value, filtered.value.map((s) => s.id))
+  else store.clearSelection(selectedId.value)
+}
+
+function createCollection() {
+  const name = prompt(t('name'))
+  if (name) store.createCollection(name)
+}
+
+function collectionMenu(c) {
+  return [
+    {
+      id: 'rename',
+      labelKey: 'rename',
+      onSelect: () => {
+        const n = prompt(t('rename'), c.name)
+        if (n) store.renameCollection(c.id, n)
+      },
+    },
+    { id: 'permissions', labelKey: 'permissions', onSelect: () => openPerms(c) },
+    {
+      id: 'delete',
+      labelKey: 'delete',
+      danger: true,
+      confirm: { titleKey: 'confirmDeleteTitle', bodyKey: 'confirmDeleteBody' },
+      onSelect: () => {
+        store.deleteCollection(c.id)
+        if (selectedId.value === c.id) selectedId.value = null
+      },
+    },
+  ]
+}
+
+function sourceMenu(s) {
+  return [
+    { id: 'reindex', labelKey: 'knowledgeReindex', onSelect: () => store.reindexSource(selected.id, s.id) },
+    s.status === 'paused'
+      ? { id: 'resume', labelKey: 'knowledgeResume', onSelect: () => store.resumeSource(selected.id, s.id) }
+      : { id: 'pause', labelKey: 'knowledgePause', onSelect: () => store.pauseSource(selected.id, s.id) },
+    { id: 'preview', labelKey: 'knowledgePreview', onSelect: () => (previewId.value = s.id) },
+    {
+      id: 'delete',
+      labelKey: 'knowledgeDelete',
+      danger: true,
+      confirm: { titleKey: 'confirmDeleteTitle', bodyKey: 'confirmDeleteBody' },
+      onSelect: () => store.deleteSources(selected.id, [s.id]),
+    },
+  ]
+}
+
+const addMenu = [
+  { id: 'file', labelKey: 'knowledgeAddFile', onSelect: () => (showUpload.value = true) },
+  { id: 'url', labelKey: 'knowledgeAddUrl', onSelect: () => addUrl() },
+  { id: 'qa', labelKey: 'knowledgeAddQA', onSelect: () => (showQA.value = true) },
+]
+
+function addUrl() {
+  const url = prompt('URL')
+  if (url) store.addUrlSource(selectedId.value, url)
+}
+
+function select(c) {
+  selectedId.value = c.id
+}
+
+function rowClass(id) {
+  return [
+    'p-2 rounded flex justify-between items-center cursor-pointer',
+    selectedId.value === id ? 'bg-selected' : 'hover:bg-hover',
+  ]
+}
+
+function batch(action) {
+  const ids = Array.from(selection.value)
+  if (action === 'delete' && !confirm(t('knowledgeDeleteConfirmTitle'))) return
+  store.batchAction(selectedId.value, ids, action)
+}
+
+function afterAdd() {
+  showUpload.value = false
+  showQA.value = false
+  store.fetchSources(selectedId.value)
+}
+
+function openPerms(c) {
+  permCollection.value = c
+  permVisibility.value = c.visibility || 'workspace'
+  permEditors.value = (c.editors || []).join(',')
+  showPerms.value = true
+}
+
+async function savePerms() {
+  const editors = permEditors.value
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+  try {
+    await store.updatePermissions(permCollection.value.id, {
+      visibility: permVisibility.value,
+      editors,
+    })
+    if (!store.state.collections.find((c) => c.id === permCollection.value.id)) {
+      if (selectedId.value === permCollection.value.id) selectedId.value = null
     }
+  } catch (e) {
+    // ignore for now
+  } finally {
+    showPerms.value = false
   }
-};
-
-const goToGroup = (id) => {
-  router.push(`/knowledge/${id}`);
-};
-
-// Prevent navigation when action menu is open for this row
-const onGroupRowClick = (group) => {
-  if (activeMenuId.value !== group.id) {
-    goToGroup(group.id);
-  }
-};
+}
 </script>
 
 <style scoped>
+.bg-selected {
+  background-color: var(--c-bg-muted);
+}
+.bg-hover {
+  background-color: var(--c-bg-hover);
+}
+.action-btn {
+  @apply p-2 rounded-full transition-colors;
+}
+.action-btn:hover {
+  background-color: var(--c-bg-hover);
+}
 .text-default {
   color: var(--c-text-primary);
 }
@@ -159,22 +311,5 @@ const onGroupRowClick = (group) => {
 }
 .border-default {
   border-color: var(--c-border);
-}
-.table-container {
-  @apply overflow-hidden rounded-lg border border-default;
-  background-color: var(--c-bg-secondary);
-}
-.table-row {
-  transition: background-color 0.15s ease-in-out;
-}
-.table-row:hover {
-  background-color: var(--c-bg-input, rgba(0, 0, 0, 0.02));
-}
-.action-btn {
-  @apply p-2 rounded-full transition-colors;
-}
-.action-btn:hover {
-  background-color: var(--c-bg-hover);
-  color: var(--c-text-accent);
 }
 </style>

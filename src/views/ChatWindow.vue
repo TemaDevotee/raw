@@ -1,107 +1,188 @@
 <template>
   <div class="flex flex-col h-full">
-    <!-- Header with gradient background controlled via CSS variables -->
-    <div class="chat-header px-0" :style="headerStyle">
-      <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-default">
-        <!-- Left side: back button and chat title/agent info -->
-        <div class="flex items-center space-x-4">
-          <!-- Back to chat list -->
+    <!-- Gradient header with controls -->
+    <div class="chat-header shadow-sm" :style="headerStyle">
+      <div class="flex items-center justify-between px-6 py-4">
+        <div class="flex items-center gap-4">
           <router-link to="/chats">
             <Button variant="secondary" size="sm">
               <span class="material-icons-outlined mr-1">arrow_back</span>
               {{ langStore.t('backToAll') }}
             </Button>
           </router-link>
-          <div>
-            <h2 class="text-xl font-bold">
-              {{ chat?.clientName || langStore.t('chat') }}
-            </h2>
-            <!-- Subtitle: assigned agent or fallback ID -->
-            <p class="text-sm text-muted" v-if="chat">
-              <template v-if="assignedAgent">
-                <span>{{ langStore.t('assignedAgent') }}:</span>
-                <router-link
-                  :to="`/agents/${assignedAgent.id}`"
-                  class="text-link ml-1 hover:underline"
-                >
-                  {{ assignedAgent.name }}
-                </router-link>
-              </template>
-              <template v-else>
-                {{ subtitle }}
-              </template>
-            </p>
-          </div>
-        </div>
-        <!-- Change status control -->
-          <div class="ml-2">
-            <select class="form-input text-sm" :value="chat?.status" @change="onChangeStatus($event)">
-              <option value="live">{{ langStore.t('live') }}</option>
-              <option value="paused">{{ langStore.t('paused') }}</option>
-              <option value="attention">{{ langStore.t('attention') }}</option>
-              <option value="resolved">{{ langStore.t('resolved') }}</option>
-              <option value="ended">{{ langStore.t('ended') }}</option>
-            </select>
-          </div>
-<!-- Right side: resolve and end actions -->
-        <div v-if="chat" class="flex items-center space-x-1">
-          <Button
-            variant="secondary"
-            size="sm"
-            v-if="chat.status === 'live'"
-            @click="resolveIssue"
+          <h2 class="text-xl font-bold">{{ chat?.clientName || langStore.t('chat') }}</h2>
+          <span
+            v-if="chat"
+            class="ml-2 text-xs px-2 py-0.5 rounded-full flex items-center"
+            :style="{ backgroundColor: badgeColor(chat.status), color: statusColor(chat.status) }"
           >
-            <span class="material-icons-outlined mr-1">check_circle</span>
-            <span>{{ langStore.t('resolve') }}</span>
+            <span
+              class="w-2 h-2 rounded-full mr-1"
+              :style="{ backgroundColor: statusColor(chat.status) }"
+              :aria-label="statusAria(chat.status)"
+            ></span>
+            {{ statusLabel }}
+          </span>
+        </div>
+        <div class="flex items-center gap-2">
+          <Button
+            v-if="!inputEnabled"
+            data-testid="interfere-btn"
+            :disabled="busyByOthers"
+            variant="primary"
+            size="sm"
+            @click="interfere"
+          >
+            {{ langStore.t('interfere') }}
           </Button>
           <Button
+            v-else
+            data-testid="return-btn"
             variant="secondary"
             size="sm"
-            v-if="chat.status === 'live' || chat.status === 'resolved'"
-            @click="endChat"
+            @click="returnControl"
           >
-            <span class="material-icons-outlined mr-1">highlight_off</span>
-            <span>{{ langStore.t('end') }}</span>
+            {{ langStore.t('returnToAgent') }}
+          </Button>
+          <div class="relative" ref="statusMenuRoot">
+            <Button
+              ref="statusMenuButton"
+              variant="secondary"
+              size="sm"
+              data-testid="status-menu-btn"
+              :aria-expanded="statusMenuOpen"
+              aria-controls="status-menu"
+              @click="toggleStatusMenu"
+            >
+              {{ langStore.t('changeStatus') }}
+            </Button>
+            <ul
+              v-if="statusMenuOpen"
+              id="status-menu"
+              role="menu"
+              data-testid="status-menu"
+              class="absolute left-full top-0 ml-1 w-40 rounded-md border border-default bg-secondary z-10"
+              @keydown="onStatusMenuKeydown"
+            >
+              <li v-for="(opt, idx) in statusOptions" :key="opt.value">
+                <button
+                  :ref="el => statusMenuItems[idx] = el"
+                  role="menuitem"
+                  class="flex items-center w-full px-3 py-2 text-left hover-bg-effect"
+                  :aria-label="langStore.t(`setStatus${opt.value.charAt(0).toUpperCase() + opt.value.slice(1)}`)"
+                  @click="selectStatus(idx)"
+                >
+                  <span
+                    class="w-2 h-2 rounded-full mr-2"
+                    :style="{ backgroundColor: statusColor(opt.value) }"
+                  ></span>
+                  <span class="flex-1">{{ langStore.t(opt.label) }}</span>
+                  <span v-if="chat?.status === opt.value" class="material-icons-outlined text-base ml-auto">check</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+          <div v-if="displayAvatars.length" class="flex -space-x-2 items-center" data-testid="presence-stack">
+            <button
+              v-for="p in displayAvatars"
+              :key="p.userId"
+              class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium border-2 border-white dark:border-gray-800"
+              :style="{ backgroundColor: p.color }"
+              :title="p.name"
+              :aria-label="`${langStore.t('present')}: ${p.name}`"
+            >
+              <img v-if="p.avatar" :src="p.avatar" alt="" class="w-full h-full rounded-full" />
+              <span v-else>{{ p.initials }}</span>
+            </button>
+            <div
+              v-if="extraCount > 0"
+              class="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 text-xs flex items-center justify-center font-medium border-2 border-white dark:border-gray-800"
+              :title="extraNames"
+              :aria-label="langStore.t('moreParticipants')"
+            >
+              +{{ extraCount }}
+            </div>
+          </div>
+          <div v-if="devCitations" class="flex items-center gap-1 ml-2">
+            <input type="checkbox" v-model="showCitations" class="h-3 w-3" />
+            <span class="text-xs">{{ langStore.t('showCitations') }}</span>
+          </div>
+          <Button
+            v-if="chat && !chat.snoozeUntil"
+            variant="secondary"
+            size="sm"
+            @click="snooze(5)"
+          >
+            {{ langStore.t('snooze') }}
+          </Button>
+          <Button
+            v-else-if="chat && chat.snoozeUntil"
+            variant="secondary"
+            size="sm"
+            @click="unsnooze"
+          >
+            {{ langStore.t('unsnooze') }}
           </Button>
         </div>
       </div>
     </div>
+    <!-- Typing indicator -->
+    <div aria-live="polite" class="text-center text-sm text-muted h-5">{{ typingLine }}</div>
     <!-- Messages list -->
     <div ref="messagesContainer" class="flex-1 p-6 overflow-y-auto space-y-4 bg-secondary">
       <!-- Drafts panel -->
-      <div v-if="drafts.length" class="p-3 rounded-lg border border-default bg-white/5 mb-3">
-        <div class="flex items-center justify-between mb-2">
-          <strong>{{ langStore.t('draftsWaiting') || 'Drafts waiting approval' }}</strong>
-          <Button variant="secondary" size="sm" @click="simulateDraft">
-            {{ langStore.t('simulate') || 'Simulate' }}
-          </Button>
-        </div>
+      <div v-if="drafts.length" class="mb-3 rounded-lg border border-default bg-white/5">
         <div
-          v-for="d in drafts"
-          :key="d.id"
-          class="flex items-center justify-between py-2 border-b border-default last:border-b-0"
+          class="flex items-center justify-between px-3 py-2 cursor-pointer"
+          @click="draftsExpanded = !draftsExpanded"
         >
-          <span class="text-sm">{{ d.text }}</span>
-          <div class="flex gap-2">
-            <Button variant="primary" size="sm" @click="approveDraft(d)">
-              {{ langStore.t('approve') || 'Approve' }}
+          <strong>{{ langStore.t('drafts') }} ({{ drafts.length }})</strong>
+          <div class="flex items-center gap-2" v-if="draftsExpanded">
+            <Button
+              variant="primary"
+              size="sm"
+              :disabled="chatStore.state.isBulkSubmitting"
+              @click.stop="sendAllDrafts"
+            >
+              {{ langStore.t('sendAll') }}
             </Button>
-            <Button variant="secondary" size="sm" @click="discardDraft(d)">
-              {{ langStore.t('discard') || 'Discard' }}
+            <Button
+              variant="secondary"
+              size="sm"
+              :disabled="chatStore.state.isBulkSubmitting"
+              @click.stop="rejectAllDrafts"
+            >
+              {{ langStore.t('rejectAll') }}
             </Button>
+          </div>
+        </div>
+        <div v-if="draftsExpanded">
+          <div
+            v-for="d in drafts"
+            :key="d.id"
+            class="border-t border-default p-3"
+          >
+            <div v-if="editingDraft && editingDraft.id === d.id">
+              <textarea v-model="editBody" class="form-input w-full mb-2"></textarea>
+              <div class="flex gap-2">
+                <Button variant="primary" size="sm" @click="submitEdit">{{ langStore.t('editAndSend') }}</Button>
+                <Button variant="secondary" size="sm" @click="cancelEdit">{{ langStore.t('cancel') }}</Button>
+              </div>
+            </div>
+            <div v-else class="flex items-center justify-between">
+              <span class="text-sm max-w-xs truncate">{{ d.body || d.text }}</span>
+              <div class="flex gap-2">
+                <Button variant="primary" size="sm" @click="approveDraft(d)">{{ langStore.t('approveAndSend') }}</Button>
+                <Button variant="secondary" size="sm" @click="startEdit(d)">{{ langStore.t('editAndSend') }}</Button>
+                <Button variant="secondary" size="sm" @click="rejectDraft(d)">{{ langStore.t('reject') }}</Button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
       <!-- Placeholder when no chat selected -->
       <div v-if="!chat" class="text-center text-muted mt-10">
         {{ langStore.t('selectChat') }}
-      </div>
-      <!-- Approve mode toggle -->
-      <div class="px-6 py-3 border-b border-default flex items-center gap-3">
-        <label class="flex items-center gap-2 text-sm text-muted">
-          <input type="checkbox" :checked="approveRequired" @change="toggleApprove($event)">
-          <span>{{ langStore.t('requiresApproval') || 'Requires approval' }}</span>
-        </label>
       </div>
       <!-- Messages -->
       <div
@@ -113,11 +194,24 @@
         <div :class="messageBubbleClasses(msg.sender)">
           <p class="text-sm whitespace-pre-wrap">{{ msg.text }}</p>
           <span class="text-xs block mt-1">{{ formatMessageTime(msg.time) }}</span>
+          <span v-if="msg.outbox" class="text-xs block mt-1">
+            {{ statusLabelMsg(msg.outbox.status) }}
+            <button
+              v-if="msg.outbox.status === 'failed'"
+              class="underline ml-2"
+              @click="outboxStore.enqueue(chatId, msg.text)"
+            >
+              {{ langStore.t('retry') }}
+            </button>
+          </span>
         </div>
       </div>
     </div>
     <!-- Composer and actions -->
     <div class="p-4 border-t border-default bg-secondary">
+      <div v-if="outboxStore.state.isOffline" class="text-center text-xs mb-2" data-testid="offline-banner">
+        {{ langStore.t('offlineBanner') }}
+      </div>
       <div class="flex items-center mb-2">
         <input
           v-model="newMessage"
@@ -128,36 +222,18 @@
           @keyup.enter="sendMessage"
           @input="onType"
         />
-        <Button
-          variant="primary"
-          size="sm"
-          :disabled="!inputEnabled || !newMessage"
-          @click="sendMessage"
-        >
-          <span class="material-icons-outlined text-base mr-1">send</span>
-          {{ langStore.t('send') }}
-        </Button>
-      </div>
-      <!-- Interfere / Return control buttons -->
-      <div v-if="chat" class="flex space-x-2">
-        <Button
-          :variant="inputEnabled ? 'secondary' : 'primary'"
-          size="sm"
-          :disabled="inputEnabled || busyByOthers"
-          @click="interfere"
-        >
-          <span class="material-icons-outlined text-base mr-1">psychology</span>
-          <span>{{ langStore.t('interfere') }}</span>
-        </Button>
-        <Button
-          :variant="inputEnabled ? 'primary' : 'secondary'"
-          size="sm"
-          :disabled="!inputEnabled"
-          @click="returnControl"
-        >
-          <span class="material-icons-outlined text-base mr-1">undo</span>
-          <span>{{ langStore.t('returnToAgent') }}</span>
-        </Button>
+        <div class="flex items-center gap-2">
+          <span v-if="savedTime" class="text-xs text-muted">{{ langStore.t('savedAt', { time: savedTime }) }}</span>
+          <Button
+            variant="primary"
+            size="sm"
+            :disabled="!inputEnabled || !newMessage"
+            @click="sendMessage"
+          >
+            <span class="material-icons-outlined text-base mr-1">send</span>
+            {{ langStore.t('send') }}
+          </Button>
+        </div>
       </div>
     </div>
   </div>
@@ -170,15 +246,58 @@ import langStore from '@/stores/langStore.js';
 import { useRoute, useRouter } from 'vue-router';
 import apiClient from '@/api';
 import { showToast } from '@/stores/toastStore';
+import {
+  statusColor,
+  badgeColor,
+  statusGradient,
+  computePresenceDisplay,
+  updateChatStatus,
+} from './chatsUtils.js';
+import { useStatusMenu } from './statusMenu.js';
+import { chatStore } from '@/stores/chatStore.js';
+import { typingStore } from '@/stores/typingStore.js';
+import { outboxStore } from '@/stores/outboxStore.js';
+import { composerStore } from '@/stores/composerStore.js';
+import { typingText } from '@/utils/typing.js';
 
 
 const presenceList = ref([]);
-const currentUser = JSON.parse(localStorage.getItem('auth.user') || sessionStorage.getItem('auth.user') || 'null') || { id: 1 };
-async function refreshPresence(){ try{ const res = await apiClient.get('/presence'); const list = res.data[String(chatId)] || []; presenceList.value = list; } catch{} }
-const busyByOthers = computed(()=> presenceList.value.some(p => p.userId !== currentUser.id));
+const devCitations = import.meta.env.DEV;
+const showCitations = ref(true);
+const currentUser =
+  JSON.parse(localStorage.getItem('auth.user') || sessionStorage.getItem('auth.user') || 'null') ||
+  { id: 1 };
+async function refreshPresence() {
+  try {
+    const res = await apiClient.get('/presence');
+    const list = res.data[String(chatId)] || [];
+    presenceList.value = list;
+  } catch {}
+}
+const busyByOthers = computed(() => presenceList.value.some((p) => p.userId !== currentUser.id));
+function avatarColor(id) {
+  const num = typeof id === 'number' ? id : Array.from(String(id)).reduce((a, c) => a + c.charCodeAt(0), 0);
+  const hue = (num * 47) % 360;
+  return `hsl(${hue},70%,55%)`;
+}
+const presenceDisplay = computed(() => computePresenceDisplay(presenceList.value, currentUser.id));
+const displayAvatars = computed(() =>
+  presenceDisplay.value.visible.map((p) => ({
+    ...p,
+    initials: (p.name || '?')
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase(),
+    color: avatarColor(p.userId),
+  })),
+);
+const extraCount = computed(() => presenceDisplay.value.extra);
+const extraNames = computed(() => presenceDisplay.value.others.map((p) => p.name).join(', '));
 const messages = ref([]);
 const messagesContainer = ref(null);
-setInterval(refreshPresence, 12000);
+let presenceInterval;
 watch(messages, () => {
   nextTick(() => {
     const el = messagesContainer.value;
@@ -189,33 +308,106 @@ const route = useRoute();
 const router = useRouter();
 const chatId = route.params.id;
 
-const approveRequired = ref(false);
 const chat = ref(null);
-const drafts = ref([]);
 const newMessage = ref('');
-const sendMode = ref('direct');
-const sendModeComputed = computed({
-  get: () => sendMode.value === 'approve',
-  set: (v) => (sendMode.value = v ? 'approve' : 'direct'),
-});
-const typing = ref(false);
-let typingTimer = null;
+const savedAt = ref(null);
+const drafts = computed(() => chatStore.state.drafts[chatId] || []);
+const draftsExpanded = ref(false);
+watch(
+  () => drafts.value.length,
+  (len) => {
+    if (len > 0) draftsExpanded.value = true;
+  },
+  { immediate: true },
+);
+let typingNotify;
 function onType() {
-  typing.value = true;
-  clearTimeout(typingTimer);
-  typingTimer = setTimeout(() => (typing.value = false), 1200);
+  if (!inputEnabled.value) return;
+  typingStore.startTyping(chatId, currentUser.id);
+  clearTimeout(typingNotify);
+  typingNotify = setTimeout(() => {
+    apiClient.post(`/chats/${chatId}/typing`).catch(() => {});
+  }, 0);
 }
-// Indicates whether the operator has taken control of the chat.
-const inputEnabled = ref(false);
+// control state
+const chatControl = computed(() => chatStore.state.chatControl[chatId] || 'agent');
+const inputEnabled = computed(() => chatControl.value === 'operator');
 // Agents list for resolving assigned agent names
 const agentsList = ref([]);
 const subtitle = computed(() => (chat.value ? `ID: ${chatId}` : ''));
 
-const placeholderText = computed(() => {
-  if (inputEnabled.value) {
-    return langStore.t('typeMessage');
-  }
-  return langStore.t('pressInterfere');
+const placeholderText = computed(() =>
+  inputEnabled.value
+    ? langStore.t('operatorInControl')
+    : langStore.t('agentInControl')
+);
+
+const saveTimer = ref(null);
+const savedTime = computed(() => (savedAt.value ? new Date(savedAt.value).toLocaleTimeString() : null));
+watch(newMessage, () => {
+  clearTimeout(saveTimer.value);
+  saveTimer.value = setTimeout(() => {
+    composerStore.save(chatId, newMessage.value);
+    savedAt.value = Date.now();
+  }, 400);
+});
+
+const statusOptions = [
+  { value: 'live', label: 'live' },
+  { value: 'paused', label: 'paused' },
+  { value: 'attention', label: 'attention' },
+  { value: 'resolved', label: 'resolved' },
+  { value: 'ended', label: 'ended' },
+];
+const statusMenu = useStatusMenu(statusOptions, (v) => setStatus(v));
+const statusMenuOpen = statusMenu.open;
+const toggleStatusMenu = statusMenu.toggle;
+const onStatusMenuKeydown = statusMenu.onKeydown;
+const statusMenuButton = statusMenu.triggerRef;
+const statusMenuRoot = statusMenu.menuRef;
+const statusMenuItems = statusMenu.itemRefs;
+const selectStatus = statusMenu.select;
+const statusLabel = computed(() => {
+  if (!chat.value) return '';
+  const map = {
+    live: 'live',
+    paused: 'paused',
+    attention: 'attention',
+    resolved: 'resolved',
+    ended: 'ended',
+    idle: 'idle',
+  };
+  return langStore.t(map[chat.value.status] || map.idle);
+});
+function tStatus(s) {
+  if (!s) return ''
+  const key = `status${s.charAt(0).toUpperCase() + s.slice(1)}`
+  return langStore.t(key)
+}
+function statusAria(s) {
+  return `${langStore.t('statusLabel')}: ${tStatus(s)}`
+}
+
+function snooze(minutes) {
+  if (!chat.value) return
+  chatStore.snoozeChat(chat.value, minutes)
+}
+
+function unsnooze() {
+  if (!chat.value) return
+  chatStore.unsnoozeChat(chat.value)
+}
+const headerStyle = computed(() => ({
+  background: statusGradient(chat.value?.status || 'idle'),
+}));
+
+const typingLine = computed(() => {
+  const ids = typingStore.getTyping(chatId).filter((id) => id !== currentUser.id);
+  const names = ids
+    .map((id) => presenceList.value.find((p) => p.userId === Number(id))?.name)
+    .filter(Boolean);
+  if (typingStore.isAgentDrafting(chatId)) return langStore.t('agentDrafting');
+  return typingText(names);
 });
 
 async function fetchChat() {
@@ -223,22 +415,24 @@ async function fetchChat() {
     const res = await apiClient.get(`/chats/${chatId}`);
     chat.value = res.data;
     messages.value = res.data.messages || [];
-    inputEnabled.value = chat.value.status === 'live';
+    chatStore.setControl(chatId, res.data.control || 'agent');
+    const draft = composerStore.get(chatId);
+    if (draft) {
+      newMessage.value = draft.body;
+      savedAt.value = draft.updatedAt;
+    }
   } catch (err) {
     console.error(err);
   }
 }
 
 onMounted(async () => {
-  // Load initial chat data, agents and drafts sequentially.
+  document.addEventListener('click', statusMenu.onDocumentClick);
   await fetchChat();
   await fetchAgents();
   await fetchDrafts();
-  // Check if approval is required for this chat
-  try {
-    const r = await apiClient.get(`/chats/${chatId}/approve_mode`);
-    approveRequired.value = !!(r.data && r.data.require);
-  } catch {}
+  await refreshPresence();
+  presenceInterval = setInterval(refreshPresence, 2000);
   // Presence: join and keepalive loop
   try {
     const user =
@@ -314,34 +508,17 @@ function formatMessageTime(timeStr) {
 
 async function sendMessage() {
   if (!newMessage.value.trim()) return;
-  if (sendMode.value === 'approve') {
-    try {
-      await apiClient.post(`/chats/${chatId}/drafts`, { sender: 'agent', text: newMessage.value });
-      showToast('Draft submitted for approval', 'success');
-    } catch (e) {
-      showToast('Failed to submit draft', 'error');
-    }
-    newMessage.value = '';
-    await fetchChat();
-    await fetchDrafts();
-  try{ const r = await apiClient.get(`/chats/${chatId}/approve_mode`); approveRequired.value = !!(r.data && r.data.require); }catch{}
-    return;
-  }
-  try {
-    await apiClient.post(`/chats/${chatId}/messages`, {
-      sender: 'operator',
-      text: newMessage.value,
-    });
-    messages.value.push({
-      sender: 'operator',
-      text: newMessage.value,
-      time: new Date().toLocaleTimeString(),
-    });
-    newMessage.value = '';
-    showToast(langStore.t('messageSent'), 'success');
-  } catch (e) {
-    showToast(langStore.t('messageSendFailed'), 'error');
-  }
+  const body = newMessage.value.trim();
+  const msgRef = outboxStore.enqueue(chatId, body);
+  messages.value.push({
+    sender: 'operator',
+    text: body,
+    time: new Date().toLocaleTimeString(),
+    outbox: msgRef,
+  });
+  newMessage.value = '';
+  composerStore.remove(chatId);
+  savedAt.value = null;
 }
 
 let presenceTimer;
@@ -351,16 +528,16 @@ onBeforeUnmount(async () => {
     await apiClient.post('/presence/leave', { chatId, userId: user.id });
   } catch {}
   clearInterval(presenceTimer);
+  clearInterval(presenceInterval);
+  document.removeEventListener('click', statusMenu.onDocumentClick);
 });
 
 async function interfere() {
   try {
     await apiClient.post(`/chats/${chatId}/interfere`);
-    inputEnabled.value = true;
-    // status unchanged by interfere
+    chatStore.setControl(chatId, 'operator');
     await fetchChat();
     await fetchDrafts();
-  try{ const r = await apiClient.get(`/chats/${chatId}/approve_mode`); approveRequired.value = !!(r.data && r.data.require); }catch{}
     showToast(langStore.t('joinedChat'), 'success');
   } catch (e) {
     showToast(langStore.t('failedInterfere'), 'error');
@@ -371,118 +548,60 @@ async function returnControl() {
   try {
     await apiClient.post(`/chats/${chatId}/return`);
   } catch {}
-  inputEnabled.value = false;
-  // status unchanged by return
+  chatStore.setControl(chatId, 'agent');
+  await fetchDrafts();
   showToast(langStore.t('controlReturned'), 'success');
 }
 
-async function approveDraft(d) {
-  try {
-    await apiClient.post(`/chats/${chatId}/drafts/${d.id}/approve`);
-    await fetchChat();
-    await fetchDrafts();
-  try{ const r = await apiClient.get(`/chats/${chatId}/approve_mode`); approveRequired.value = !!(r.data && r.data.require); }catch{}
-  } catch {}
+async function setStatus(s) {
+  if (!chat.value) return;
+  await updateChatStatus(chat.value, s, apiClient, showToast, langStore.t);
 }
-async function discardDraft(d) {
-  try {
-    await apiClient.delete(`/chats/${chatId}/drafts/${d.id}`);
-    drafts.value = drafts.value.filter((x) => x.id !== d.id);
-  } catch {}
-}
-async function simulateDraft() {
-  try {
-    const t = `Draft at ${new Date().toLocaleTimeString()}`;
-    await apiClient.post(`/chats/${chatId}/drafts`, { sender: 'agent', text: t });
-    await fetchDrafts();
-  try{ const r = await apiClient.get(`/chats/${chatId}/approve_mode`); approveRequired.value = !!(r.data && r.data.require); }catch{}
-  } catch {}
-}
-async function resolveIssue() {
-  try {
-    await apiClient.post(`/chats/${chatId}/resolve`);
-    inputEnabled.value = false;
-    chat.value.status = 'resolved';
-    await fetchChat();
-    await fetchDrafts();
-  try{ const r = await apiClient.get(`/chats/${chatId}/approve_mode`); approveRequired.value = !!(r.data && r.data.require); }catch{}
-    showToast(langStore.t('issueResolvedMsg'), 'success');
-  } catch (e) {
-    showToast(langStore.t('failedResolve'), 'error');
-  }
-}
-
-async function endChat() {
-  try {
-    await apiClient.post(`/chats/${chatId}/end`);
-    showToast(langStore.t('chatEndedMsg'), 'success');
-    router.push('/chats');
-  } catch (e) {
-    showToast(langStore.t('failedEndChat'), 'error');
-  }
-}
-
 async function fetchDrafts() {
-  try {
-    const res = await apiClient.get(`/chats/${chatId}/drafts`);
-    drafts.value = res.data || [];
-  } catch {}
+  await chatStore.fetchDrafts(chatId);
 }
 
-// Compute gradient style for chat header based on status
-const headerStyle = computed(() => {
-  if (!chat.value) return {};
-  let gradFrom = '';
-  let gradTo = '';
-  let opacity = 0.25;
-  const status = chat.value.status || '';
-  switch (status) {
-    case 'live':
-      gradFrom = '#22c55e';
-      gradTo = '#4ade80';
-      opacity = 0.4;
-      break;
-    case 'resolved':
-      gradFrom = '#84cc16';
-      gradTo = '#bef264';
-      opacity = 0.3;
-      break;
-    case 'ended':
-      gradFrom = '#ef4444';
-      gradTo = '#fda4af';
-      opacity = 0.25;
-      break;
-    case 'attention':
-      gradFrom = '#f59e0b';
-      gradTo = '#fbbf24';
-      opacity = 0.35;
-      break;
-    default:
-      gradFrom = '#64748b';
-      gradTo = '#94a3b8';
-      opacity = 0.2;
-      break;
+function approveDraft(d) {
+  chatStore.approveDraft(chatId, d.id);
+}
+
+function rejectDraft(d) {
+  chatStore.rejectDraft(chatId, d.id);
+}
+
+const editingDraft = ref(null);
+const editBody = ref('');
+function startEdit(d) {
+  editingDraft.value = d;
+  editBody.value = d.body || d.text || '';
+}
+async function submitEdit() {
+  if (!editingDraft.value) return;
+  await chatStore.editAndSend(chatId, editingDraft.value.id, editBody.value);
+  editingDraft.value = null;
+  editBody.value = '';
+}
+function cancelEdit() {
+  editingDraft.value = null;
+  editBody.value = '';
+}
+
+function sendAllDrafts() {
+  if (window.confirm(langStore.t('confirmSendAllBody'))) {
+    chatStore.sendAll(chatId);
   }
-  return {
-    '--chat-grad-from': gradFrom,
-    '--chat-grad-to': gradTo,
-    '--chat-grad-opacity': opacity,
-  };
-});
-
-async function onChangeStatus(e){
-  const val = e.target.value;
-  try{
-    await apiClient.patch(`/chats/${chatId}/status`, { status: val });
-    if (chat.value) chat.value.status = val;
-    showToast(langStore.t('statusUpdated') || 'Status updated', 'success');
-  } catch {}
 }
 
+function rejectAllDrafts() {
+  if (window.confirm(langStore.t('confirmRejectAllBody'))) {
+    chatStore.rejectAll(chatId);
+  }
+}
 
-async function toggleApprove(e){
-  const require = !!e.target.checked;
-  try{ const r = await apiClient.patch(`/chats/${chatId}/approve_mode`, { require }); approveRequired.value = !!r.data.require; }catch{}
+function statusLabelMsg(s) {
+  if (s === 'failed') return langStore.t('failed');
+  if (s === 'sent') return langStore.t('sent');
+  return langStore.t('sending');
 }
 
 </script>

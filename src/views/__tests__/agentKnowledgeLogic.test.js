@@ -1,0 +1,82 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+
+global.localStorage = {
+  getItem: () => null,
+  setItem: () => {},
+  removeItem: () => {},
+}
+global.sessionStorage = { ...global.localStorage }
+
+vi.mock('@/stores/agentStore.js', () => {
+  const state = { knowledgeLinks: [] }
+  return {
+    agentStore: {
+      state,
+      setKnowledgeLinks: vi.fn((links) => (state.knowledgeLinks = links)),
+    },
+  }
+})
+vi.mock('@/stores/knowledgeStore.js', () => ({
+  knowledgeStore: {
+    state: {
+      collections: [
+        { id: 'c1', name: 'Docs' },
+        { id: 'c2', name: 'FAQ' },
+      ],
+    },
+  },
+}))
+vi.mock('@/stores/toastStore', () => ({ showToast: vi.fn() }))
+vi.mock('@/stores/langStore', () => ({ default: { t: (k) => k } }))
+vi.mock('@/api/agents.js', () => ({ patchKnowledge: vi.fn(() => Promise.resolve({})) }))
+vi.mock('@/stores/authStore', () => ({ authStore: { state: { user: { id: 'u1' } } } }))
+
+import { useAgentKnowledge } from '../agentKnowledgeLogic.js'
+import { agentStore } from '@/stores/agentStore.js'
+import { patchKnowledge } from '@/api/agents.js'
+
+describe('useAgentKnowledge', () => {
+  beforeEach(() => {
+    agentStore.state.knowledgeLinks = []
+  })
+
+  it('adds collection with defaults and saves', async () => {
+    const logic = useAgentKnowledge('a1')
+    logic.selectedId.value = 'c1'
+    logic.addSelected()
+    expect(logic.links.value[0].params.chunkSize).toBe(500)
+    await logic.save()
+    expect(patchKnowledge).toHaveBeenCalled()
+  })
+
+  it('rolls back on save error', async () => {
+    patchKnowledge.mockRejectedValueOnce(new Error('fail'))
+    agentStore.state.knowledgeLinks = []
+    const logic = useAgentKnowledge('a1')
+    logic.selectedId.value = 'c1'
+    logic.addSelected()
+    await logic.save()
+    expect(logic.links.value.length).toBe(0)
+  })
+
+  it('validates ranges', () => {
+    const logic = useAgentKnowledge('a1')
+    logic.links.value.push({
+      collectionId: 'c1',
+      enabled: true,
+      params: {
+        topK: 0,
+        maxChunks: 10,
+        citations: false,
+        chunkSize: 10,
+        chunkOverlap: -1,
+        embeddingModel: '',
+        rerankModel: '',
+        temperature: -1,
+        maxContextTokens: 100,
+        priority: 0,
+      },
+    })
+    expect(logic.isValid.value).toBe(false)
+  })
+})

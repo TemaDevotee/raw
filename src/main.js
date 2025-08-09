@@ -4,6 +4,8 @@ import App from './App.vue'
 import router from './router'
 import { showToast } from '@/stores/toastStore'
 import { workspaceStore } from '@/stores/workspaceStore'
+import accountStore from '@/stores/accountStore'
+import { initLogoutListener } from '@/stores/logout.js'
 
 const app = createApp(App)
 
@@ -49,3 +51,7 @@ if (location.pathname !== '/login.html') { app.mount('#app') }
 
 // ensure workspace store initializes and persists
 void workspaceStore
+// hydrate account plan state
+void accountStore
+// cross-tab logout synchronisation
+initLogoutListener()
