@@ -12,7 +12,7 @@ const twoWorkspaces = [
 ];
 
 test('workspace switcher toggles with workspace count', async ({ page }) => {
-  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.goto('/#/chats?skipAuth=1', { waitUntil: 'domcontentloaded' });
   await page.getByTestId('sidebar').waitFor();
   await expect(page.getByTestId('sidebar')).toBeVisible();
   await expect(page.getByTestId('workspace-switcher')).toHaveCount(0);

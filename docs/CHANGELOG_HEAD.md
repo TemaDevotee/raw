@@ -6,6 +6,10 @@ Use this section to draft release notes for the next version. Copy relevant entr
 
 - Show stacked avatars for chat participants and polling improvements
 
+## E2E harness
+
+- Force auth in tests and render chat list container even when empty
+
 ## Template
 
 ```

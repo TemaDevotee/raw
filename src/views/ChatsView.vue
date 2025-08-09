@@ -30,15 +30,15 @@
         </label>
       </div>
 
-      <SkeletonLoader v-if="isLoading" class="flex-1" />
-      <VirtualList
-        v-else
-        class="flex-1 border-t border-default"
-        :items="virtualItems"
-        :item-height="ITEM_HEIGHT"
-        data-testid="chats-groups"
-      >
-        <template #default="{ item }">
+      <section class="flex-1 border-t border-default" data-testid="chats-groups">
+        <SkeletonLoader v-if="isLoading" class="h-full" />
+        <template v-else>
+          <VirtualList
+            v-if="virtualItems.length"
+            :items="virtualItems"
+            :item-height="ITEM_HEIGHT"
+          >
+            <template #default="{ item }">
           <div v-if="item.type === 'header'" class="border-t border-default">
             <button
               class="w-full flex justify-between items-center px-6 py-3 text-sm font-medium text-default hover:bg-hover focus:outline-none"
@@ -114,8 +114,13 @@
               <span class="text-xs text-muted">{{ formatChatTime(item.chat.time) }}</span>
             </div>
           </div>
+            </template>
+          </VirtualList>
+          <div v-else data-testid="chats-empty" class="p-6 text-sm text-muted">
+            {{ langStore.t('noChats') }}
+          </div>
         </template>
-      </VirtualList>
+      </section>
     </div>
 
     <!-- Right column: chat window (router-view) -->

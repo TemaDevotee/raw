@@ -26,7 +26,7 @@ test('presence stacks update after participant leaves', async ({ page }) => {
   await page.route('**/presence/join', (route) => {
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload[0]) })
   })
-  await page.goto('/#/chats/1', { waitUntil: 'domcontentloaded' })
+  await page.goto('/#/chats/1?skipAuth=1', { waitUntil: 'domcontentloaded' })
   await page.getByTestId('presence-stack-header').waitFor()
   const header = page.getByTestId('presence-stack-header')
   await expect(header.locator('.avatar')).toHaveCount(4)

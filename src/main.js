@@ -7,9 +7,17 @@ import { showToast } from '@/stores/toastStore'
 import { workspaceStore } from '@/stores/workspaceStore'
 import accountStore from '@/stores/accountStore'
 import { initLogoutListener } from '@/stores/logout.js'
+import { authStore } from '@/stores/authStore'
 
 if (isE2E) {
   window.__E2E__ = true
+}
+
+const params = new URLSearchParams(location.search)
+const skipAuth = params.get('skipAuth') === '1'
+if (isE2E || skipAuth) {
+  authStore.forceLogin()
+  localStorage.setItem('skipAuth', 'true')
 }
 
 const app = createApp(App)

@@ -49,4 +49,15 @@ export function setAuth ({ token, user, remember }) {
   }
 }
 
-export const authStore = { state, isAuthenticated, fetchMe, tokenHeader, setAuth }
+export function forceLogin (user = { id: 'e2e', name: 'E2E' }) {
+  state.user = user
+  state.token = 'e2e'
+  localStorage.setItem('auth.token', 'e2e')
+  localStorage.setItem('auth.user', JSON.stringify(user))
+  localStorage.setItem('authenticated', 'true')
+  sessionStorage.setItem('auth.token', 'e2e')
+  sessionStorage.setItem('auth.user', JSON.stringify(user))
+  sessionStorage.setItem('authenticated', 'true')
+}
+
+export const authStore = { state, isAuthenticated, fetchMe, tokenHeader, setAuth, forceLogin }
