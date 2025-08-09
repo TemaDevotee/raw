@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-full">
+  <div class="flex h-full" data-testid="chats-view">
     <!-- Left column: chat list with search/filter and groups -->
     <div class="w-full max-w-md border-r border-default flex flex-col">
       <PageHeader :title="langStore.t('chats')" />
@@ -24,6 +24,10 @@
           <option value="resolved">{{ langStore.t('resolved') }}</option>
           <option value="idle">{{ langStore.t('idle') }}</option>
         </select>
+        <label class="flex items-center gap-1 text-sm">
+          <input type="checkbox" v-model="onlyMine" data-testid="filter-mine" />
+          {{ langStore.t('assign.toMe') }}
+        </label>
       </div>
 
       <SkeletonLoader v-if="isLoading" class="flex-1" />
@@ -39,6 +43,7 @@
               class="w-full flex justify-between items-center px-6 py-3 text-sm font-medium text-default hover:bg-hover focus:outline-none"
               @click="toggleGroup(item.status)"
               :aria-expanded="isGroupOpen(item.status).toString()"
+              :data-testid="`group-${item.status}`"
             >
               <span class="uppercase text-xs tracking-wide">
                 {{ statusLabel(item.status) }} ({{ groupedChats[item.status].length }})
@@ -59,9 +64,16 @@
             @keydown.enter="goToChat(item.chat.id)"
             role="button"
             tabindex="0"
-            :class="['chat-item group', { active: String(route.params.id) === String(item.chat.id) }]"
+            :data-testid="`chat-row-${item.chat.id}`"
+            :class="['chat-item group relative', { active: String(route.params.id) === String(item.chat.id) }]"
             :style="{ '--status-color': statusColor(item.chat.status) }"
           >
+            <AgentBadge
+              v-if="agentsById[item.chat.agentId]"
+              :agent="agentsById[item.chat.agentId]"
+              class="absolute top-1.5 right-1.5"
+              data-testid="agent-badge"
+            />
             <span
               class="status-dot mr-3"
               :style="{ backgroundColor: statusColor(item.chat.status) }"
@@ -76,6 +88,21 @@
               </p>
             </div>
             <div class="flex items-center space-x-2">
+              <span
+                v-if="item.chat.assignedTo"
+                class="assignee-badge"
+                :aria-label="langStore.t('assign.assignedTo', { name: item.chat.assignedTo.name })"
+              >
+                {{ initials(item.chat.assignedTo.name) }}
+              </span>
+              <span
+                v-if="chatStore.isSlaActive(item.chat)"
+                class="sla-chip"
+                :class="slaClass(item.chat)"
+                :aria-label="slaAria(item.chat)"
+              >
+                {{ formatSla(item.chat) }}
+              </span>
               <span
                 v-if="presenceCount(item.chat.id)"
                 class="presence-badge"
@@ -107,7 +134,11 @@ import apiClient from '@/api';
 import PageHeader from '@/components/PageHeader.vue';
 import VirtualList from '@/components/VirtualList.vue';
 import SkeletonLoader from '@/components/SkeletonLoader.vue';
+import AgentBadge from '@/components/AgentBadge.vue';
 import langStore from '@/stores/langStore';
+import { chatStore } from '@/stores/chatStore.js';
+import { settingsStore } from '@/stores/settingsStore.js';
+import { agentStore } from '@/stores/agentStore.js';
 import {
   statusColor,
   badgeColor,
@@ -119,9 +150,10 @@ import {
 const router = useRouter();
 const route = useRoute();
 
-// raw chat data
-const chats = ref([]);
+// chats from store
+const chats = computed(() => chatStore.state.chats);
 const isLoading = ref(true);
+const agentsById = computed(() => agentStore.state.agentsById);
 
 // search & filter
 const searchQuery = ref('');
@@ -132,6 +164,8 @@ watch(searchQuery, (v) => {
   searchTimer = setTimeout(() => (liveSearch.value = v), 200);
 });
 const selectedStatus = ref('');
+const onlyMine = ref(false);
+const meId = JSON.parse(localStorage.getItem('auth.user') || 'null')?.id || 'op1';
 
 // presence map
 const presenceMap = ref({});
@@ -150,7 +184,7 @@ let presenceTimer;
 async function fetchChats() {
   try {
     const res = await apiClient.get('/chats');
-    chats.value = res.data || [];
+    chatStore.mergePersisted(res.data || []);
   } catch (e) {
     console.error(e);
   }
@@ -158,6 +192,7 @@ async function fetchChats() {
 }
 
 onMounted(async () => {
+  await agentStore.fetchAgents();
   await fetchChats();
   await refreshPresence();
   presenceTimer = setInterval(refreshPresence, 2000);
@@ -172,18 +207,25 @@ onBeforeUnmount(() => {
 const filteredChats = computed(() => {
   const q = liveSearch.value.trim().toLowerCase();
   return chats.value.filter((c) => {
+    const agentName = agentsById.value[c.agentId]?.name?.toLowerCase() || '';
     const matchSearch =
       !q ||
       c.clientName.toLowerCase().includes(q) ||
-      c.lastMessage.toLowerCase().includes(q);
+      c.lastMessage.toLowerCase().includes(q) ||
+      String(c.id).toLowerCase().includes(q) ||
+      agentName.includes(q);
     const matchStatus = !selectedStatus.value || c.status === selectedStatus.value;
-    return matchSearch && matchStatus;
+    const matchMine = !onlyMine.value || c.assignedTo?.id === meId;
+    return matchSearch && matchStatus && matchMine;
   });
 });
 
 // grouping & sorting
 const groupOrder = ['live', 'attention', 'paused', 'resolved', 'idle'];
+const slaMinutes = computed(() => settingsStore.state.workspaceSettings.attentionSLA);
+
 const groupedChats = computed(() => {
+  chatStore.slaTick.value;
   const groups = {
     live: [],
     attention: [],
@@ -200,7 +242,16 @@ const groupedChats = computed(() => {
     groups[key].push(chat);
   });
   Object.keys(groups).forEach((k) => {
-    groups[k].sort((a, b) => chatTimestamp(b) - chatTimestamp(a));
+    if (k === 'attention') {
+      groups[k].sort((a, b) => {
+        const ra = chatStore.getSlaRemainingMs(a, slaMinutes.value);
+        const rb = chatStore.getSlaRemainingMs(b, slaMinutes.value);
+        if (!!b.slaBreached !== !!a.slaBreached) return a.slaBreached ? -1 : 1;
+        return ra - rb;
+      });
+    } else {
+      groups[k].sort((a, b) => chatTimestamp(b) - chatTimestamp(a));
+    }
   });
   return groups;
 });
@@ -272,6 +323,30 @@ function presenceCount(id) {
   return utilPresenceCount(presenceMap.value, id);
 }
 
+function initials(name) {
+  return name
+    .split(' ')
+    .map((s) => s.charAt(0).toUpperCase())
+    .slice(0, 2)
+    .join('');
+}
+
+function formatSla(chat) {
+  chatStore.slaTick.value;
+  return chatStore.formatSla(chatStore.getSlaRemainingMs(chat, slaMinutes.value));
+}
+
+function slaClass(chat) {
+  const ms = chatStore.getSlaRemainingMs(chat, slaMinutes.value);
+  if (chat.slaBreached || ms === 0) return 'danger';
+  if (ms <= 60_000) return 'warning';
+  return 'neutral';
+}
+
+function slaAria(chat) {
+  return langStore.t('sla.remaining', { time: formatSla(chat) });
+}
+
 function goToChat(id) {
   router.push(`/chats/${id}`);
 }
@@ -310,6 +385,7 @@ function formatChatTime(timeStr) {
   cursor: pointer;
   transition: background-color 0.15s ease;
   border-left: 2px solid transparent;
+  position: relative;
 }
 .chat-item:hover {
   background-color: var(--c-bg-hover);
@@ -317,6 +393,17 @@ function formatChatTime(timeStr) {
 .chat-item.active {
   background-color: var(--c-bg-hover);
   border-left-color: var(--status-color);
+}
+.assignee-badge {
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background-color: var(--c-bg-tertiary, #e5e7eb);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
 }
 .status-dot {
   width: 8px;
@@ -330,6 +417,18 @@ function formatChatTime(timeStr) {
   padding: 0.125rem 0.375rem;
   border-radius: 9999px;
   color: currentColor;
+}
+.sla-chip {
+  padding: 0 0.25rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+}
+.sla-chip.warning {
+  background-color: var(--status-color-paused);
+}
+.sla-chip.danger {
+  background-color: var(--status-color-attention);
+  color: #fff;
 }
 .bg-input {
   background-color: var(--c-bg-secondary);

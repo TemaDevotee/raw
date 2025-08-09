@@ -4,12 +4,18 @@ const STORAGE_KEY = 'settings.v1'
 
 const state = reactive({
   notificationsEnabled: false,
+  workspaceSettings: {
+    attentionSLA: 5,
+  },
 })
 
 function hydrate() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
     state.notificationsEnabled = !!saved.notificationsEnabled
+    if (saved.workspaceSettings && typeof saved.workspaceSettings.attentionSLA === 'number') {
+      state.workspaceSettings.attentionSLA = saved.workspaceSettings.attentionSLA
+    }
   } catch {
     /* ignore */
   }
@@ -17,9 +23,13 @@ function hydrate() {
 
 function persist() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      notificationsEnabled: state.notificationsEnabled,
-    }))
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        notificationsEnabled: state.notificationsEnabled,
+        workspaceSettings: { ...state.workspaceSettings },
+      }),
+    )
   } catch {
     /* ignore */
   }

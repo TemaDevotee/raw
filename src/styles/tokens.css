@@ -26,4 +26,60 @@
 
   --motion-fast: 120ms;
   --motion-normal: 160ms;
+
+  --agent-badge-size: 16px;
+  --agent-badge-size-sm: 14px;
+  --agent-badge-radius: 4px;
+  --agent-badge-border: 1px;
+  --agent-badge-shadow: var(--shadow-sm);
+}
+
+/* Trickster logo palettes */
+:root {
+  --logo-1: #345003;
+  --logo-2: #639405;
+  --logo-3: #834202;
+  --logo-4: #CD6502;
+}
+
+:root[data-theme="forest"] {
+  --logo-1: #345003;
+  --logo-2: #639405;
+  --logo-3: #834202;
+  --logo-4: #CD6502;
+}
+
+:root[data-theme="ice"] {
+  --logo-1: #979797;
+  --logo-2: #D6D6D6;
+  --logo-3: #77B4DA;
+  --logo-4: #A1DBFF;
+}
+
+:root[data-theme="violet"] {
+  --logo-1: #49207A;
+  --logo-2: #8A5DDB;
+  --logo-3: #7A124E;
+  --logo-4: #FF66B3;
+}
+
+:root[data-theme="sunset"] {
+  --logo-1: #8A3A00;
+  --logo-2: #FF9153;
+  --logo-3: #8A0039;
+  --logo-4: #FF6A88;
+}
+
+:root[data-theme="slate"] {
+  --logo-1: #434957;
+  --logo-2: #9AA3B2;
+  --logo-3: #0D5A58;
+  --logo-4: #42BFB6;
+}
+
+:root[data-theme="cyber"] {
+  --logo-1: #2C1E4A;
+  --logo-2: #7D5CFF;
+  --logo-3: #005B4A;
+  --logo-4: #40FFD9;
 }

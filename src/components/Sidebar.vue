@@ -4,11 +4,11 @@
     class="sidebar h-full flex flex-col transition-all duration-300 overflow-hidden"
     data-testid="sidebar"
   >
-    <!-- Top: brand (ссылка на home) и collapse toggle -->
+    <!-- Top: brand link and collapse toggle -->
     <div class="flex items-center justify-between py-4 pl-6 pr-4">
       <router-link to="/" class="flex items-center space-x-3" data-testid="brand-link">
-        <BrandLogo class="h-6 w-6 text-accent" data-testid="logo-3xtr" />
-        <span v-if="!collapsed" class="text-2xl font-bold whitespace-nowrap">Trickster</span>
+        <BrandTricksterMark v-if="collapsed" :size="24" />
+        <span v-else class="text-2xl font-bold whitespace-nowrap">Trickster</span>
       </router-link>
       <button
         @click="toggleCollapse"
@@ -23,7 +23,7 @@
       </button>
     </div>
 
-    <!-- Navigation: без Dashboard -->
+    <!-- Navigation: without Dashboard -->
     <nav id="sidebar-navigation" class="flex-1 mt-4" aria-label="Primary">
       <router-link
         v-for="item in navItems"
@@ -43,16 +43,12 @@
       </router-link>
     </nav>
 
-    <!-- Workspace switcher displayed only when multiple workspaces exist -->
-      <WorkspaceSwitcher />
-    </div>
-
-    <!-- Bottom controls: compact icon buttons in a single row.  Each control
-         uses consistent rounded styling and alignment.  When collapsed,
-         icons remain centred due to flex container. -->
-    <div class="pb-6 px-4 mt-auto">
-      <!-- Stack bottom controls vertically with equal spacing.  When the sidebar
-           is collapsed, centre the items horizontally. -->
+    <footer class="pb-6 px-4 mt-auto sidebar__footer">
+      <WorkspaceSwitcher
+        v-if="showSwitcher"
+        data-testid="workspace-switcher"
+        class="mb-4"
+      />
       <div class="flex flex-col gap-2" :class="{ 'items-center': collapsed }">
         <ThemeSwitcher />
         <LanguageSwitcher />
@@ -74,7 +70,7 @@
           <span class="material-icons">logout</span>
         </button>
       </div>
-    </div>
+    </footer>
   </div>
   <ConfirmDialog
     v-if="showConfirm"
@@ -97,7 +93,7 @@ import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 import WorkspaceSwitcher from '@/components/WorkspaceSwitcher.vue'
 import { workspaceStore } from '@/stores/workspaceStore'
-import BrandLogo from '@/assets/brand/3xtr.svg?component'
+import BrandTricksterMark from '@/components/BrandTricksterMark.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { orchestratedLogout, getLogoutRisk } from '@/stores/logout.js'
 
@@ -120,7 +116,9 @@ const isActiveRoute = (to) => {
 
 const t = langStore.t
 
-const showSwitcher = computed(() => workspaceStore.hasMultiple())
+const showSwitcher = computed(
+  () => workspaceStore.hasMultiple?.() ?? (workspaceStore.workspaces?.length > 1),
+)
 </script>
 
 <style scoped>

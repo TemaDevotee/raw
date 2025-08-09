@@ -1,10 +1,13 @@
 import { reactive } from 'vue'
+import apiClient from '@/api'
 
 const STORAGE_KEY = 'agent.settings.v1'
 
 const state = reactive({
   manualApprove: false,
+  autoReturnMinutes: 0,
   knowledgeLinks: [],
+  agentsById: {},
 })
 
 function hydrate() {
@@ -13,11 +16,13 @@ function hydrate() {
     try {
       const parsed = JSON.parse(raw)
       state.manualApprove = !!parsed.manualApprove
+      state.autoReturnMinutes = Number(parsed.autoReturnMinutes) || 0
       state.knowledgeLinks = Array.isArray(parsed.knowledgeLinks)
         ? parsed.knowledgeLinks
         : []
     } catch {
       state.manualApprove = false
+      state.autoReturnMinutes = 0
       state.knowledgeLinks = []
     }
   }
@@ -28,6 +33,7 @@ function persist() {
     STORAGE_KEY,
     JSON.stringify({
       manualApprove: state.manualApprove,
+      autoReturnMinutes: state.autoReturnMinutes,
       knowledgeLinks: state.knowledgeLinks,
     }),
   )
@@ -35,6 +41,11 @@ function persist() {
 
 function setManualApprove(val) {
   state.manualApprove = !!val
+  persist()
+}
+
+function setAutoReturnMinutes(val) {
+  state.autoReturnMinutes = Number(val) || 0
   persist()
 }
 
@@ -92,6 +103,22 @@ function effectiveKnowledge() {
     .sort((a, b) => (a.params.priority ?? 0) - (b.params.priority ?? 0))
 }
 
+async function fetchAgents() {
+  try {
+    const res = await apiClient.get('/agents')
+    state.agentsById = {}
+    ;(res.data || []).forEach((a) => {
+      state.agentsById[a.id] = a
+    })
+  } catch {
+    state.agentsById = {}
+  }
+}
+
+function agentById(id) {
+  return state.agentsById[id]
+}
+
 hydrate()
 
 export const agentStore = {
@@ -99,10 +126,13 @@ export const agentStore = {
   hydrate,
   persist,
   setManualApprove,
+  setAutoReturnMinutes,
   setKnowledgeLinks,
   addKnowledgeLink,
   updateKnowledgeLink,
   removeKnowledgeLink,
   reorderKnowledgeLinks,
   effectiveKnowledge,
+  fetchAgents,
+  agentById,
 }

@@ -31,13 +31,16 @@ export function groupAndSort(chats) {
   return groups
 }
 
-export function filterChatsList(chats, status = '', query = '') {
+export function filterChatsList(chats, status = '', query = '', agentsById = {}) {
   const q = query.trim().toLowerCase()
   return chats.filter((c) => {
+    const agentName = agentsById[c.agentId]?.name?.toLowerCase() || ''
     const matchSearch =
       !q ||
       c.clientName.toLowerCase().includes(q) ||
-      c.lastMessage.toLowerCase().includes(q)
+      c.lastMessage.toLowerCase().includes(q) ||
+      String(c.id).toLowerCase().includes(q) ||
+      agentName.includes(q)
     const matchStatus = !status || c.status === status
     return matchSearch && matchStatus
   })
