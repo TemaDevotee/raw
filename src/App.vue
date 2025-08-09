@@ -8,14 +8,16 @@
       ]"
     />
     <main class="flex-1 flex flex-col overflow-y-auto" @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
-      <!-- Hamburger for mobile -->
-      <header class="sm:hidden p-4">
+      <!-- Top bar -->
+      <header class="flex justify-between items-center p-4">
         <button
           @click="mobileSidebarOpen = true"
-          class="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+          class="sm:hidden p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
         >
           <span class="material-icons">menu</span>
         </button>
+        <div class="flex-1"></div>
+        <QuotaBar />
       </header>
       <RouterView />
     </main>
@@ -36,6 +38,7 @@ import { RouterView } from 'vue-router'
 import Sidebar from '@/components/Sidebar.vue'
 import SidePanel from '@/components/SidePanel.vue'
 import ToastNotification from '@/components/ToastNotification.vue'
+import QuotaBar from '@/components/QuotaBar.vue'
 
 const mobileSidebarOpen = ref(false)
 let startX = 0, startY = 0, deltaX = 0, swiping = false;

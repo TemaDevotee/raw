@@ -14,18 +14,18 @@ app.use(router)
 // Global error handling to prevent white-screen on runtime errors
 app.config.errorHandler = (err, instance, info) => {
   console.error('[Vue error]', err, info);
-  try { showToast(err?.message || 'Unexpected error', 'error', 5000); } catch (_) {}
+  try { showToast(err?.message || 'Unexpected error', 'error', 5000); } catch (_) { /* noop */ }
 };
 window.addEventListener('error', (e) => {
   console.error('[Window error]', e.error || e);
-  try { showToast(e?.message || 'Unexpected error', 'error', 5000); } catch (_) {}
+  try { showToast(e?.message || 'Unexpected error', 'error', 5000); } catch (_) { /* noop */ }
 });
 window.addEventListener('unhandledrejection', (e) => {
   console.error('[Unhandled rejection]', e.reason || e);
-  try { 
+  try {
     const msg = (e?.reason && (e.reason.message || e.reason.toString())) || 'Unexpected async error';
-    showToast(msg, 'error', 5000); 
-  } catch (_) {}
+    showToast(msg, 'error', 5000);
+  } catch (_) { /* noop */ }
 });
 
 // Tooltip directive

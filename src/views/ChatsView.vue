@@ -36,6 +36,7 @@
         class="flex-1 border-t border-default"
         :items="virtualItems"
         :item-height="ITEM_HEIGHT"
+        data-testid="chats-groups"
       >
         <template #default="{ item }">
           <div v-if="item.type === 'header'" class="border-t border-default">
@@ -103,12 +104,13 @@
               >
                 {{ formatSla(item.chat) }}
               </span>
-              <span
-                v-if="presenceCount(item.chat.id)"
-                class="presence-badge"
-                :style="{ backgroundColor: badgeColor(item.chat.status) }"
-                >{{ presenceCount(item.chat.id) }}</span
-              >
+              <StackedAvatars
+                v-if="presenceStore.count(item.chat.id)"
+                :participants="presenceStore.getParticipants(item.chat.id)"
+                :overflow-text="langStore.t('presence.more')"
+                :label="langStore.t('presence.participants')"
+                :testid="`presence-stack-row-${item.chat.id}`"
+              />
               <span class="text-xs text-muted">{{ formatChatTime(item.chat.time) }}</span>
             </div>
           </div>
@@ -139,12 +141,13 @@ import langStore from '@/stores/langStore';
 import { chatStore } from '@/stores/chatStore.js';
 import { settingsStore } from '@/stores/settingsStore.js';
 import { agentStore } from '@/stores/agentStore.js';
+import { presenceStore } from '@/stores/presenceStore.js';
+import StackedAvatars from '@/components/StackedAvatars.vue';
 import {
   statusColor,
   badgeColor,
   chatTimestamp,
   GROUPS_KEY,
-  presenceCount as utilPresenceCount,
 } from './chatsUtils.js';
 
 const router = useRouter();
@@ -167,20 +170,6 @@ const selectedStatus = ref('');
 const onlyMine = ref(false);
 const meId = JSON.parse(localStorage.getItem('auth.user') || 'null')?.id || 'op1';
 
-// presence map
-const presenceMap = ref({});
-
-async function refreshPresence() {
-  try {
-    const res = await apiClient.get('/presence');
-    presenceMap.value = res.data || {};
-  } catch {
-    // ignore
-  }
-}
-
-let presenceTimer;
-
 async function fetchChats() {
   try {
     const res = await apiClient.get('/chats');
@@ -194,13 +183,13 @@ async function fetchChats() {
 onMounted(async () => {
   await agentStore.fetchAgents();
   await fetchChats();
-  await refreshPresence();
-  presenceTimer = setInterval(refreshPresence, 2000);
+  await presenceStore.hydrate(chats.value.map((c) => c.id));
+  presenceStore.poll();
   restoreGroups();
 });
 
 onBeforeUnmount(() => {
-  clearInterval(presenceTimer);
+  presenceStore.stop();
 });
 
 // filtering
@@ -319,10 +308,6 @@ function statusAria(status) {
   return `${langStore.t('statusLabel')}: ${tStatus(status)}`
 }
 
-function presenceCount(id) {
-  return utilPresenceCount(presenceMap.value, id);
-}
-
 function initials(name) {
   return name
     .split(' ')
@@ -410,13 +395,6 @@ function formatChatTime(timeStr) {
   height: 8px;
   border-radius: 9999px;
   flex-shrink: 0;
-}
-.presence-badge {
-  font-size: 10px;
-  line-height: 1;
-  padding: 0.125rem 0.375rem;
-  border-radius: 9999px;
-  color: currentColor;
 }
 .sla-chip {
   padding: 0 0.25rem;

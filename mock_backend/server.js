@@ -19,6 +19,8 @@ const workspacesRoutes = require('./routes/workspaces');
 const chatsRoutes = require('./routes/chats');
 const teamsRoutes = require('./routes/teams');
 const connectionsRoutes = require('./routes/connections');
+const usageRoutes = require('./routes/usage');
+const presenceRoutes = require('./routes/presence');
 
 const app = express();
 const PORT = 3001;
@@ -34,6 +36,8 @@ app.use('/api/workspaces', workspacesRoutes);
 app.use('/api/chats', chatsRoutes);
 app.use('/api/teams', teamsRoutes);
 app.use('/api/connections', connectionsRoutes);
+app.use('/api/usage', usageRoutes);
+app.use('/api', presenceRoutes);
 
 // Keep the agents and knowledge routes in this file for now.  They
 // operate on the top‑level collections in db.json.  If needed they

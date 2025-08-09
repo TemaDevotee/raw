@@ -343,7 +343,7 @@ async function returnToAgentAction(id) {
   clearAutoReturn(id)
   try {
     await chatsApi.returnToAgent(id)
-  } catch {}
+  } catch { /* noop */ }
   setControl(id, 'agent')
   chat.autoReturnAt = null
   persist()

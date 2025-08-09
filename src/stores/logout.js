@@ -73,7 +73,7 @@ export async function orchestratedLogout({ force = false } = {}) {
 
     try {
       await apiClient.post('/api/auth/logout')
-    } catch {}
+    } catch { /* noop */ }
   } finally {
     running = false
     window.location.assign('/login.html')

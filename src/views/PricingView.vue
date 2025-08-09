@@ -11,6 +11,8 @@
     <p class="text-sm text-gray-600 dark:text-gray-300 mb-8">
       {{ t('plansSubtitle') }}
     </p>
+    <button class="mb-4 underline" @click="showPurchase=true">{{ t('tokens.purchase') }}</button>
+    <PurchaseDialog v-if="showPurchase" @close="showPurchase=false" />
     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
       <div
         v-for="plan in plans"
@@ -49,7 +51,10 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { usePricing } from './pricingLogic'
+import PurchaseDialog from '@/components/PurchaseDialog.vue'
 
 const { plans, currentId, isUpdating, pendingId, goBack, choose, t } = usePricing()
+const showPurchase = ref(false)
 </script>

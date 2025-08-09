@@ -11,7 +11,7 @@ export default defineConfig({
   reporter: [['list'], ['html', { open: 'never' }]],
   webServer: {
     command: 'npm run preview',
-    url: 'http://localhost:5173',
+    port: 5173,
     timeout: 60_000,
     reuseExistingServer: !process.env.CI,
   },
