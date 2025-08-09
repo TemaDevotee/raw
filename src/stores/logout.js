@@ -48,6 +48,8 @@ export async function orchestratedLogout({ force = false } = {}) {
     workspaceStore.persist()
 
     agentStore.state.manualApprove = false
+    agentStore.state.knowledgeLinks = []
+    agentStore.persist()
     langStore.setLang('en')
 
     themeStore.currentTheme = 'classic'

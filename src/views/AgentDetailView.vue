@@ -91,6 +91,123 @@
           </div>
         </dl>
       </div>
+      <div class="bg-secondary p-6 rounded-xl border border-default space-y-4 mt-6">
+        <h3 class="text-xl font-semibold mb-2">{{ langStore.t('agent.knowledge.title') }}</h3>
+        <p class="text-sm text-muted mb-4">
+          {{ langStore.t('agent.knowledge.help') }}
+        </p>
+        <div class="flex flex-wrap items-center gap-2 mb-4">
+          <input
+            v-model="knowledge.search"
+            :placeholder="langStore.t('agent.knowledge.searchPlaceholder')"
+            class="form-input"
+          />
+          <select v-model="knowledge.selectedId" class="form-select">
+            <option value="" disabled>{{ langStore.t('agent.knowledge.addCollection') }}</option>
+            <option
+              v-for="c in knowledge.availableCollections"
+              :key="c.id"
+              :value="c.id"
+            >
+              {{ c.name }}
+            </option>
+          </select>
+          <button
+            class="btn-secondary"
+            :disabled="!knowledge.selectedId"
+            @click="knowledge.addSelected"
+          >
+            {{ langStore.t('agent.knowledge.addCollection') }}
+          </button>
+        </div>
+        <div v-if="knowledge.links.length === 0" class="text-muted">
+          {{ langStore.t('knowledgeNoSources') }}
+        </div>
+        <table v-else class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-muted">
+              <th class="py-1">{{ langStore.t('agent.knowledge.priority') }}</th>
+              <th class="py-1">{{ langStore.t('knowledgeCollections') }}</th>
+              <th class="py-1">{{ langStore.t('agent.knowledge.enabled') }}</th>
+              <th class="py-1">{{ langStore.t('agent.knowledge.topK') }}</th>
+              <th class="py-1">{{ langStore.t('agent.knowledge.maxChunks') }}</th>
+              <th class="py-1">{{ langStore.t('agent.knowledge.citations') }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="(link, idx) in knowledge.links"
+              :key="link.collectionId"
+              :class="{
+                'text-muted':
+                  !knowledgeStore.state.collections.find((c) => c.id === link.collectionId),
+              }"
+            >
+              <td class="py-1">
+                <button class="material-icons-outlined text-base" @click="knowledge.moveUp(idx)">
+                  arrow_upward
+                </button>
+                <button class="material-icons-outlined text-base" @click="knowledge.moveDown(idx)">
+                  arrow_downward
+                </button>
+              </td>
+              <td class="py-1">
+                {{
+                  knowledgeStore.state.collections.find((c) => c.id === link.collectionId)?.name ||
+                    langStore.t('agent.knowledge.missingCollection')
+                }}
+              </td>
+              <td class="py-1">
+                <input type="checkbox" v-model="link.enabled" />
+              </td>
+              <td class="py-1">
+                <input
+                  type="number"
+                  class="form-input w-20"
+                  v-model.number="link.params.topK"
+                  min="1"
+                  max="20"
+                />
+              </td>
+              <td class="py-1">
+                <input
+                  type="number"
+                  class="form-input w-24"
+                  v-model.number="link.params.maxChunks"
+                  min="50"
+                  max="2000"
+                  step="50"
+                />
+              </td>
+              <td class="py-1">
+                <input type="checkbox" v-model="link.params.citations" />
+              </td>
+              <td class="py-1">
+                <button
+                  class="material-icons-outlined text-base text-[var(--c-text-danger)]"
+                  @click="knowledge.removeLink(idx)"
+                >
+                  delete
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="flex justify-end mt-4">
+          <button
+            class="btn-primary"
+            :disabled="!knowledge.isValid || knowledge.saving"
+            @click="knowledge.save"
+          >
+            {{
+              knowledge.saving
+                ? langStore.t('agent.knowledge.saving')
+                : langStore.t('agent.knowledge.save')
+            }}
+          </button>
+        </div>
+      </div>
     </template>
     <template v-else-if="activeTab === 'testSandbox'">
       <div class="flex flex-col h-[500px] border border-default rounded-lg overflow-hidden">
@@ -142,6 +259,9 @@ import apiClient from '@/api';
 import { showToast } from '@/stores/toastStore';
 import langStore from '@/stores/langStore';
 import { agentStore } from '@/stores/agentStore.js';
+import { knowledgeStore } from '@/stores/knowledgeStore.js';
+import { workspaceStore } from '@/stores/workspaceStore.js';
+import { useAgentKnowledge } from './agentKnowledgeLogic.js';
 import AgentForm from '@/components/AgentForm.vue';
 
 const route = useRoute();
@@ -165,6 +285,11 @@ async function fetchAgent() {
     const res = await apiClient.get(`/agents/${agentId}`);
     agent.value = res.data;
     agentStore.setManualApprove(!!res.data.approveRequired);
+    agentStore.setKnowledgeLinks(res.data.knowledgeLinks || []);
+    knowledge.links.value = agentStore.state.knowledgeLinks.map((l) => ({
+      ...l,
+      params: { ...l.params },
+    }));
   } catch (e) {
     console.error(e);
   }
@@ -181,6 +306,9 @@ async function fetchKnowledgeGroups() {
   }
 }
 onMounted(fetchKnowledgeGroups);
+onMounted(() => knowledgeStore.fetchCollections(workspaceStore.state.currentWorkspaceId));
+
+const knowledge = useAgentKnowledge(agentId);
 
 // Utility: return channel icon name based on channel key
 function getChannelIcon(channel) {
