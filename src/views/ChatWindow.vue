@@ -105,27 +105,13 @@
           <ActionMenu :items="assignMenu">
             <Button variant="secondary" size="sm" data-testid="assign-menu-btn">⋮</Button>
           </ActionMenu>
-          <div v-if="displayAvatars.length" class="flex -space-x-2 items-center" data-testid="presence-stack">
-            <button
-              v-for="p in displayAvatars"
-              :key="p.userId"
-              class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium border-2 border-white dark:border-gray-800"
-              :style="{ backgroundColor: p.color }"
-              :title="p.name"
-              :aria-label="`${langStore.t('present')}: ${p.name}`"
-            >
-              <img v-if="p.avatar" :src="p.avatar" alt="" class="w-full h-full rounded-full" />
-              <span v-else>{{ p.initials }}</span>
-            </button>
-            <div
-              v-if="extraCount > 0"
-              class="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 text-xs flex items-center justify-center font-medium border-2 border-white dark:border-gray-800"
-              :title="extraNames"
-              :aria-label="langStore.t('moreParticipants')"
-            >
-              +{{ extraCount }}
-            </div>
-          </div>
+          <StackedAvatars
+            v-if="presenceStore.count(chatId)"
+            :participants="presenceStore.getParticipants(chatId)"
+            :overflow-text="langStore.t('presence.more')"
+            :label="langStore.t('presence.participants')"
+            testid="presence-stack-header"
+          />
           <div v-if="devCitations" class="flex items-center gap-1 ml-2">
             <input type="checkbox" v-model="showCitations" class="h-3 w-3" />
             <span class="text-xs">{{ langStore.t('showCitations') }}</span>
@@ -216,7 +202,10 @@
       >
         <div :class="messageBubbleClasses(msg.sender)">
           <p class="text-sm whitespace-pre-wrap">{{ msg.text }}</p>
-          <span class="text-xs block mt-1">{{ formatMessageTime(msg.time) }}</span>
+          <span class="text-xs block mt-1 flex items-center gap-1">
+            {{ formatMessageTime(msg.time) }}
+            <TokenBadge v-if="msg.tokenUsage" :count="msg.tokenUsage.totalTokens" />
+          </span>
           <span v-if="msg.outbox" class="text-xs block mt-1">
             {{ statusLabelMsg(msg.outbox.status) }}
             <button
@@ -258,6 +247,9 @@
           </Button>
         </div>
       </div>
+      <div class="text-xs text-muted" data-testid="composer-estimate">
+        {{ langStore.t('tokens.estimate', { count: draftEstimate }) }}
+      </div>
     </div>
   </div>
 </template>
@@ -273,11 +265,14 @@ import {
   statusColor,
   badgeColor,
   statusGradient,
-  computePresenceDisplay,
   updateChatStatus,
 } from './chatsUtils.js';
 import { useStatusMenu } from './statusMenu.js';
 import { chatStore } from '@/stores/chatStore.js';
+import usageStore from '@/stores/usageStore.js'
+import { estimateTokensForText } from '@/utils/tokenEstimate.js'
+import TokenBadge from '@/components/TokenBadge.vue'
+import StackedAvatars from '@/components/StackedAvatars.vue'
 import { settingsStore } from '@/stores/settingsStore.js';
 import { typingStore } from '@/stores/typingStore.js';
 import { outboxStore } from '@/stores/outboxStore.js';
@@ -286,49 +281,17 @@ import { typingText } from '@/utils/typing.js';
 import ActionMenu from '@/components/ui/ActionMenu.vue';
 import { presenceStore } from '@/stores/presenceStore.js';
 
-
-const presenceList = ref([]);
 const devCitations = import.meta.env.DEV;
 const showCitations = ref(true);
 const currentUser =
   JSON.parse(localStorage.getItem('auth.user') || sessionStorage.getItem('auth.user') || 'null') ||
   { id: 1 };
-async function refreshPresence() {
-  try {
-    const res = await apiClient.get('/presence');
-    const list = res.data[String(chatId)] || [];
-    presenceList.value = list;
-  } catch {}
-}
-const busyByOthers = computed(() => presenceList.value.some((p) => p.userId !== currentUser.id));
-const canInterfere = computed(() => chat.value && chatStore.canInterfere(chat.value, currentUser.id) && !busyByOthers.value);
-function avatarColor(id) {
-  const num = typeof id === 'number' ? id : Array.from(String(id)).reduce((a, c) => a + c.charCodeAt(0), 0);
-  const hue = (num * 47) % 360;
-  return `hsl(${hue},70%,55%)`;
-}
-function initials(name) {
-  return name
-    .split(' ')
-    .map((s) => s.charAt(0).toUpperCase())
-    .slice(0, 2)
-    .join('');
-}
-const presenceDisplay = computed(() => computePresenceDisplay(presenceList.value, currentUser.id));
-const displayAvatars = computed(() =>
-  presenceDisplay.value.visible.map((p) => ({
-    ...p,
-    initials: (p.name || '?')
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .slice(0, 2)
-      .toUpperCase(),
-    color: avatarColor(p.userId),
-  })),
+const busyByOthers = computed(() =>
+  presenceStore.getParticipants(chatId).some((p) => p.id !== currentUser.id)
 );
-const extraCount = computed(() => presenceDisplay.value.extra);
-const extraNames = computed(() => presenceDisplay.value.others.map((p) => p.name).join(', '));
+const canInterfere = computed(
+  () => chat.value && chatStore.canInterfere(chat.value, currentUser.id) && !busyByOthers.value
+);
 const assignMenu = computed(() => {
   const items = [];
   if (chat.value) {
@@ -349,8 +312,29 @@ const assignMenu = computed(() => {
   return items;
 });
 const messages = ref([]);
+watch(messages, (arr, prev) => {
+  if (arr.length > prev.length) {
+    const msg = arr[arr.length - 1];
+    if (msg.sender === 'agent' && !msg.tokenUsage) {
+      const outputTokens = estimateTokensForText(msg.text);
+      const inputTokens = 0;
+      msg.tokenUsage = {
+        inputTokens,
+        outputTokens,
+        totalTokens: inputTokens + outputTokens,
+      };
+      usageStore.record({
+        chatId,
+        agentId: chat.value?.agentId,
+        messageId: `m_${Date.now()}`,
+        direction: 'agent',
+        inputTokens,
+        outputTokens,
+      });
+    }
+  }
+});
 const messagesContainer = ref(null);
-let presenceInterval;
 watch(messages, () => {
   nextTick(() => {
     const el = messagesContainer.value;
@@ -363,6 +347,7 @@ const chatId = route.params.id;
 
 const chat = ref(null);
 const newMessage = ref('');
+const draftEstimate = computed(() => estimateTokensForText(newMessage.value));
 const savedAt = ref(null);
 const drafts = computed(() => chatStore.state.drafts[chatId] || []);
 const draftsExpanded = ref(false);
@@ -472,7 +457,7 @@ const headerStyle = computed(() => ({
 const typingLine = computed(() => {
   const ids = typingStore.getTyping(chatId).filter((id) => id !== currentUser.id);
   const names = ids
-    .map((id) => presenceList.value.find((p) => p.userId === Number(id))?.name)
+    .map((id) => presenceStore.getParticipants(chatId).find((p) => p.id === String(id))?.name)
     .filter(Boolean);
   if (typingStore.isAgentDrafting(chatId)) return langStore.t('agentDrafting');
   return typingText(names);
@@ -501,28 +486,8 @@ onMounted(async () => {
   await fetchChat();
   await fetchAgents();
   await fetchDrafts();
-  await refreshPresence();
-  presenceInterval = setInterval(refreshPresence, 2000);
-  // Presence: join and keepalive loop
-  try {
-    const user =
-      JSON.parse(localStorage.getItem('auth.user') || sessionStorage.getItem('auth.user') || 'null') ||
-      { id: 1, name: 'Operator' };
-    await apiClient.post('/presence/enter', {
-      chatId,
-      userId: user.id,
-      name: user.name || 'Operator',
-    });
-    presenceTimer = setInterval(async () => {
-      try {
-        await apiClient.post('/presence/enter', {
-          chatId,
-          userId: user.id,
-          name: user.name || 'Operator',
-        });
-      } catch {}
-    }, 15000);
-  } catch {}
+  await presenceStore.hydrate([chatId]);
+  await presenceStore.join(chatId, currentUser);
 });
 
 async function fetchAgents() {
@@ -591,14 +556,8 @@ async function sendMessage() {
   savedAt.value = null;
 }
 
-let presenceTimer;
-onBeforeUnmount(async () => {
-  try {
-    const user = JSON.parse(localStorage.getItem('auth.user') || sessionStorage.getItem('auth.user') || 'null') || { id: 1 };
-    await apiClient.post('/presence/leave', { chatId, userId: user.id });
-  } catch {}
-  clearInterval(presenceTimer);
-  clearInterval(presenceInterval);
+onBeforeUnmount(() => {
+  presenceStore.leave(chatId, currentUser);
   document.removeEventListener('click', statusMenu.onDocumentClick);
 });
 

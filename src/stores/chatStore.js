@@ -5,6 +5,7 @@ import * as chatsApi from '@/api/chats'
 import langStore from '@/stores/langStore.js'
 import { settingsStore } from '@/stores/settingsStore.js'
 import { agentStore } from '@/stores/agentStore.js'
+import { isE2E } from '@/utils/e2e'
 
 const state = reactive({
   drafts: {},
@@ -102,7 +103,7 @@ function handleStatusChange(chat, prev) {
 }
 
 function startSlaTimer() {
-  if (slaTimer) return
+  if (isE2E || slaTimer) return
   slaTimer = setInterval(() => {
     slaTick.value++
     const minutes = settingsStore.state.workspaceSettings.attentionSLA
@@ -343,7 +344,7 @@ async function returnToAgentAction(id) {
   clearAutoReturn(id)
   try {
     await chatsApi.returnToAgent(id)
-  } catch {}
+  } catch { /* noop */ }
   setControl(id, 'agent')
   chat.autoReturnAt = null
   persist()
@@ -370,6 +371,7 @@ function cancelAutoReturn(id) {
 }
 
 function armAutoReturn(chat) {
+  if (isE2E) return
   clearAutoReturn(chat.id)
   const fireMs = Date.parse(chat.autoReturnAt) - Date.now()
   if (fireMs <= 0) return

@@ -8,6 +8,43 @@ router.get('/', (req, res) => {
   res.json(db.account);
 });
 
+router.get('/usage', (req, res) => {
+  const db = ensureScopes(readDb());
+  const a = db.account;
+  const remainingInPeriod = Math.max(0, a.includedMonthlyTokens - a.usedThisPeriod);
+  const totalRemaining = remainingInPeriod + a.topupBalance;
+  res.json({
+    plan: a.plan,
+    periodStart: a.periodStart,
+    periodEnd: a.periodEnd,
+    includedMonthlyTokens: a.includedMonthlyTokens,
+    usedThisPeriod: a.usedThisPeriod,
+    topupBalance: a.topupBalance,
+    remainingInPeriod,
+    totalRemaining,
+  });
+});
+
+router.post('/purchase', (req, res) => {
+  const db = ensureScopes(readDb());
+  const { tokens } = req.body || {};
+  db.account.topupBalance += tokens || 0;
+  const a = db.account;
+  const remainingInPeriod = Math.max(0, a.includedMonthlyTokens - a.usedThisPeriod);
+  const totalRemaining = remainingInPeriod + a.topupBalance;
+  writeDb(db);
+  res.json({
+    plan: a.plan,
+    periodStart: a.periodStart,
+    periodEnd: a.periodEnd,
+    includedMonthlyTokens: a.includedMonthlyTokens,
+    usedThisPeriod: a.usedThisPeriod,
+    topupBalance: a.topupBalance,
+    remainingInPeriod,
+    totalRemaining,
+  });
+});
+
 // Update a team member's role
 router.patch('/team/:memberId', (req, res) => {
   const db = ensureScopes(readDb());

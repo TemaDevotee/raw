@@ -7,8 +7,6 @@ import {
   filterChatsList,
   toggleGroupState,
   restoreGroupState,
-  presenceCount,
-  computePresenceDisplay,
   updateChatStatus,
   GROUPS_KEY,
 } from '../chatsUtils.js'
@@ -82,25 +80,6 @@ describe('chats utils', () => {
     expect(restored).toEqual({ live: true })
   })
 
-  it('counts presence correctly', () => {
-    const map = { '1': [1, 2], '2': [] }
-    expect(presenceCount(map, 1)).toBe(2)
-    expect(presenceCount(map, 2)).toBe(0)
-  })
-
-  it('computes presence display with extras and ordering', () => {
-    const list = [
-      { userId: 1, name: 'Alice' },
-      { userId: 2, name: 'Bob' },
-      { userId: 3, name: 'Cara' },
-      { userId: 4, name: 'Dan' },
-      { userId: 2, name: 'Bob' },
-    ]
-    const { visible, extra } = computePresenceDisplay(list, 2)
-    expect(visible.map((p) => p.userId)).toEqual([2, 1, 3])
-    expect(extra).toBe(1)
-  })
-
   it('optimistically updates status and rolls back on failure', async () => {
     const chat = { id: 5, status: 'live' }
     const api = { post: vi.fn().mockRejectedValue(new Error('fail')) }
@@ -122,7 +101,7 @@ describe('chats utils', () => {
   it('chat window template exposes menu and presence roles', () => {
     const src = readFileSync(resolve('src/views/ChatWindow.vue'), 'utf8')
     expect(src).toMatch(/role="menu"/)
-    expect(src).toMatch(/data-testid="presence-stack"/)
+    expect(src).toMatch(/testid="presence-stack-header"/)
   })
 })
 

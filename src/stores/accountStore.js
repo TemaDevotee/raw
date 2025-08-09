@@ -47,7 +47,7 @@ function hydrate() {
       if (plans.some((p) => p.id === parsed.currentPlanId)) {
         state.currentPlanId = parsed.currentPlanId
       }
-    } catch (_) {}
+    } catch (_) { /* noop */ }
   }
 }
 

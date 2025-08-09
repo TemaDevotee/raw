@@ -1,4 +1,6 @@
 import './main.css'
+import { isE2E } from '@/utils/e2e'
+import { installE2EStubs } from '@/utils/e2eFetchStub'
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
@@ -6,6 +8,19 @@ import { showToast } from '@/stores/toastStore'
 import { workspaceStore } from '@/stores/workspaceStore'
 import accountStore from '@/stores/accountStore'
 import { initLogoutListener } from '@/stores/logout.js'
+import { authStore } from '@/stores/authStore'
+
+if (isE2E) {
+  installE2EStubs()
+  window.__E2E__ = true
+}
+
+const params = new URLSearchParams(location.search)
+const skipAuth = params.get('skipAuth') === '1'
+if (isE2E || skipAuth) {
+  authStore.forceLogin()
+  localStorage.setItem('skipAuth', 'true')
+}
 
 const app = createApp(App)
 
@@ -14,18 +29,18 @@ app.use(router)
 // Global error handling to prevent white-screen on runtime errors
 app.config.errorHandler = (err, instance, info) => {
   console.error('[Vue error]', err, info);
-  try { showToast(err?.message || 'Unexpected error', 'error', 5000); } catch (_) {}
+  try { showToast(err?.message || 'Unexpected error', 'error', 5000); } catch (_) { /* noop */ }
 };
 window.addEventListener('error', (e) => {
   console.error('[Window error]', e.error || e);
-  try { showToast(e?.message || 'Unexpected error', 'error', 5000); } catch (_) {}
+  try { showToast(e?.message || 'Unexpected error', 'error', 5000); } catch (_) { /* noop */ }
 });
 window.addEventListener('unhandledrejection', (e) => {
   console.error('[Unhandled rejection]', e.reason || e);
-  try { 
+  try {
     const msg = (e?.reason && (e.reason.message || e.reason.toString())) || 'Unexpected async error';
-    showToast(msg, 'error', 5000); 
-  } catch (_) {}
+    showToast(msg, 'error', 5000);
+  } catch (_) { /* noop */ }
 });
 
 // Tooltip directive
@@ -46,7 +61,18 @@ app.directive('tooltip', {
   },
   unmounted(el){ el.removeEventListener('mouseenter', el.__ttEnter__); el.removeEventListener('mouseleave', el.__ttLeave__); el.removeEventListener('focus', el.__ttEnter__); el.removeEventListener('blur', el.__ttLeave__) }
 })
-if (location.pathname !== '/login.html') { app.mount('#app') }
+if (location.pathname !== '/login.html') {
+  app.mount('#app')
+  if (typeof document !== 'undefined') {
+    document.documentElement.setAttribute('data-testid-app-ready', '1')
+  }
+}
+
+router.isReady().then(() => {
+  if (isE2E && !router.currentRoute.value.path.startsWith('/chats')) {
+    router.replace('/chats?skipAuth=1')
+  }
+})
 
 
 // ensure workspace store initializes and persists

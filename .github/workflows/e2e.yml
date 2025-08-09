@@ -9,6 +9,8 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    env:
+      VITE_E2E: 'true'
 
     steps:
       - name: Checkout
@@ -20,28 +22,18 @@ jobs:
           node-version: 20
           cache: npm
 
-      # Use npm ci when lockfile exists; otherwise fall back to npm install
-      - name: Install deps (ci if lockfile, else install)
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci --no-audit --no-fund
-          else
-            npm install --no-audit --no-fund
-          fi
+      - name: Install deps
+        run: npm ci --no-audit --no-fund || npm i --no-audit --no-fund
 
-      # In some runners Playwright browser download is blocked; don't fail the job because of it
       - name: Install Playwright browsers (best-effort)
-        run: npx playwright install --with-deps
-        continue-on-error: true
+        run: npx playwright install --with-deps || echo "skip"
 
-      - name: Build app
-        run: npm run build
+      - name: Start dev server
+        run: npm run dev:e2e & npx wait-on http://127.0.0.1:5173
 
-      # This script already checks for @playwright/test and skips with exit 0 when missing
-      - name: Run e2e tests (skips if Playwright not available)
+      - name: Run e2e tests
         run: npm run e2e
 
-      # Upload report if it exists
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4

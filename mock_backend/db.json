@@ -1,8 +1,14 @@
 {
   "account": {
+    "id": "acc_1",
     "name": "Tema",
     "email": "tema@wsl.ru",
-    "plan": "Pro Plan",
+    "plan": "Pro",
+    "periodStart": "2025-08-01T00:00:00.000Z",
+    "periodEnd": "2025-09-01T00:00:00.000Z",
+    "includedMonthlyTokens": 50000,
+    "usedThisPeriod": 13240,
+    "topupBalance": 18000,
     "team": [
       {
         "id": 1,
@@ -22,6 +28,27 @@
         "email": "sam@example.com",
         "role": "Read-only"
       }
+    ]
+  },
+  "usage": [
+    {
+      "id": "u_1",
+      "ts": "2025-08-09T09:00:00.000Z",
+      "chatId": "c_101",
+      "agentId": "a_1",
+      "messageId": "m_77",
+      "direction": "agent",
+      "inputTokens": 320,
+      "outputTokens": 210,
+      "totalTokens": 530
+    }
+  ],
+  "presence": {
+    "1": [
+      { "id": "u1", "name": "Alice", "role": "operator", "online": true },
+      { "id": "u2", "name": "Bob", "role": "operator", "online": true },
+      { "id": "u3", "name": "Charlie", "role": "observer", "online": true },
+      { "id": "u4", "name": "Dana", "role": "observer", "online": true }
     ]
   },
   "agents": [

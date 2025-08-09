@@ -1,0 +1,80 @@
+import { isE2E } from '@/utils/e2e'
+
+export function installE2EStubs() {
+  if (!isE2E || typeof window === 'undefined' || !window.fetch) return
+
+  const original = window.fetch.bind(window)
+  const json = (obj) =>
+    new Response(JSON.stringify(obj), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+  const presence = {
+    '1': [
+      { id: 'u1', name: 'Alice', role: 'operator', online: true },
+      { id: 'u2', name: 'Bob', role: 'operator', online: true },
+      { id: 'u3', name: 'Charlie', role: 'observer', online: true },
+      { id: 'u4', name: 'Dana', role: 'observer', online: false },
+    ],
+    '2': [
+      { id: 'u1', name: 'Alice', role: 'operator', online: true },
+    ],
+  }
+  window.__e2ePresenceData = presence
+
+  window.fetch = async (input, init) => {
+    const url = typeof input === 'string' ? input : input.url
+
+    if (url.includes('/chats')) {
+      return json([
+        {
+          id: 1,
+          clientName: 'Acme Inc',
+          lastMessage: 'Hello',
+          time: '1m ago',
+          status: 'attention',
+          channels: ['web'],
+          agentId: 1,
+        },
+        {
+          id: 2,
+          clientName: 'Globex',
+          lastMessage: 'Hi',
+          time: '2m ago',
+          status: 'live',
+          channels: ['web'],
+          agentId: 2,
+        },
+      ])
+    }
+
+    if (url.includes('/presence/list')) {
+      const list = Object.entries(window.__e2ePresenceData).map(([chatId, participants]) => ({
+        chatId,
+        participants,
+        updatedAt: new Date().toISOString(),
+      }))
+      return json(list)
+    }
+
+    if (url.match(/\/presence\/(join|leave)/) || url.match(/\/drafts/)) {
+      return json({ ok: true })
+    }
+
+    if (url.includes('/account/usage')) {
+      return json({
+        plan: 'Pro',
+        periodStart: '2025-08-01T00:00:00Z',
+        periodEnd: '2025-09-01T00:00:00Z',
+        includedMonthlyTokens: 50000,
+        usedThisPeriod: 0,
+        topupBalance: 0,
+        remainingInPeriod: 50000,
+        totalRemaining: 50000,
+      })
+    }
+
+    return original(input, init)
+  }
+}

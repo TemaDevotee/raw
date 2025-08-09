@@ -53,6 +53,25 @@ export const messages = {
       cancel: 'Cancel',
       returned: 'Control returned to agent',
     },
+    tokens: {
+      quota: 'Tokens',
+      usedOf: '{used} of {included}',
+      left: '{left} left',
+      purchase: 'Buy tokens',
+      purchased: 'Purchased {count} tokens',
+      estimate: '\u2248 {count} tok',
+      messageUsed: '{count} tok',
+      periodResets: 'Resets {date}',
+      analytics: 'Usage analytics',
+      byChat: 'By chat',
+      byAgent: 'By agent',
+      total: 'Total',
+      avgPerMsg: 'Avg / msg',
+    },
+    presence: {
+      participants: 'Participants',
+      more: '+{count}',
+    },
     // ...добавьте другие английские ключи
   },
   ru: {
@@ -108,6 +127,25 @@ export const messages = {
       warn: 'Через 60 сек управление вернётся агенту',
       cancel: 'Отмена',
       returned: 'Управление возвращено агенту',
+    },
+    tokens: {
+      quota: 'Токены',
+      usedOf: '{used} из {included}',
+      left: 'осталось {left}',
+      purchase: 'Купить токены',
+      purchased: 'Куплено {count} токенов',
+      estimate: '\u2248 {count} ток',
+      messageUsed: '{count} ток',
+      periodResets: 'Сброс {date}',
+      analytics: 'Аналитика расхода',
+      byChat: 'По чатам',
+      byAgent: 'По агентам',
+      total: 'Итого',
+      avgPerMsg: 'Средн. / сообщение',
+    },
+    presence: {
+      participants: 'Участники',
+      more: '+{count}',
     },
     // ...добавьте другие русские ключи
   }

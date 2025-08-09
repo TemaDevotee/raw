@@ -41,7 +41,7 @@ Data is persisted to `localStorage['app.state.v2']` while a mock backend under `
 | --- | --- |
 | [src/stores/chatStore.js](../src/stores/chatStore.js) | Chat data, SLA timers, assignment and auto-return |
 | [src/stores/agentStore.js](../src/stores/agentStore.js) | Agent directory and auto-return settings |
-| [src/stores/presenceStore.js](../src/stores/presenceStore.js) | Operator presence list |
+| [src/stores/presenceStore.js](../src/stores/presenceStore.js) | Chat participant presence with polling |
 | [src/stores/workspaceStore.js](../src/stores/workspaceStore.js) | Workspaces and selection |
 | [src/stores/settingsStore.js](../src/stores/settingsStore.js) | Theme, notifications and SLA minutes |
 | [src/stores/knowledgeStore.js](../src/stores/knowledgeStore.js) | Knowledge collections and sources |
@@ -76,8 +76,8 @@ Data is persisted to `localStorage['app.state.v2']` while a mock backend under `
 | [mock_backend/db.json](../mock_backend/db.json) | Fixture data for chats, agents and knowledge |
 
 ## 3. Key flows
-- **Chats list:** groups chats by status, applies filters, displays status dot, SLA chip, presence counts and agent badge. Search normalizes client name, ID and agent name. Group collapse state saved in `sessionStorage`.
-- **Chat window:** header gradient reflects status, shows assignee chip, Interfere/Return buttons and status menu. Draft panel surfaces agent replies awaiting approval. Presence avatars and typing indicators update live. Offline banner and outbox retries handle connectivity issues.
+- **Chats list:** groups chats by status, applies filters, displays status dot, SLA chip, presence stacks and agent badge. Search normalizes client name, ID and agent name. Group collapse state saved in `sessionStorage`.
+- **Chat window:** header gradient reflects status, shows assignee chip, Interfere/Return buttons and status menu. Draft panel surfaces agent replies awaiting approval. Stacked avatars and typing indicators update live. Offline banner and outbox retries handle connectivity issues.
 - **Control model:** each chat has `control` of `agent` or `operator`. Interfere grants operator control, auto‑return schedules warning at T‑60s and return at T using `agentStore.settings.autoReturnMinutes`. Manual‑approve forces agent replies into drafts.
 - **Assignment:** operators can claim, unassign or transfer chats. Only the assignee can Interfere; others see a disabled button with tooltip. Assignee chip shows in chat list and header. Chats can be filtered by "Assigned to me".
 - **Snooze:** temporarily hides a chat from attention until a timer elapses; unsnooze restores it.

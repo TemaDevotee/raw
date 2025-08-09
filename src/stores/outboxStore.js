@@ -2,6 +2,7 @@ import { reactive } from 'vue'
 import apiClient from '@/api'
 import { showToast } from '@/stores/toastStore'
 import langStore from '@/stores/langStore.js'
+import { isE2E } from '@/utils/e2e'
 
 const STORAGE_KEY = 'app.outbox.v1'
 
@@ -62,6 +63,7 @@ function attemptSend(msg) {
 }
 
 function scheduleRetry(msg) {
+  if (isE2E) return
   const delay = Math.min(1000 * 2 ** msg.attempts, 30000)
   msg.attempts += 1
   persist()
