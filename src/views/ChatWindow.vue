@@ -19,6 +19,7 @@
             <span
               class="w-2 h-2 rounded-full mr-1"
               :style="{ backgroundColor: statusColor(chat.status) }"
+              :aria-label="statusAria(chat.status)"
             ></span>
             {{ statusLabel }}
           </span>
@@ -356,6 +357,14 @@ const statusLabel = computed(() => {
   };
   return langStore.t(map[chat.value.status] || map.idle);
 });
+function tStatus(s) {
+  if (!s) return ''
+  const key = `status${s.charAt(0).toUpperCase() + s.slice(1)}`
+  return langStore.t(key)
+}
+function statusAria(s) {
+  return `${langStore.t('statusLabel')}: ${tStatus(s)}`
+}
 const headerStyle = computed(() => ({
   background: statusGradient(chat.value?.status || 'idle'),
 }));

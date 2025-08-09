@@ -116,7 +116,7 @@ describe('chats utils', () => {
   it('template contains accessibility hooks', () => {
     const src = readFileSync(resolve('src/views/ChatsView.vue'), 'utf8')
     expect(src).toMatch(/role="button"/)
-    expect(src).toMatch(/aria-label="`Status:/)
+    expect(src).toMatch(/aria-label="statusAria/)
   })
 
   it('chat window template exposes menu and presence roles', () => {

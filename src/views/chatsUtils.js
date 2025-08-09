@@ -1,31 +1,4 @@
-export const STATUS_COLORS = {
-  attention: '#EF4444',
-  live: '#22C55E',
-  paused: '#F59E0B',
-  resolved: '#84CC16',
-  idle: '#9CA3AF',
-}
-
-export const STATUS_GRADIENTS = {
-  attention: 'linear-gradient(to right, #FB923C, #EF4444)',
-  live: 'linear-gradient(to right, #34D399, #22C55E)',
-  paused: 'linear-gradient(to right, #FBBF24, #F59E0B)',
-  resolved: 'linear-gradient(to right, #A3E635, #84CC16)',
-  ended: 'linear-gradient(to right, #F87171, #EF4444)',
-  idle: 'linear-gradient(to right, #e5e7eb, #d1d5db)',
-}
-
-export function statusColor(status) {
-  return STATUS_COLORS[status] || STATUS_COLORS.idle
-}
-
-export function statusGradient(status) {
-  return STATUS_GRADIENTS[status] || STATUS_GRADIENTS.idle
-}
-
-export function badgeColor(status) {
-  return `${statusColor(status)}33`
-}
+export { statusColor, statusGradient, badgeColor } from '@/utils/statusTheme.js'
 
 export function chatTimestamp(chat) {
   const t = chat.timestamp ?? chat.updatedAt ?? chat.time

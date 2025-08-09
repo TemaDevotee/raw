@@ -65,7 +65,7 @@
             <span
               class="status-dot mr-3"
               :style="{ backgroundColor: statusColor(item.chat.status) }"
-              :aria-label="`Status: ${statusLabel(item.chat.status)}`"
+              :aria-label="statusAria(item.chat.status)"
             ></span>
             <div class="flex-1 min-w-0">
               <p class="font-medium text-default truncate">
@@ -253,21 +253,16 @@ function isGroupOpen(status) {
 }
 
 // helpers
+function tStatus(s) {
+  if (!s) return ''
+  const key = `status${s.charAt(0).toUpperCase() + s.slice(1)}`
+  return langStore.t(key)
+}
 function statusLabel(status) {
-  switch (status) {
-    case 'attention':
-      return langStore.t('attention');
-    case 'live':
-      return langStore.t('live');
-    case 'paused':
-      return langStore.t('paused');
-    case 'resolved':
-      return langStore.t('resolved');
-    case 'idle':
-      return langStore.t('idle');
-    default:
-      return status;
-  }
+  return tStatus(status)
+}
+function statusAria(status) {
+  return `${langStore.t('statusLabel')}: ${tStatus(status)}`
 }
 
 function presenceCount(id) {
