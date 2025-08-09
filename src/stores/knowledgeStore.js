@@ -1,5 +1,6 @@
 import { reactive } from 'vue'
 import api from '@/api/knowledge'
+import { authStore } from '@/stores/authStore'
 
 const state = reactive({
   collections: [],
@@ -35,7 +36,7 @@ async function createCollection(name, workspaceId) {
   const trimmed = (name || '').trim()
   if (!trimmed) throw new Error('Collection name required')
   const { data } = await api.createCollection({ name: trimmed, workspaceId })
-  const coll = data || { id: crypto.randomUUID(), name: trimmed, workspaceId }
+  const coll = data || { id: crypto.randomUUID(), name: trimmed, workspaceId, visibility: 'private', editors: [] }
   state.collections.push(coll)
   return coll
 }
@@ -56,6 +57,26 @@ async function deleteCollection(id) {
   delete state.sourcesByCollection[id]
   delete state.selectionByCollection[id]
   await api.deleteCollection(id)
+}
+
+async function updatePermissions(id, perms) {
+  const coll = state.collections.find((c) => c.id === id)
+  if (!coll) return
+  const prev = { visibility: coll.visibility, editors: coll.editors }
+  coll.visibility = perms.visibility
+  coll.editors = perms.editors || []
+  try {
+    await api.updatePermissions(id, perms)
+    const uid = authStore.state.user?.id
+    if (coll.visibility === 'private' && !(coll.editors || []).includes(uid)) {
+      const idx = state.collections.findIndex((c) => c.id === id)
+      if (idx !== -1) state.collections.splice(idx, 1)
+    }
+  } catch (e) {
+    coll.visibility = prev.visibility
+    coll.editors = prev.editors
+    throw e
+  }
 }
 
 async function fetchSources(collectionId) {
@@ -259,6 +280,7 @@ export const knowledgeStore = {
   createCollection,
   renameCollection,
   deleteCollection,
+  updatePermissions,
   fetchSources,
   addUrlSource,
   addQASource,

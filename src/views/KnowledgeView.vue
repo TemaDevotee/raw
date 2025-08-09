@@ -100,6 +100,29 @@
       <SourceFormQA :collection-id="selected.id" @added="afterAdd" @close="showQA=false" />
     </div>
   </div>
+  <div v-if="showPerms" class="fixed inset-0 bg-black/40 flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-800 p-6 rounded shadow-lg w-96">
+      <h3 class="font-semibold mb-2">{{ t('permissions') }}</h3>
+      <div class="space-y-2">
+        <div>
+          <label class="block text-xs mb-1">{{ t('visibility') }}</label>
+          <select v-model="permVisibility" class="form-select w-full">
+            <option value="private">{{ t('visibilityPrivate') }}</option>
+            <option value="workspace">{{ t('visibilityWorkspace') }}</option>
+            <option value="public">{{ t('visibilityPublic') }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs mb-1">{{ t('editors') }}</label>
+          <input v-model="permEditors" class="form-input w-full" />
+        </div>
+      </div>
+      <div class="flex justify-end mt-4 space-x-2">
+        <button class="btn-secondary" @click="showPerms=false">{{ t('cancel') }}</button>
+        <button class="btn-primary" @click="savePerms">{{ t('save') }}</button>
+      </div>
+    </div>
+  </div>
   <SourcePreviewDrawer v-if="previewId" :collection-id="selected.id" :source-id="previewId" @close="previewId=null" />
 </template>
 
@@ -120,6 +143,10 @@ const search = ref('')
 const showUpload = ref(false)
 const showQA = ref(false)
 const previewId = ref(null)
+const showPerms = ref(false)
+const permCollection = ref(null)
+const permVisibility = ref('workspace')
+const permEditors = ref('')
 
 onMounted(() => {
   store.fetchCollections()
@@ -170,6 +197,7 @@ function collectionMenu(c) {
         if (n) store.renameCollection(c.id, n)
       },
     },
+    { id: 'permissions', labelKey: 'permissions', onSelect: () => openPerms(c) },
     {
       id: 'delete',
       labelKey: 'delete',
@@ -232,6 +260,33 @@ function afterAdd() {
   showUpload.value = false
   showQA.value = false
   store.fetchSources(selectedId.value)
+}
+
+function openPerms(c) {
+  permCollection.value = c
+  permVisibility.value = c.visibility || 'workspace'
+  permEditors.value = (c.editors || []).join(',')
+  showPerms.value = true
+}
+
+async function savePerms() {
+  const editors = permEditors.value
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+  try {
+    await store.updatePermissions(permCollection.value.id, {
+      visibility: permVisibility.value,
+      editors,
+    })
+    if (!store.state.collections.find((c) => c.id === permCollection.value.id)) {
+      if (selectedId.value === permCollection.value.id) selectedId.value = null
+    }
+  } catch (e) {
+    // ignore for now
+  } finally {
+    showPerms.value = false
+  }
 }
 </script>
 

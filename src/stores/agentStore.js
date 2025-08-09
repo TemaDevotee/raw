@@ -47,7 +47,18 @@ function addKnowledgeLink(collectionId) {
   const link = {
     collectionId,
     enabled: true,
-    params: { topK: 5, maxChunks: 500, citations: false, priority: state.knowledgeLinks.length },
+    params: {
+      topK: 5,
+      maxChunks: 500,
+      citations: false,
+      chunkSize: 500,
+      chunkOverlap: 50,
+      embeddingModel: 'text-embedding-3-small',
+      rerankModel: '',
+      temperature: 0,
+      maxContextTokens: 4000,
+      priority: state.knowledgeLinks.length,
+    },
   }
   state.knowledgeLinks.push(link)
   persist()

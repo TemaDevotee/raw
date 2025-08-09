@@ -3,6 +3,7 @@ global.localStorage = {
   setItem: () => {},
   removeItem: () => {},
 }
+global.sessionStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} }
 
 import { describe, it, expect } from 'vitest'
 

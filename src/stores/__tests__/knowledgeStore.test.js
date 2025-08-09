@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { knowledgeStore } from '@/stores/knowledgeStore'
 import api from '@/api/knowledge'
+import { authStore } from '@/stores/authStore'
 
 vi.mock('@/api/knowledge', () => ({
   default: {
@@ -8,6 +9,7 @@ vi.mock('@/api/knowledge', () => ({
     createCollection: vi.fn(),
     renameCollection: vi.fn(),
     deleteCollection: vi.fn(),
+    updatePermissions: vi.fn(),
     listSources: vi.fn(),
     addUrl: vi.fn(),
     addQA: vi.fn(),
@@ -19,6 +21,7 @@ vi.mock('@/api/knowledge', () => ({
     status: vi.fn(),
   },
 }))
+vi.mock('@/stores/authStore', () => ({ authStore: { state: { user: { id: 'u1' } } } }))
 
 beforeEach(() => {
   knowledgeStore.state.collections = []
@@ -96,6 +99,23 @@ describe('knowledgeStore', () => {
     api.deleteSource.mockResolvedValue({})
     await knowledgeStore.deleteSources('1', ['s1'])
     expect(knowledgeStore.state.sourcesByCollection['1']).toHaveLength(0)
+  })
+
+  it('updates permissions and hides collection when not allowed', async () => {
+    knowledgeStore.state.collections.push({ id: 'p1', name: 'P', visibility: 'public', editors: [] })
+    api.updatePermissions.mockResolvedValue({})
+    authStore.state.user = { id: 'u1' }
+    await knowledgeStore.updatePermissions('p1', { visibility: 'private', editors: [] })
+    expect(knowledgeStore.state.collections.find((c) => c.id === 'p1')).toBeUndefined()
+  })
+
+  it('rolls back permissions on failure', async () => {
+    knowledgeStore.state.collections.push({ id: 'p2', name: 'P', visibility: 'public', editors: [] })
+    api.updatePermissions.mockRejectedValue(new Error('fail'))
+    await expect(
+      knowledgeStore.updatePermissions('p2', { visibility: 'private', editors: [] })
+    ).rejects.toThrow()
+    expect(knowledgeStore.state.collections[0].visibility).toBe('public')
   })
 
 })

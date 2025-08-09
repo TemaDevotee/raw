@@ -24,6 +24,7 @@ describe('agentStore knowledge links', () => {
   it('adds collection with defaults', () => {
     const link = agentStore.addKnowledgeLink('c1')
     expect(link.params.topK).toBe(5)
+    expect(link.params.chunkSize).toBe(500)
     expect(agentStore.state.knowledgeLinks.length).toBe(1)
     expect(agentStore.state.knowledgeLinks[0].collectionId).toBe('c1')
   })

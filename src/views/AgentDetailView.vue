@@ -132,6 +132,7 @@
               <th class="py-1">{{ langStore.t('agent.knowledge.topK') }}</th>
               <th class="py-1">{{ langStore.t('agent.knowledge.maxChunks') }}</th>
               <th class="py-1">{{ langStore.t('agent.knowledge.citations') }}</th>
+              <th class="py-1">{{ langStore.t('advanced') }}</th>
               <th></th>
             </tr>
           </thead>
@@ -184,12 +185,53 @@
                 <input type="checkbox" v-model="link.params.citations" />
               </td>
               <td class="py-1">
+                <button class="text-xs underline" @click="link.showAdv = !link.showAdv">
+                  {{ link.showAdv ? langStore.t('hide') : langStore.t('advanced') }}
+                </button>
+              </td>
+              <td class="py-1">
                 <button
                   class="material-icons-outlined text-base text-[var(--c-text-danger)]"
                   @click="knowledge.removeLink(idx)"
                 >
                   delete
                 </button>
+              </td>
+            </tr>
+            <tr v-if="link.showAdv" class="bg-secondary/50">
+              <td colspan="8" class="p-2">
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  <div>
+                    <label class="block text-xs">{{ langStore.t('agent.knowledge.chunkSize') }}</label>
+                    <input type="number" class="form-input w-full" v-model.number="link.params.chunkSize" min="50" max="2000" />
+                  </div>
+                  <div>
+                    <label class="block text-xs">{{ langStore.t('agent.knowledge.chunkOverlap') }}</label>
+                    <input type="number" class="form-input w-full" v-model.number="link.params.chunkOverlap" min="0" max="500" />
+                  </div>
+                  <div>
+                    <label class="block text-xs">{{ langStore.t('agent.knowledge.embeddingModel') }}</label>
+                    <select v-model="link.params.embeddingModel" class="form-select w-full">
+                      <option value="text-embedding-3-small">text-embedding-3-small</option>
+                      <option value="text-embedding-3-large">text-embedding-3-large</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-xs">{{ langStore.t('agent.knowledge.rerankModel') }}</label>
+                    <input class="form-input w-full" v-model="link.params.rerankModel" />
+                  </div>
+                  <div>
+                    <label class="block text-xs">{{ langStore.t('agent.knowledge.temperature') }}</label>
+                    <input type="number" step="0.1" class="form-input w-full" v-model.number="link.params.temperature" min="0" max="1" />
+                  </div>
+                  <div>
+                    <label class="block text-xs">{{ langStore.t('agent.knowledge.maxContextTokens') }}</label>
+                    <input type="number" class="form-input w-full" v-model.number="link.params.maxContextTokens" min="500" max="40000" />
+                  </div>
+                </div>
+                <div class="text-right mt-2">
+                  <button class="btn-secondary" @click="knowledge.resetParams(idx)">{{ langStore.t('reset') }}</button>
+                </div>
               </td>
             </tr>
           </tbody>

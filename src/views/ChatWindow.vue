@@ -103,6 +103,10 @@
               +{{ extraCount }}
             </div>
           </div>
+          <div v-if="devCitations" class="flex items-center gap-1 ml-2">
+            <input type="checkbox" v-model="showCitations" class="h-3 w-3" />
+            <span class="text-xs">{{ langStore.t('showCitations') }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -242,6 +246,8 @@ import { typingText } from '@/utils/typing.js';
 
 
 const presenceList = ref([]);
+const devCitations = import.meta.env.DEV;
+const showCitations = ref(true);
 const currentUser =
   JSON.parse(localStorage.getItem('auth.user') || sessionStorage.getItem('auth.user') || 'null') ||
   { id: 1 };

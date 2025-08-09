@@ -18,6 +18,10 @@ export function deleteCollection(id) {
   return apiClient.delete(`/knowledge/collections/${id}`)
 }
 
+export function updatePermissions(id, payload) {
+  return apiClient.patch(`/knowledge/collections/${id}/permissions`, payload)
+}
+
 export function listSources(collectionId) {
   return apiClient.get(`/knowledge/collections/${collectionId}/sources`)
 }
@@ -67,6 +71,7 @@ export default {
   createCollection,
   renameCollection,
   deleteCollection,
+  updatePermissions,
   listSources,
   uploadFiles,
   addUrl,

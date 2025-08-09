@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { agentStore } from '@/stores/agentStore.js'
 import { knowledgeStore } from '@/stores/knowledgeStore.js'
+import { authStore } from '@/stores/authStore'
 import { showToast } from '@/stores/toastStore'
 import langStore from '@/stores/langStore'
 import * as agentsApi from '@/api/agents.js'
@@ -16,13 +17,15 @@ export function useAgentKnowledge(agentId) {
   const selectedId = ref('')
   const saving = ref(false)
 
-  const availableCollections = computed(() =>
-    knowledgeStore.state.collections.filter(
+  const availableCollections = computed(() => {
+    const uid = authStore.state.user?.id
+    return knowledgeStore.state.collections.filter(
       (c) =>
         !links.value.some((l) => l.collectionId === c.id) &&
-        c.name.toLowerCase().includes(search.value.toLowerCase()),
-    ),
-  )
+        c.name.toLowerCase().includes(search.value.toLowerCase()) &&
+        (c.visibility !== 'private' || (c.editors || []).includes(uid)),
+    )
+  })
 
   function addSelected() {
     if (!selectedId.value) return
@@ -33,6 +36,12 @@ export function useAgentKnowledge(agentId) {
         topK: 5,
         maxChunks: 500,
         citations: false,
+        chunkSize: 500,
+        chunkOverlap: 50,
+        embeddingModel: 'text-embedding-3-small',
+        rerankModel: '',
+        temperature: 0,
+        maxContextTokens: 4000,
         priority: links.value.length,
       },
     })
@@ -62,9 +71,33 @@ export function useAgentKnowledge(agentId) {
         l.params.topK >= 1 &&
         l.params.topK <= 20 &&
         l.params.maxChunks >= 50 &&
-        l.params.maxChunks <= 2000,
+        l.params.maxChunks <= 2000 &&
+        l.params.chunkSize >= 50 &&
+        l.params.chunkSize <= 2000 &&
+        l.params.chunkOverlap >= 0 &&
+        l.params.chunkOverlap <= 500 &&
+        l.params.temperature >= 0 &&
+        l.params.temperature <= 1 &&
+        l.params.maxContextTokens >= 500 &&
+        l.params.maxContextTokens <= 40000,
     ),
   )
+
+  function resetParams(idx) {
+    const pri = links.value[idx].params.priority
+    links.value[idx].params = {
+      topK: 5,
+      maxChunks: 500,
+      citations: false,
+      chunkSize: 500,
+      chunkOverlap: 50,
+      embeddingModel: 'text-embedding-3-small',
+      rerankModel: '',
+      temperature: 0,
+      maxContextTokens: 4000,
+      priority: pri,
+    }
+  }
 
   async function save() {
     if (!isValid.value || saving.value) return
@@ -101,6 +134,7 @@ export function useAgentKnowledge(agentId) {
     removeLink,
     moveUp: (i) => move(i, -1),
     moveDown: (i) => move(i, 1),
+    resetParams,
     save,
     isValid,
     saving,
