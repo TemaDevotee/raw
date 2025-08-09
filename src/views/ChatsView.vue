@@ -192,7 +192,10 @@ const groupedChats = computed(() => {
     idle: [],
   };
   filteredChats.value.forEach((chat) => {
-    const key = chat.status === 'ended' ? 'idle' : chat.status;
+    let key = chat.status === 'ended' ? 'idle' : chat.status;
+    if (key === 'attention' && chat.snoozeUntil && Date.parse(chat.snoozeUntil) > Date.now()) {
+      key = 'paused';
+    }
     if (!groups[key]) groups[key] = [];
     groups[key].push(chat);
   });

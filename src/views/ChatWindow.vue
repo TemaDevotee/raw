@@ -107,6 +107,22 @@
             <input type="checkbox" v-model="showCitations" class="h-3 w-3" />
             <span class="text-xs">{{ langStore.t('showCitations') }}</span>
           </div>
+          <Button
+            v-if="chat && !chat.snoozeUntil"
+            variant="secondary"
+            size="sm"
+            @click="snooze(5)"
+          >
+            {{ langStore.t('snooze') }}
+          </Button>
+          <Button
+            v-else-if="chat && chat.snoozeUntil"
+            variant="secondary"
+            size="sm"
+            @click="unsnooze"
+          >
+            {{ langStore.t('unsnooze') }}
+          </Button>
         </div>
       </div>
     </div>
@@ -370,6 +386,16 @@ function tStatus(s) {
 }
 function statusAria(s) {
   return `${langStore.t('statusLabel')}: ${tStatus(s)}`
+}
+
+function snooze(minutes) {
+  if (!chat.value) return
+  chatStore.snoozeChat(chat.value, minutes)
+}
+
+function unsnooze() {
+  if (!chat.value) return
+  chatStore.unsnoozeChat(chat.value)
 }
 const headerStyle = computed(() => ({
   background: statusGradient(chat.value?.status || 'idle'),

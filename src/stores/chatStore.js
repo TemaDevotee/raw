@@ -1,6 +1,7 @@
 import { reactive } from 'vue'
 import { showToast } from '@/stores/toastStore'
 import * as draftsApi from '@/api/drafts'
+import * as chatsApi from '@/api/chats'
 import langStore from '@/stores/langStore.js'
 
 const state = reactive({
@@ -109,6 +110,31 @@ async function rejectAll(chatId) {
   }
 }
 
+async function snoozeChat(chat, minutes) {
+  if (!chat) return
+  const prev = chat.snoozeUntil
+  const until = new Date(Date.now() + minutes * 60_000).toISOString()
+  chat.snoozeUntil = until
+  try {
+    await chatsApi.snooze(chat.id, minutes)
+  } catch (e) {
+    chat.snoozeUntil = prev
+    showToast(langStore.t('snoozeFailed'), 'error')
+  }
+}
+
+async function unsnoozeChat(chat) {
+  if (!chat) return
+  const prev = chat.snoozeUntil
+  chat.snoozeUntil = null
+  try {
+    await chatsApi.unsnooze(chat.id)
+  } catch (e) {
+    chat.snoozeUntil = prev
+    showToast(langStore.t('unsnoozeFailed'), 'error')
+  }
+}
+
 export const chatStore = {
   state,
   setControl,
@@ -119,4 +145,6 @@ export const chatStore = {
   editAndSend,
   sendAll,
   rejectAll,
+  snoozeChat,
+  unsnoozeChat,
 }
