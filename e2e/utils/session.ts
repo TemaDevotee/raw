@@ -1,6 +1,11 @@
 import { Page } from '@playwright/test'
 
-export async function seedAppState(page: Page) {
+interface SeedData {
+  agents?: Array<Record<string, any>>
+  knowledge?: { collections?: any[] }
+}
+
+export async function seedAppState(page: Page, data: SeedData = {}) {
   const state = {
     workspaces: [],
     currentWorkspaceId: 'ws_default',
@@ -8,17 +13,60 @@ export async function seedAppState(page: Page) {
     chats: {},
   }
   const user = { id: 'e2e', name: 'E2E' }
-  await page.addInitScript((payload) => {
-    localStorage.setItem('__e2e__', '1')
-    localStorage.setItem('app.state.v2', JSON.stringify(payload.state))
-    localStorage.setItem('lang', 'ru')
-    localStorage.setItem('appTheme', 'forest')
-    localStorage.setItem('authenticated', 'true')
-    localStorage.setItem('auth.user', JSON.stringify(payload.user))
-    localStorage.setItem('auth.token', 'e2e')
-    localStorage.setItem('skipAuth', 'true')
-    sessionStorage.setItem('authenticated', 'true')
-    sessionStorage.setItem('auth.user', JSON.stringify(payload.user))
-    sessionStorage.setItem('auth.token', 'e2e')
-  }, { state, user })
+  await page.addInitScript(
+    (payload) => {
+      localStorage.setItem('__e2e__', '1')
+      localStorage.setItem('app.state.v2', JSON.stringify(payload.state))
+      localStorage.setItem('lang', 'ru')
+      localStorage.setItem('appTheme', 'forest')
+      localStorage.setItem('authenticated', 'true')
+      localStorage.setItem('auth.user', JSON.stringify(payload.user))
+      localStorage.setItem('auth.token', 'e2e')
+      localStorage.setItem('skipAuth', 'true')
+      sessionStorage.setItem('authenticated', 'true')
+      sessionStorage.setItem('auth.user', JSON.stringify(payload.user))
+      sessionStorage.setItem('auth.token', 'e2e')
+      if (payload.knowledge?.collections !== undefined) {
+        localStorage.setItem(
+          'knowledge.collections.v1',
+          JSON.stringify(payload.knowledge.collections),
+        )
+      }
+    },
+    { state, user, knowledge: data.knowledge },
+  )
+
+  if (data.agents) {
+    await page.route('**/api/agents*', (route) => {
+      const url = new URL(route.request().url())
+      const parts = url.pathname.split('/')
+      const last = parts[parts.length - 1]
+      if (last && last !== 'agents') {
+        const agent = data.agents!.find((a) => a.id === last)
+        route.fulfill({ json: agent || {}, status: agent ? 200 : 404 })
+      } else {
+        route.fulfill({ json: data.agents })
+      }
+    })
+  }
+
+  await page.route('**/api/knowledge_groups*', (route) => {
+    route.fulfill({ json: [] })
+  })
+
+  await page.route('https://fonts.googleapis.com/**', (route) => {
+    route.fulfill({ status: 200, body: '' })
+  })
+  await page.route('https://fonts.gstatic.com/**', (route) => {
+    route.fulfill({ status: 200, body: '' })
+  })
+}
+
+export async function waitForAppReady(page: Page) {
+  await page.waitForLoadState('domcontentloaded')
+  await page.waitForLoadState('networkidle')
+  await page.waitForFunction(() => (window as any).__E2E_READY__ === true, null, {
+    timeout: 15_000,
+  })
+  await page.waitForSelector('[data-test-ready="1"]', { timeout: 15_000 })
 }

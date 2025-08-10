@@ -14,3 +14,6 @@ export const transferChat = (id, operatorId) =>
   api.post(`/chats/${id}/transfer`, { operatorId })
 export const interfereChat = (id) => api.post(`/chats/${id}/interfere`, {})
 export const returnToAgent = (id) => api.post(`/chats/${id}/return`, {})
+export const interfere = interfereChat
+export const returnControl = returnToAgent
+export const setStatus = (id, status) => api.patch(`/chats/${id}/status`, { status })

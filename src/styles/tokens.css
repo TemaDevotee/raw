@@ -11,6 +11,7 @@
   --status-gradient-resolved: linear-gradient(to right, #A3E635, #84CC16);
   --status-gradient-ended: linear-gradient(to right, #F87171, #EF4444);
   --status-gradient-idle: linear-gradient(to right, #e5e7eb, #d1d5db);
+  --chatHeaderGradientOpacity: 0.12;
 
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -21,7 +22,14 @@
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
   --shadow-xs: 0 0 0 1px rgba(0, 0, 0, 0.05);
 
-  --z-popover: 1300;
+  --panel: var(--c-bg-secondary);
+  --border: var(--c-border);
+
+  --z-popover: 1000;
+  --popover-radius: 10px;
+  --popover-shadow: 0 8px 24px rgba(0,0,0,.16);
+  --popover-bg: var(--panel);
+  --popover-border: var(--border);
   --z-modal: 1400;
   --z-toast: 1500;
 

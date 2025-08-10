@@ -106,7 +106,7 @@ const toggleCollapse = () => {
 const navItems = [
   { key: 'chats', to: '/chats', icon: 'chat' },
   { key: 'agents', to: '/agents', icon: 'psychology' },
-  { key: 'knowledge', to: '/knowledge', icon: 'library_books' },
+  { key: 'knowledgeNav', to: '/knowledge', icon: 'library_books' },
   { key: 'account', to: '/account', icon: 'account_circle' },
 ]
 const route = useRoute()

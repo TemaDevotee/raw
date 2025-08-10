@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col h-full">
     <!-- Gradient header with controls -->
-    <div class="chat-header shadow-sm" :style="headerStyle">
+    <div class="chat-header shadow-sm" data-testid="chat-header-gradient" :style="headerStyle">
       <div class="flex items-center justify-between px-6 py-4">
         <div class="flex items-center gap-4">
           <router-link to="/chats">
@@ -21,7 +21,7 @@
               :style="{ backgroundColor: statusColor(chat.status) }"
               :aria-label="statusAria(chat.status)"
             ></span>
-            {{ statusLabel }}
+            {{ currentStatusLabel }}
           </span>
           <span
             v-if="slaActive"
@@ -45,63 +45,35 @@
         </div>
         <div class="flex items-center gap-2">
           <Button
-            v-if="!inputEnabled"
-            data-testid="interfere-btn"
-            :disabled="!canInterfere"
-            :title="!canInterfere ? langStore.t('assign.cannotInterfere', { name: chat?.assignedTo?.name }) : ''"
-            variant="primary"
-            size="sm"
-            @click="interfere"
-          >
-            {{ langStore.t('interfere') }}
-          </Button>
-          <Button
-            v-else
-            data-testid="return-btn"
             variant="secondary"
             size="sm"
-            @click="returnControl"
+            data-testid="btn-change-status"
+            aria-haspopup="menu"
+            :aria-expanded="statusOpen"
+            @click="openStatusMenu"
           >
-            {{ langStore.t('returnToAgent') }}
+            {{ langStore.t('controls.changeStatus') }}
           </Button>
-          <div class="relative" ref="statusMenuRoot">
-            <Button
-              ref="statusMenuButton"
-              variant="secondary"
-              size="sm"
-              data-testid="status-menu-btn"
-              :aria-expanded="statusMenuOpen"
-              aria-controls="status-menu"
-              @click="toggleStatusMenu"
-            >
-              {{ langStore.t('changeStatus') }}
-            </Button>
-            <ul
-              v-if="statusMenuOpen"
-              id="status-menu"
-              role="menu"
-              data-testid="status-menu"
-              class="absolute left-full top-0 ml-1 w-40 rounded-md border border-default bg-secondary z-10"
-              @keydown="onStatusMenuKeydown"
-            >
-              <li v-for="(opt, idx) in statusOptions" :key="opt.value">
+          <Popover v-model:open="statusOpen" :anchor="statusAnchor" placement="bottom-end">
+            <ul role="menu" class="w-40 rounded-md border border-default bg-secondary p-2">
+              <li v-for="opt in statusOptions" :key="opt">
                 <button
-                  :ref="el => statusMenuItems[idx] = el"
+                  :data-testid="`status-item-${opt}`"
                   role="menuitem"
                   class="flex items-center w-full px-3 py-2 text-left hover-bg-effect"
-                  :aria-label="langStore.t(`setStatus${opt.value.charAt(0).toUpperCase() + opt.value.slice(1)}`)"
-                  @click="selectStatus(idx)"
+                  @click="setStatus(opt)"
                 >
                   <span
                     class="w-2 h-2 rounded-full mr-2"
-                    :style="{ backgroundColor: statusColor(opt.value) }"
+                    :style="{ backgroundColor: statusColor(opt) }"
+                    :aria-label="statusLabelFn(opt)"
                   ></span>
-                  <span class="flex-1">{{ langStore.t(opt.label) }}</span>
-                  <span v-if="chat?.status === opt.value" class="material-icons-outlined text-base ml-auto">check</span>
+                  <span class="flex-1">{{ statusLabelFn(opt) }}</span>
+                  <span v-if="chat?.status === opt" class="material-icons-outlined text-base ml-auto">check</span>
                 </button>
               </li>
             </ul>
-          </div>
+          </Popover>
           <ActionMenu :items="assignMenu">
             <Button variant="secondary" size="sm" data-testid="assign-menu-btn">⋮</Button>
           </ActionMenu>
@@ -225,9 +197,32 @@
         {{ langStore.t('offlineBanner') }}
       </div>
       <div class="flex items-center mb-2">
+        <Button
+          v-if="!inputEnabled"
+          data-testid="btn-interfere"
+          class="mr-3"
+          :disabled="!canInterfere"
+          :title="!canInterfere ? langStore.t('assign.cannotInterfere', { name: chat?.assignedTo?.name }) : ''"
+          variant="primary"
+          size="sm"
+          @click="interfere"
+        >
+          {{ langStore.t('controls.interfere') }}
+        </Button>
+        <Button
+          v-else
+          data-testid="btn-return"
+          class="mr-3"
+          variant="secondary"
+          size="sm"
+          @click="returnControl"
+        >
+          {{ langStore.t('controls.return') }}
+        </Button>
         <input
           v-model="newMessage"
           type="text"
+          data-testid="composer-input"
           :disabled="!inputEnabled"
           :placeholder="placeholderText"
           class="flex-1 form-input mr-3 rounded-full"
@@ -261,13 +256,8 @@ import langStore from '@/stores/langStore.js';
 import { useRoute, useRouter } from 'vue-router';
 import apiClient from '@/api';
 import { showToast } from '@/stores/toastStore';
-import {
-  statusColor,
-  badgeColor,
-  statusGradient,
-  updateChatStatus,
-} from './chatsUtils.js';
-import { useStatusMenu } from './statusMenu.js';
+import { statusColor, badgeColor, statusGradient, statusLabel as statusLabelFn } from './chatsUtils.js';
+import { setStatus as setChatStatus } from '@/api/chats.js';
 import { chatStore } from '@/stores/chatStore.js';
 import usageStore from '@/stores/usageStore.js'
 import { estimateTokensForText } from '@/utils/tokenEstimate.js'
@@ -280,6 +270,7 @@ import { composerStore } from '@/stores/composerStore.js';
 import { typingText } from '@/utils/typing.js';
 import ActionMenu from '@/components/ui/ActionMenu.vue';
 import { presenceStore } from '@/stores/presenceStore.js';
+import Popover from '@/components/ui/Popover.vue';
 
 const devCitations = import.meta.env.DEV;
 const showCitations = ref(true);
@@ -377,7 +368,7 @@ const subtitle = computed(() => (chat.value ? `ID: ${chatId}` : ''));
 const placeholderText = computed(() =>
   inputEnabled.value
     ? langStore.t('operatorInControl')
-    : langStore.t('agentInControl')
+    : langStore.t('composer.placeholder.locked')
 );
 
 const saveTimer = ref(null);
@@ -390,40 +381,16 @@ watch(newMessage, () => {
   }, 400);
 });
 
-const statusOptions = [
-  { value: 'live', label: 'live' },
-  { value: 'paused', label: 'paused' },
-  { value: 'attention', label: 'attention' },
-  { value: 'resolved', label: 'resolved' },
-  { value: 'ended', label: 'ended' },
-];
-const statusMenu = useStatusMenu(statusOptions, (v) => setStatus(v));
-const statusMenuOpen = statusMenu.open;
-const toggleStatusMenu = statusMenu.toggle;
-const onStatusMenuKeydown = statusMenu.onKeydown;
-const statusMenuButton = statusMenu.triggerRef;
-const statusMenuRoot = statusMenu.menuRef;
-const statusMenuItems = statusMenu.itemRefs;
-const selectStatus = statusMenu.select;
-const statusLabel = computed(() => {
-  if (!chat.value) return '';
-  const map = {
-    live: 'live',
-    paused: 'paused',
-    attention: 'attention',
-    resolved: 'resolved',
-    ended: 'ended',
-    idle: 'idle',
-  };
-  return langStore.t(map[chat.value.status] || map.idle);
-});
-function tStatus(s) {
-  if (!s) return ''
-  const key = `status${s.charAt(0).toUpperCase() + s.slice(1)}`
-  return langStore.t(key)
+const statusOptions = ['live', 'attention', 'paused', 'resolved', 'ended'];
+const statusOpen = ref(false);
+const statusAnchor = ref(null);
+function openStatusMenu(e) {
+  statusAnchor.value = e.currentTarget;
+  statusOpen.value = true;
 }
+const currentStatusLabel = computed(() => statusLabelFn(chat.value?.status || 'idle'));
 function statusAria(s) {
-  return `${langStore.t('statusLabel')}: ${tStatus(s)}`
+  return statusLabelFn(s);
 }
 
 const slaMinutes = computed(() => settingsStore.state.workspaceSettings.attentionSLA);
@@ -451,7 +418,7 @@ function unsnooze() {
   chatStore.unsnoozeChat(chat.value)
 }
 const headerStyle = computed(() => ({
-  background: statusGradient(chat.value?.status || 'idle'),
+  '--header-gradient': statusGradient(chat.value?.status || 'idle'),
 }));
 
 const typingLine = computed(() => {
@@ -482,7 +449,6 @@ async function fetchChat() {
 }
 
 onMounted(async () => {
-  document.addEventListener('click', statusMenu.onDocumentClick);
   await fetchChat();
   await fetchAgents();
   await fetchDrafts();
@@ -558,7 +524,6 @@ async function sendMessage() {
 
 onBeforeUnmount(() => {
   presenceStore.leave(chatId, currentUser);
-  document.removeEventListener('click', statusMenu.onDocumentClick);
 });
 
 async function interfere() {
@@ -585,7 +550,13 @@ async function returnControl() {
 async function setStatus(s) {
   if (!chat.value) return;
   const prev = chat.value.status;
-  await updateChatStatus(chat.value, s, apiClient, showToast, langStore.t);
+  try {
+    await setChatStatus(chatId, s);
+    chat.value.status = s;
+  } catch {
+    showToast(langStore.t('statusChangeFailed') || 'Status update failed', 'error');
+    return;
+  }
   chatStore.handleStatusChange(chat.value, prev);
 }
 async function fetchDrafts() {
@@ -679,9 +650,6 @@ function statusLabelMsg(s) {
   font-size: 0.75rem;
   font-weight: 600;
 }
-</style>
-
-<style scoped>
 .chat-header {
   position: relative;
 }
@@ -689,24 +657,9 @@ function statusLabelMsg(s) {
   content: '';
   position: absolute;
   inset: 0 0 auto 0;
-  height: 72px;
-  background: linear-gradient(
-    135deg,
-    color-mix(in oklab, var(--chat-grad-from) 35%, transparent),
-    color-mix(in oklab, var(--chat-grad-to) 35%, transparent)
-  );
-  opacity: var(--chat-grad-opacity);
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
+  height: 56px;
+  background: var(--header-gradient);
+  opacity: var(--chatHeaderGradientOpacity);
   pointer-events: none;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .chat-header::before {
-    transition: opacity 0.25s ease, transform 0.25s ease;
-  }
-  .chat-header:hover::before {
-    opacity: calc(var(--chat-grad-opacity) + 0.04);
-    transform: translateY(-1px);
-  }
 }
 </style>

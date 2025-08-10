@@ -3,14 +3,23 @@
     <div class="w-1/3">
       <div class="flex justify-between items-center mb-2">
         <h2 class="font-semibold text-default">{{ t('knowledgeCollections') }}</h2>
-        <button class="btn-primary" @click="createCollection">{{ t('knowledgeAdd') }}</button>
+        <button
+          class="btn-primary"
+          type="button"
+          data-testid="knowledge-add"
+          @click="openDrawer = true"
+        >
+          {{ t('knowledge.add') }}
+        </button>
       </div>
-      <ul>
+      <ul v-if="store.state.collections.length">
         <li
           v-for="c in store.state.collections"
           :key="c.id"
           @click="select(c)"
           :class="rowClass(c.id)"
+          data-testid="collection-row"
+          :data-id="c.id"
         >
           <span>{{ c.name }}</span>
           <ActionMenu :items="collectionMenu(c)">
@@ -20,6 +29,9 @@
           </ActionMenu>
         </li>
       </ul>
+      <div v-else class="text-muted py-16 text-center">
+        {{ t('knowledge.empty') }}
+      </div>
     </div>
     <div class="flex-1" v-if="selected">
       <div class="flex justify-between items-center mb-2">
@@ -124,16 +136,58 @@
     </div>
   </div>
   <SourcePreviewDrawer v-if="previewId" :collection-id="selected.id" :source-id="previewId" @close="previewId=null" />
+  <Drawer v-model="openDrawer" aria-labelledby="drawer-title">
+    <div class="p-6 space-y-4">
+      <h2 id="drawer-title" data-testid="drawer-title" class="text-lg font-semibold">
+        {{ t('knowledge.drawerTitle') }}
+      </h2>
+      <div>
+        <label for="coll-name" class="block text-sm mb-1">{{ t('knowledge.name') }}</label>
+        <input
+          id="coll-name"
+          ref="nameInput"
+          data-testid="collection-name"
+          v-model="form.name"
+          class="form-input w-full"
+          autofocus
+        />
+      </div>
+      <div>
+        <label for="coll-desc" class="block text-sm mb-1">{{ t('knowledge.description') }}</label>
+        <input id="coll-desc" v-model="form.description" class="form-input w-full" />
+      </div>
+      <div>
+        <label class="block text-sm mb-1">{{ t('knowledge.visibility') }}</label>
+        <select v-model="form.visibility" class="form-select w-full">
+          <option value="private">{{ t('knowledge.private') }}</option>
+          <option value="workspace">{{ t('knowledge.workspace') }}</option>
+        </select>
+      </div>
+      <div class="flex justify-end">
+        <button
+          class="btn-primary"
+          type="button"
+          data-testid="collection-create"
+          @click="submit"
+          :disabled="!form.name.trim()"
+        >
+          {{ t('knowledge.create') }}
+        </button>
+      </div>
+    </div>
+  </Drawer>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
 import { knowledgeStore as store } from '@/stores/knowledgeStore'
 import langStore from '@/stores/langStore'
 import ActionMenu from '@/components/ui/ActionMenu.vue'
 import SourceUpload from '@/components/SourceUpload.vue'
 import SourceFormQA from '@/components/SourceFormQA.vue'
 import SourcePreviewDrawer from '@/components/SourcePreviewDrawer.vue'
+import Drawer from '@/components/ui/Drawer.vue'
+import { showToast } from '@/stores/toastStore'
 
 const t = langStore.t
 const selectedId = ref(null)
@@ -147,9 +201,16 @@ const showPerms = ref(false)
 const permCollection = ref(null)
 const permVisibility = ref('workspace')
 const permEditors = ref('')
+const openDrawer = ref(false)
+const form = reactive({ name: '', description: '', visibility: 'private' })
+const nameInput = ref(null)
 
 onMounted(() => {
   store.fetchCollections()
+})
+
+watch(openDrawer, (v) => {
+  if (v) nextTick(() => nameInput.value?.focus())
 })
 
 const selected = computed(() => store.state.collections.find((c) => c.id === selectedId.value))
@@ -182,9 +243,14 @@ function toggleAll(val) {
   else store.clearSelection(selectedId.value)
 }
 
-function createCollection() {
-  const name = prompt(t('name'))
-  if (name) store.createCollection(name)
+async function submit() {
+  await store.createCollection({ ...form })
+  await nextTick()
+  openDrawer.value = false
+  showToast(t('created'))
+  form.name = ''
+  form.description = ''
+  form.visibility = 'private'
 }
 
 function collectionMenu(c) {

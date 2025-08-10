@@ -16,15 +16,49 @@ export const messages = {
     dangerZone: 'Danger Zone',
     transferOwnership: 'Transfer Ownership',
     deleteAccount: 'Delete Account',
-    interfere: 'Interfere',
-    returnToAgent: 'Return to agent',
-    changeStatus: 'Change status',
+    created: 'Created',
+    theme: 'Theme',
+    language: 'Language',
+    langEnglish: 'English',
+    langRussian: 'Russian',
+    controls: {
+      interfere: 'Interfere',
+      return: 'Return to agent',
+      changeStatus: 'Change status'
+    },
+    composer: {
+      placeholder: {
+        locked: 'Agent in control. Interfere to reply.'
+      }
+    },
     statusAttention: 'Attention',
     statusLive: 'Live',
     statusPaused: 'Paused',
     statusResolved: 'Resolved',
     statusEnded: 'Ended',
     statusIdle: 'Idle',
+    status: {
+      live: 'Live',
+      attention: 'Attention',
+      paused: 'Paused',
+      resolved: 'Resolved',
+      idle: 'Idle'
+    },
+    agent: {
+      notFoundTitle: 'Agent not found',
+      backToList: 'Back to list'
+    },
+    knowledge: {
+      add: 'Add',
+      drawerTitle: 'Create collection',
+      name: 'Name',
+      description: 'Description',
+      visibility: 'Visibility',
+      private: 'Private',
+      workspace: 'Workspace',
+      create: 'Create',
+      empty: 'No sources yet'
+    },
     workspaces: 'Workspaces',
     createWorkspace: 'Create workspace',
     renameWorkspace: 'Rename workspace',
@@ -91,15 +125,49 @@ export const messages = {
     dangerZone: 'Опасная зона',
     transferOwnership: 'Передать владение',
     deleteAccount: 'Удалить аккаунт',
-    interfere: 'Вмешаться',
-    returnToAgent: 'Вернуть агенту',
-    changeStatus: 'Изменить статус',
+    created: 'Создано',
+    theme: 'Тема',
+    language: 'Язык',
+    langEnglish: 'Английский',
+    langRussian: 'Русский',
+    controls: {
+      interfere: 'Вмешаться',
+      return: 'Вернуть агенту',
+      changeStatus: 'Изменить статус'
+    },
+    composer: {
+      placeholder: {
+        locked: 'Агент отвечает. Вмешайтесь, чтобы писать.'
+      }
+    },
     statusAttention: 'Требует внимания',
     statusLive: 'Активен',
     statusPaused: 'На паузе',
     statusResolved: 'Решён',
     statusEnded: 'Завершён',
     statusIdle: 'Неактивен',
+    status: {
+      live: 'В эфире',
+      attention: 'Требует внимания',
+      paused: 'На паузе',
+      resolved: 'Решён',
+      idle: 'Неактивен'
+    },
+    agent: {
+      notFoundTitle: 'Агент не найден',
+      backToList: 'Назад к списку'
+    },
+    knowledge: {
+      add: 'Добавить',
+      drawerTitle: 'Новая коллекция',
+      name: 'Название',
+      description: 'Описание',
+      visibility: 'Доступ',
+      private: 'Личный',
+      workspace: 'В воркспейсе',
+      create: 'Создать',
+      empty: 'Источников пока нет'
+    },
     workspaces: 'Рабочие пространства',
     createWorkspace: 'Создать пространство',
     renameWorkspace: 'Переименовать пространство',

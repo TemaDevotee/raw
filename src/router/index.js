@@ -1,5 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import DashboardView from '@/views/DashboardView.vue';
+import AgentDetailView from '@/views/AgentDetailView.vue';
 import { authStore } from '@/stores/authStore';
 
 const routes = [
@@ -7,7 +8,7 @@ const routes = [
   { path: '/chats', name: 'chats', component: () => import('@/views/ChatsView.vue') },
   { path: '/chats/:id', name: 'chat-detail', component: () => import('@/views/ChatWindow.vue'), props: true },
   { path: '/agents', name: 'agents', component: () => import('@/views/AgentsView.vue') },
-  { path: '/agents/:id', name: 'agent-detail', component: () => import('@/views/AgentDetailView.vue'), props: true },
+  { path: '/agents/:id', name: 'agent-detail', component: AgentDetailView, props: true },
   { path: '/knowledge', name: 'knowledge-list', component: () => import('@/views/KnowledgeView.vue') },
   { path: '/knowledge/:id', name: 'knowledge-detail', component: () => import('@/views/KnowledgeGroupDetailView.vue'), props: true },
   { path: '/account', name: 'account', component: () => import('@/views/AccountView.vue') },

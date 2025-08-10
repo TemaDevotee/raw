@@ -18,16 +18,12 @@
           class="w-40 sm:w-48 px-4 py-2 rounded-full border border-default bg-input text-default shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--c-text-brand)]"
         >
           <option value="">{{ langStore.t('all') || 'All' }}</option>
-          <option value="attention">{{ langStore.t('attention') }}</option>
-          <option value="live">{{ langStore.t('live') }}</option>
-          <option value="paused">{{ langStore.t('paused') }}</option>
-          <option value="resolved">{{ langStore.t('resolved') }}</option>
-          <option value="idle">{{ langStore.t('idle') }}</option>
+          <option value="attention">{{ statusLabel('attention') }}</option>
+          <option value="live">{{ statusLabel('live') }}</option>
+          <option value="paused">{{ statusLabel('paused') }}</option>
+          <option value="resolved">{{ statusLabel('resolved') }}</option>
+          <option value="idle">{{ statusLabel('idle') }}</option>
         </select>
-        <label class="flex items-center gap-1 text-sm">
-          <input type="checkbox" v-model="onlyMine" data-testid="filter-mine" />
-          {{ langStore.t('assign.toMe') }}
-        </label>
       </div>
 
       <section class="flex-1 border-t border-default" data-testid="chats-groups">
@@ -78,7 +74,7 @@
             <span
               class="status-dot mr-3"
               :style="{ backgroundColor: statusColor(item.chat.status) }"
-              :aria-label="statusAria(item.chat.status)"
+              :aria-label="statusLabel(item.chat.status)"
             ></span>
             <div class="flex-1 min-w-0">
               <p class="font-medium text-default truncate">
@@ -153,6 +149,7 @@ import {
   badgeColor,
   chatTimestamp,
   GROUPS_KEY,
+  statusLabel,
 } from './chatsUtils.js';
 
 const router = useRouter();
@@ -172,8 +169,6 @@ watch(searchQuery, (v) => {
   searchTimer = setTimeout(() => (liveSearch.value = v), 200);
 });
 const selectedStatus = ref('');
-const onlyMine = ref(false);
-const meId = JSON.parse(localStorage.getItem('auth.user') || 'null')?.id || 'op1';
 
 async function fetchChats() {
   try {
@@ -209,8 +204,7 @@ const filteredChats = computed(() => {
       String(c.id).toLowerCase().includes(q) ||
       agentName.includes(q);
     const matchStatus = !selectedStatus.value || c.status === selectedStatus.value;
-    const matchMine = !onlyMine.value || c.assignedTo?.id === meId;
-    return matchSearch && matchStatus && matchMine;
+    return matchSearch && matchStatus;
   });
 });
 
@@ -301,17 +295,6 @@ function isGroupOpen(status) {
 }
 
 // helpers
-function tStatus(s) {
-  if (!s) return ''
-  const key = `status${s.charAt(0).toUpperCase() + s.slice(1)}`
-  return langStore.t(key)
-}
-function statusLabel(status) {
-  return tStatus(status)
-}
-function statusAria(status) {
-  return `${langStore.t('statusLabel')}: ${tStatus(status)}`
-}
 
 function initials(name) {
   return name

@@ -115,6 +115,19 @@ async function fetchAgents() {
   }
 }
 
+async function getById(id) {
+  const cached = state.agentsById[id]
+  if (cached) return cached
+  try {
+    const res = await apiClient.get(`/agents/${id}`)
+    const agent = res.data
+    if (agent && agent.id) state.agentsById[agent.id] = agent
+    return agent
+  } catch {
+    return undefined
+  }
+}
+
 function agentById(id) {
   return state.agentsById[id]
 }
@@ -134,5 +147,6 @@ export const agentStore = {
   reorderKnowledgeLinks,
   effectiveKnowledge,
   fetchAgents,
+  getById,
   agentById,
 }

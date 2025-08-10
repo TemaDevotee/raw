@@ -9,10 +9,20 @@ import { workspaceStore } from '@/stores/workspaceStore'
 import accountStore from '@/stores/accountStore'
 import { initLogoutListener } from '@/stores/logout.js'
 import { authStore } from '@/stores/authStore'
+import { agentStore } from '@/stores/agentStore'
+import { knowledgeStore } from '@/stores/knowledgeStore'
 
 if (isE2E) {
   installE2EStubs()
   window.__E2E__ = true
+  if ('serviceWorker' in navigator) {
+    try {
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((rs) => rs.forEach((r) => r.unregister()))
+        .catch(() => {})
+    } catch {}
+  }
 }
 
 const params = new URLSearchParams(location.search)
@@ -63,14 +73,24 @@ app.directive('tooltip', {
 })
 if (location.pathname !== '/login.html') {
   app.mount('#app')
-  if (typeof document !== 'undefined') {
-    document.documentElement.setAttribute('data-testid-app-ready', '1')
-  }
 }
 
-router.isReady().then(() => {
-  if (isE2E && !router.currentRoute.value.path.startsWith('/chats')) {
-    router.replace('/chats?skipAuth=1')
+router.isReady().then(async () => {
+  await Promise.all([
+    Promise.resolve(workspaceStore.hydrate?.()),
+    Promise.resolve(agentStore.hydrate?.()),
+    Promise.resolve(knowledgeStore.hydrate?.()),
+  ])
+  if (isE2E) {
+    if ('serviceWorker' in navigator) {
+      try {
+        const regs = await navigator.serviceWorker.getRegistrations()
+        regs.forEach((r) => r.unregister())
+      } catch {}
+    }
+    document.documentElement.classList.add('e2e-mode')
+    window.__E2E_READY__ = true
+    document.documentElement.setAttribute('data-test-ready', '1')
   }
 })
 
