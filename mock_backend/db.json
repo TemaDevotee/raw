@@ -118,7 +118,7 @@
     "tokenQuota": 200000,
     "tokenUsed": 34850,
     "storageQuotaMB": 5000,
-    "storageUsedMB": 0.00001049041748046875,
+    "storageUsedMB": 0.0000209808349609375,
     "period": {
       "start": "2025-08-01",
       "end": "2025-09-01"
@@ -919,6 +919,13 @@
       "name": "Docs",
       "createdAt": "2025-08-10T15:43:19.733Z",
       "sourcesCount": 1
+    },
+    {
+      "id": "1754842043302",
+      "tenantId": "t1",
+      "name": "Docs",
+      "createdAt": "2025-08-10T16:07:23.302Z",
+      "sourcesCount": 1
     }
   ],
   "knowledgeSources": [
@@ -932,9 +939,41 @@
       "path": "t1/1754840599733/1754840599755/file.bin",
       "createdAt": "2025-08-10T15:43:19.756Z",
       "status": "uploaded"
+    },
+    {
+      "id": "1754842043324",
+      "tenantId": "t1",
+      "collectionId": "1754842043302",
+      "name": "hello.txt",
+      "mime": "text/plain",
+      "size": 11,
+      "path": "t1/1754842043302/1754842043324/file.bin",
+      "createdAt": "2025-08-10T16:07:23.324Z",
+      "status": "uploaded"
     }
   ],
-  "draftsByChat": {},
+  "draftsByChat": {
+    "5": [
+      {
+        "id": "d501",
+        "chatId": "5",
+        "author": "agent",
+        "text": "Need clarification on shipping.",
+        "createdAt": "2025-08-10T12:30:00Z",
+        "state": "queued"
+      }
+    ],
+    "6": [
+      {
+        "id": "d601",
+        "chatId": "6",
+        "author": "agent",
+        "text": "Awaiting invoice details.",
+        "createdAt": "2025-08-10T12:31:00Z",
+        "state": "queued"
+      }
+    ]
+  },
   "membershipsByWs": {},
   "chatDrafts": {},
   "users": [

@@ -101,7 +101,7 @@ describe('chats utils', () => {
   it('chat window template exposes menu and presence roles', () => {
     const src = readFileSync(resolve('src/views/ChatWindow.vue'), 'utf8')
     expect(src).toMatch(/role="menu"/)
-    expect(src).toMatch(/testid="presence-stack-header"/)
+    expect(src).toMatch(/testid="presence-stack"/)
   })
 })
 

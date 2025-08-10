@@ -1,13 +1,13 @@
 import apiClient from '.'
 
 export function listDrafts(chatId) {
-  return apiClient.get(`/drafts/list/${chatId}`)
+  return apiClient.get(`/chats/${chatId}/drafts`)
 }
 
-export function approveDraft(id) {
-  return apiClient.post(`/drafts/approve/${id}`)
+export function approveDraft(chatId, id) {
+  return apiClient.post(`/chats/${chatId}/drafts/${id}/approve`)
 }
 
-export function discardDraft(id) {
-  return apiClient.post(`/drafts/discard/${id}`)
+export function discardDraft(chatId, id) {
+  return apiClient.post(`/chats/${chatId}/drafts/${id}/discard`)
 }

@@ -2,51 +2,50 @@ const express = require('express');
 const router = express.Router();
 const { readDb, writeDb, ensureScopes } = require('../utils/db');
 
-// list drafts for a chat
-router.get('/list/:chatId', (req, res) => {
-  const db = ensureScopes(readDb());
-  const chatId = req.params.chatId;
+function getDraftsByChat(db, chatId) {
   db.draftsByChat = db.draftsByChat || {};
-  const list = db.draftsByChat[chatId] || [];
-  res.json(list.filter((d) => d.state !== 'discarded'));
-});
-
-function findDraft(db, id) {
-  db.draftsByChat = db.draftsByChat || {};
-  for (const [cid, arr] of Object.entries(db.draftsByChat)) {
-    const idx = arr.findIndex((d) => String(d.id) === String(id));
-    if (idx !== -1) return { chatId: cid, draft: arr[idx], index: idx, list: arr };
-  }
-  return null;
+  return db.draftsByChat[chatId] || [];
 }
 
-router.post('/approve/:id', (req, res) => {
+router.get('/chats/:id/drafts', (req, res) => {
   const db = ensureScopes(readDb());
-  const found = findDraft(db, req.params.id);
-  if (!found) return res.status(404).send();
-  const { chatId, draft, list, index } = found;
-  list.splice(index, 1);
+  const list = getDraftsByChat(db, req.params.id).filter((d) => d.state !== 'discarded');
+  res.json(list);
+});
+
+function findDraft(db, chatId, draftId) {
+  const list = getDraftsByChat(db, chatId);
+  const idx = list.findIndex((d) => String(d.id) === String(draftId));
+  return { list, idx };
+}
+
+router.post('/chats/:chatId/drafts/:draftId/approve', (req, res) => {
+  const db = ensureScopes(readDb());
+  const { list, idx } = findDraft(db, req.params.chatId, req.params.draftId);
+  if (idx === -1) return res.status(404).send();
+  const draft = list.splice(idx, 1)[0];
   db.chatDetails = db.chatDetails || {};
-  if (!db.chatDetails[chatId]) db.chatDetails[chatId] = { id: chatId, messages: [] };
-  const message = {
-    sender: 'agent',
-    text: draft.text,
-    time: new Date().toLocaleTimeString(),
-    visibility: 'public',
-  };
-  db.chatDetails[chatId].messages.push(message);
+  if (!db.chatDetails[req.params.chatId]) db.chatDetails[req.params.chatId] = { id: req.params.chatId, messages: [] };
+  const msg = { sender: 'agent', text: draft.text, time: new Date().toISOString(), visibility: 'public' };
+  db.chatDetails[req.params.chatId].messages.push(msg);
   writeDb(db);
-  res.json({ chatId, message });
+  res.json({ chatId: req.params.chatId, message: msg });
 });
 
-router.post('/discard/:id', (req, res) => {
+router.post('/chats/:chatId/drafts/:draftId/discard', (req, res) => {
   const db = ensureScopes(readDb());
-  const found = findDraft(db, req.params.id);
-  if (!found) return res.status(404).send();
-  const { list, index } = found;
-  list.splice(index, 1);
+  const { list, idx } = findDraft(db, req.params.chatId, req.params.draftId);
+  if (idx === -1) return res.status(404).send();
+  list.splice(idx, 1);
   writeDb(db);
-  res.status(200).json({ ok: true });
+  res.json({ ok: true });
 });
 
-module.exports = router;
+// e2e seeding
+function seedDrafts(map) {
+  const db = ensureScopes(readDb());
+  db.draftsByChat = map;
+  writeDb(db);
+}
+
+module.exports = { router, seedDrafts };

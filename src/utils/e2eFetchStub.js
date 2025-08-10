@@ -10,19 +10,6 @@ export function installE2EStubs() {
       headers: { 'Content-Type': 'application/json' },
     })
 
-  const presence = {
-    '1': [
-      { id: 'u1', name: 'Alice', role: 'operator', online: true },
-      { id: 'u2', name: 'Bob', role: 'operator', online: true },
-      { id: 'u3', name: 'Charlie', role: 'observer', online: true },
-      { id: 'u4', name: 'Dana', role: 'observer', online: false },
-    ],
-    '2': [
-      { id: 'u1', name: 'Alice', role: 'operator', online: true },
-    ],
-  }
-  window.__e2ePresenceData = presence
-
   window.fetch = async (input, init) => {
     const url = typeof input === 'string' ? input : input.url
 
@@ -76,17 +63,8 @@ export function installE2EStubs() {
       return json(list)
     }
 
-    if (url.includes('/presence/list')) {
-      const list = Object.entries(window.__e2ePresenceData).map(([chatId, participants]) => ({
-        chatId,
-        participants,
-        updatedAt: new Date().toISOString(),
-      }))
-      return json(list)
-    }
-
-    if (url.match(/\/presence\/(join|leave)/) || url.match(/\/drafts/)) {
-      return json({ ok: true })
+    if (url.match(/\/presence\/(join|leave)/)) {
+      return original(input, init)
     }
 
     if (url.includes('/account/usage')) {

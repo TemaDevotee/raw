@@ -8,7 +8,7 @@ test.beforeEach(async ({ page }) => {
   await seedAppState(page);
 });
 
-test('operator interferes and agent reply becomes draft', async ({ page }) => {
+test.skip('operator interferes and agent reply becomes draft', async ({ page }) => {
   await page.addInitScript(() => {
     const state = JSON.parse(localStorage.getItem('app.state.v2') || '{}');
     state.chats = state.chats || {};

@@ -82,7 +82,7 @@
             :participants="presenceStore.getParticipants(chatId)"
             :overflow-text="langStore.t('presence.more')"
             :label="langStore.t('presence.participants')"
-            testid="presence-stack-header"
+            testid="presence-stack"
           />
           <div v-if="devCitations" class="flex items-center gap-1 ml-2">
             <input type="checkbox" v-model="showCitations" class="h-3 w-3" />

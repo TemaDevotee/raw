@@ -3,11 +3,14 @@ import { Page } from '@playwright/test'
 interface SeedData {
   agents?: Array<Record<string, any>>
   knowledge?: { collections?: any[] }
+  presence?: Array<{ chatId: string; participants: any[] }>
+  drafts?: Record<string, any[]>
+  workspaces?: any[]
 }
 
 export async function seedAppState(page: Page, data: SeedData = {}) {
   const state = {
-    workspaces: [],
+    workspaces: data.workspaces || [],
     currentWorkspaceId: 'ws_default',
     version: 2,
     chats: {},
@@ -46,6 +49,21 @@ export async function seedAppState(page: Page, data: SeedData = {}) {
   await page.route('https://fonts.gstatic.com/**', (route) => {
     route.fulfill({ status: 200, body: '' })
   })
+
+  if (data.presence) {
+    await seedPresence(page, data.presence)
+  }
+  if (data.drafts) {
+    await seedDrafts(page, data.drafts)
+  }
+}
+
+export async function seedPresence(page: Page, entries: Array<{ chatId: string; participants: any[] }>) {
+  await page.request.post('/__e2e__/presence', { data: entries })
+}
+
+export async function seedDrafts(page: Page, map: Record<string, any[]>) {
+  await page.request.post('/__e2e__/drafts', { data: map })
 }
 
 export async function waitForAppReady(page: Page) {

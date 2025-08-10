@@ -20,8 +20,8 @@ const chatsRoutes = require('./routes/chats');
 const teamsRoutes = require('./routes/teams');
 const connectionsRoutes = require('./routes/connections');
 const usageRoutes = require('./routes/usage');
-const presenceRoutes = require('./routes/presence');
-const draftsRoutes = require('./routes/drafts');
+const { router: draftsRoutes, seedDrafts } = require('./routes/drafts');
+const { router: presenceRoutes, seedPresence } = require('./routes/presence');
 const knowledgeRoutes = require('./routes/knowledge');
 const adminRoutes = require('./routes/admin');
 
@@ -83,7 +83,7 @@ app.use('/api/teams', teamsRoutes);
 app.use('/api/connections', connectionsRoutes);
 app.use('/api/usage', usageRoutes);
 app.use('/api', presenceRoutes);
-app.use('/api/drafts', draftsRoutes);
+app.use('/api', draftsRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
 
 // Keep the agents and knowledge routes in this file for now.  They
@@ -287,6 +287,19 @@ app.get('/api/presence', (req, res) => {
   res.json(out);
 });
 
+if (process.env.NODE_ENV !== 'production') {
+  app.post('/__e2e__/presence', (req, res) => {
+    const data = req.body && req.body.data ? req.body.data : req.body;
+    seedPresence(data || []);
+    res.json({ ok: true });
+  });
+  app.post('/__e2e__/drafts', (req, res) => {
+    const map = req.body && req.body.data ? req.body.data : req.body;
+    seedDrafts(map || {});
+    res.json({ ok: true });
+  });
+}
+
 
 // Chat-specific approve mode: when enabled, agent messages go to drafts until approved.
 // ---------------------------------------------------------------------------
@@ -358,54 +371,16 @@ app.post('/api/chats/:id/agent_message', (req, res) => {
   const operatorInControl = db.chatControl && db.chatControl[chatId] === 'operator';
   const needsApprove = db.chatApproveRequired && db.chatApproveRequired[chatId];
   if (operatorInControl || needsApprove) {
-    if (!db.chatDrafts) db.chatDrafts = {};
-    if (!db.chatDrafts[chatId]) db.chatDrafts[chatId] = [];
-    const draft = { id: Date.now(), sender: 'agent', text };
-    db.chatDrafts[chatId].push(draft);
+    if (!db.draftsByChat) db.draftsByChat = {};
+    if (!db.draftsByChat[chatId]) db.draftsByChat[chatId] = [];
+    const draft = { id: Date.now(), chatId, author: 'agent', text, createdAt: new Date().toISOString(), state: 'queued' };
+    db.draftsByChat[chatId].push(draft);
     writeDb(db);
     return res.status(201).json({ queued: true, draft });
   }
   db.chatDetails[chatId].messages.push({ sender: 'agent', text, time: new Date().toLocaleTimeString() });
   writeDb(db);
   res.status(201).json({ queued: false });
-});
-
-// DRAFTS
-app.get('/api/chats/:id/drafts', (req, res) => {
-  const db = ensureScopes(readDb());
-  const id = String(req.params.id);
-  res.json(db.chatDrafts[id] || []);
-});
-app.post('/api/chats/:id/drafts', (req, res) => {
-  const db = ensureScopes(readDb());
-  const id = String(req.params.id);
-  const draft = { id: Date.now(), sender: req.body?.sender || 'agent', text: req.body?.text || '' };
-  if (!db.chatDrafts[id]) db.chatDrafts[id] = [];
-  db.chatDrafts[id].push(draft);
-  writeDb(db);
-  res.status(201).json(draft);
-});
-app.post('/api/chats/:id/drafts/:draftId/approve', (req, res) => {
-  const db = ensureScopes(readDb());
-  const chatId = String(req.params.id);
-  const draftId = parseInt(req.params.draftId, 10);
-  const list = db.chatDrafts[chatId] || [];
-  const idx = list.findIndex(d => d.id === draftId);
-  if (idx === -1) return res.status(404).json({ error: 'Not found' });
-  const draft = list.splice(idx, 1)[0];
-  db.chatDetails = db.chatDetails || {};
-  if (!db.chatDetails[chatId]) db.chatDetails[chatId] = { id: chatId, messages: [] };
-  db.chatDetails[chatId].messages.push({ sender: draft.sender, text: draft.text, time: new Date().toLocaleTimeString() });
-  writeDb(db);
-  res.json({ ok: true });
-});
-app.delete('/api/chats/:id/drafts/:draftId', (req, res) => {
-  const db = ensureScopes(readDb());
-  const chatId = String(req.params.id);
-  const draftId = parseInt(req.params.draftId, 10);
-  db.chatDrafts[chatId] = (db.chatDrafts[chatId] || []).filter(d => d.id !== draftId);
-  writeDb(db);
-  res.status(204).send();
 });
 
 app.patch('/api/agents/:id/approve_mode', (req, res) => {
