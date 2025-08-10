@@ -1,7 +1,7 @@
 import { beforeAll, afterAll, describe, expect, it } from 'vitest'
 
 let server: any
-const BASE = 'http://localhost:3001'
+const BASE = 'http://localhost:3100'
 
 beforeAll(async () => {
   server = (await import('../server.js')).default

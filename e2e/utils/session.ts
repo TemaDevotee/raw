@@ -1,4 +1,5 @@
 import { Page, expect } from '@playwright/test'
+import { MOCK_BASE } from '../__setup__'
 
 interface SeedData {
   agents?: Array<Record<string, any>>
@@ -60,14 +61,12 @@ export async function seedAppState(page: Page, data: SeedData = {}) {
   }
 }
 
-const backendBase = process.env.PLAYWRIGHT_API_URL || 'http://127.0.0.1:3001'
-
 export async function seedPresence(page: Page, entries: Array<{ chatId: string; participants: any[] }>) {
-  await page.request.post(`${backendBase}/__e2e__/presence`, { data: entries })
+  await page.request.post(`${MOCK_BASE}/__e2e__/presence`, { data: entries })
 }
 
 export async function seedDrafts(page: Page, chatId: string, drafts: any[]) {
-  await page.request.post(`${backendBase}/__e2e__/drafts/seed`, {
+  await page.request.post(`${MOCK_BASE}/__e2e__/drafts/seed`, {
     data: { chatId, drafts: drafts.map((d, i) => (typeof d === 'string' ? { id: `d-e2e-${i + 1}`, text: d } : d)) }
   })
 }
@@ -107,7 +106,7 @@ export async function waitStoreOp(page: Page, type: 'approve' | 'discard', draft
 
 export async function waitDraftCountServer(page: Page, chatId: string, n: number) {
   await expect.poll(async () => {
-    const res = await page.request.get(`${backendBase}/__e2e__/drafts?chatId=${chatId}`)
+    const res = await page.request.get(`${MOCK_BASE}/__e2e__/drafts?chatId=${chatId}`)
     const data = await res.json()
     return Array.isArray(data) ? data.length : 0
   }, { timeout: 3000 }).toBe(n)

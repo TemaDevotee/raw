@@ -26,9 +26,14 @@ const knowledgeRoutes = require('./routes/knowledge');
 const adminRoutes = require('./routes/admin');
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.MOCK_PORT || 3100;
 
 app.use(bodyParser.json());
+
+// Simple healthcheck so e2e harness can wait for the backend to start
+app.get('/health', (_req, res) => {
+  res.json({ ok: true });
+});
 
 const ADMIN_ORIGIN = process.env.ADMIN_ORIGIN || 'http://localhost:5175';
 const checkAdminAuth = (req, res, next) => {
