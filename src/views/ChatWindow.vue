@@ -147,7 +147,7 @@
         v-for="d in drafts"
         :key="d.id"
         class="flex justify-start"
-        data-testid="draft-bubble"
+        :data-testid="`draft-bubble-${d.id}`"
         :aria-busy="draftStore.isPending(chatId, d.id) ? 'true' : 'false'"
       >
         <div class="draft-msg">
@@ -157,7 +157,7 @@
               variant="primary"
               size="xs"
               :disabled="(!isHeldByMe && !isE2E) || draftStore.isPending(chatId, d.id)"
-              data-testid="draft-approve"
+              :data-testid="`draft-approve-${d.id}`"
               @click="approveDraft(d)"
             >
               {{ langStore.t('drafts.approve') }}
@@ -166,7 +166,7 @@
               variant="secondary"
               size="xs"
               :disabled="(!isHeldByMe && !isE2E) || draftStore.isPending(chatId, d.id)"
-              data-testid="draft-discard"
+              :data-testid="`draft-discard-${d.id}`"
               @click="rejectDraft(d)"
             >
               {{ langStore.t('drafts.discard') }}

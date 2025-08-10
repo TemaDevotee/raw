@@ -9,6 +9,14 @@ const state = reactive({
   capture: new Set(),
 })
 
+function emitE2E(type, chatId, draftId) {
+  if (window && window.__E2E__) {
+    window.dispatchEvent(
+      new CustomEvent('__draft_op_done__', { detail: { type, chatId, draftId } })
+    )
+  }
+}
+
 export async function fetchDrafts(chatId) {
   state.loadingByChat[chatId] = true
   try {
@@ -45,6 +53,7 @@ export async function approve(chatId, id) {
     return res.data
   } finally {
     state.pendingApprove[chatId].delete(id)
+    emitE2E('approve', chatId, id)
   }
 }
 
@@ -62,6 +71,7 @@ export async function discard(chatId, id) {
     return res.data
   } finally {
     state.pendingDiscard[chatId].delete(id)
+    emitE2E('discard', chatId, id)
   }
 }
 

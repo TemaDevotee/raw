@@ -65,7 +65,7 @@ test.skip('operator interferes and agent reply becomes draft', async ({ page }) 
   await expect(input).toHaveAttribute('data-locked', 'false');
 
   await seedDrafts(page, '5', ['hello from agent']);
-  await expect(page.getByTestId('draft-bubble')).toBeVisible();
+  await expect(page.getByTestId('draft-bubble-e2e-draft-0')).toBeVisible();
   await expect(page.getByTestId('draft-count')).toHaveText('1');
 
   const ret = page.getByTestId('btn-return');

@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test'
+import { Page, expect } from '@playwright/test'
 
 interface SeedData {
   agents?: Array<Record<string, any>>
@@ -79,4 +79,42 @@ export async function waitForAppReady(page: Page) {
     timeout: 15_000,
   })
   await page.waitForSelector('[data-test-ready="1"]', { timeout: 15_000 })
+}
+
+export async function approveDraft(page: Page, draftId: string) {
+  const click = page.getByTestId(`draft-approve-${draftId}`).click()
+  const api = page.waitForResponse((r) => /\/drafts\/.*\/approve$/.test(r.url()))
+  await Promise.all([click, api])
+  await page.waitForSelector(`[data-testid="draft-bubble-${draftId}"]`, { state: 'detached' })
+}
+
+export async function discardDraft(page: Page, draftId: string) {
+  const click = page.getByTestId(`draft-discard-${draftId}`).click()
+  const api = page.waitForResponse((r) => /\/drafts\/.*\/discard$/.test(r.url()))
+  await Promise.all([click, api])
+  await page.waitForSelector(`[data-testid="draft-bubble-${draftId}"]`, { state: 'detached' })
+}
+
+export async function waitForDraftCount(page: Page, n: number) {
+  await expect(page.getByTestId('draft-count')).toHaveText(String(n))
+}
+
+export async function waitForAgentMessage(page: Page, text: string) {
+  await expect(page.getByTestId('msg-agent').last()).toHaveText(text)
+}
+
+export async function waitStoreOp(page: Page, type: 'approve' | 'discard', draftId: string) {
+  await page.evaluate(
+    ({ type, draftId }) =>
+      new Promise<void>((resolve) => {
+        const handler = (e: any) => {
+          if (e?.detail?.type === type && e.detail.draftId === draftId) {
+            window.removeEventListener('__draft_op_done__', handler)
+            resolve()
+          }
+        }
+        window.addEventListener('__draft_op_done__', handler, { once: true })
+      }),
+    { type, draftId },
+  )
 }
