@@ -59,6 +59,25 @@ export function installE2EStubs() {
       return json(data)
     }
 
+    if (url.includes('/knowledge/collections')) {
+      const list = window.__e2eKnowledgeCollections || []
+      if (init?.method === 'POST') {
+        const body = init.body ? JSON.parse(init.body) : {}
+        const coll = {
+          id: Date.now().toString(),
+          name: body.name || '',
+          description: body.description || '',
+          visibility: body.visibility || 'private',
+          createdAt: new Date().toISOString(),
+          sources: [],
+        }
+        list.push(coll)
+        window.__e2eKnowledgeCollections = list
+        return json(coll, 201)
+      }
+      return json(list)
+    }
+
     if (url.includes('/presence/list')) {
       const list = Object.entries(window.__e2ePresenceData).map(([chatId, participants]) => ({
         chatId,

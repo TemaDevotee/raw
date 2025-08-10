@@ -9,7 +9,7 @@
           data-testid="knowledge-add"
           @click="openDrawer = true"
         >
-          {{ t('knowledge.add') }}
+          {{ t('knowledge.add.trigger') }}
         </button>
       </div>
       <ul v-if="store.state.collections.length">
@@ -30,7 +30,7 @@
         </li>
       </ul>
       <div v-else class="text-muted py-16 text-center">
-        {{ t('knowledge.empty') }}
+        {{ t('knowledge.noSources') }}
       </div>
     </div>
     <div class="flex-1" v-if="selected">
@@ -100,7 +100,7 @@
         {{ t('knowledgeNoResults') }}
       </div>
     </div>
-    <div v-else class="flex-1 text-muted py-8 text-center">{{ t('knowledgeNoSources') }}</div>
+    <div v-else class="flex-1 text-muted py-8 text-center">{{ t('knowledge.noSources') }}</div>
   </div>
   <div v-if="showUpload" class="fixed inset-0 bg-black/40 flex items-center justify-center">
     <div class="bg-white dark:bg-gray-800 p-6 rounded shadow-lg w-96">
@@ -139,7 +139,7 @@
   <Drawer v-model="openDrawer" aria-labelledby="drawer-title">
     <div class="p-6 space-y-4">
       <h2 id="drawer-title" data-testid="drawer-title" class="text-lg font-semibold">
-        {{ t('knowledge.drawerTitle') }}
+        {{ t('knowledge.add.title') }}
       </h2>
       <div>
         <label for="coll-name" class="block text-sm mb-1">{{ t('knowledge.name') }}</label>
@@ -171,7 +171,7 @@
           @click="submit"
           :disabled="!form.name.trim()"
         >
-          {{ t('knowledge.create') }}
+          {{ t('knowledge.add.submit') }}
         </button>
       </div>
     </div>

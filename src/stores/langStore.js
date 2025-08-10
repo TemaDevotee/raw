@@ -56,19 +56,24 @@ const messages = {
       idle: 'Idle'
     },
     agent: {
-      notFoundTitle: 'Agent not found',
-      backToList: 'Back to list'
+      notFound: {
+        title: 'Agent not found',
+        desc: 'The requested agent does not exist.'
+      }
     },
+    agents: { back: 'Back to agents' },
     knowledge: {
-      add: 'Add',
-      drawerTitle: 'Create collection',
+      add: {
+        trigger: 'Add',
+        title: 'Create collection',
+        submit: 'Create'
+      },
       name: 'Name',
       description: 'Description',
       visibility: 'Visibility',
       private: 'Private',
       workspace: 'Workspace',
-      create: 'Create',
-      empty: 'No sources yet'
+      noSources: 'No sources yet'
     },
     // Sandbox messages
     send: 'Send',
@@ -323,19 +328,24 @@ const messages = {
       idle: 'Неактивен'
     },
     agent: {
-      notFoundTitle: 'Агент не найден',
-      backToList: 'Назад к списку'
+      notFound: {
+        title: 'Агент не найден',
+        desc: 'Запрошенный агент не существует.'
+      }
     },
+    agents: { back: 'Назад к агентам' },
     knowledge: {
-      add: 'Добавить',
-      drawerTitle: 'Новая коллекция',
+      add: {
+        trigger: 'Добавить',
+        title: 'Новая коллекция',
+        submit: 'Создать'
+      },
       name: 'Название',
       description: 'Описание',
       visibility: 'Доступ',
       private: 'Личный',
       workspace: 'В воркспейсе',
-      create: 'Создать',
-      empty: 'Источников пока нет'
+      noSources: 'Источников пока нет'
     },
     send: 'Отправить',
     typeMessage: 'Введите сообщение…',

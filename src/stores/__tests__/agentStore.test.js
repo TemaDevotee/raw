@@ -1,4 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+
+vi.mock('@/api', () => ({
+  default: { get: vi.fn().mockResolvedValue({ data: null }) },
+}))
 
 let agentStore
 
@@ -59,5 +63,10 @@ describe('agentStore knowledge links', () => {
     agentStore.hydrate()
     expect(agentStore.state.knowledgeLinks.length).toBe(1)
     expect(agentStore.state.knowledgeLinks[0].collectionId).toBe('x')
+  })
+
+  it('getById returns undefined for unknown id', async () => {
+    const res = await agentStore.getById('999')
+    expect(res).toBeUndefined()
   })
 })

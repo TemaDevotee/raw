@@ -4,15 +4,16 @@ import { seedAppState } from './utils/session';
 import { gotoHash } from './support/nav';
 import { waitForAppReady } from './support/wait';
 
-test('unknown agent shows empty state', async ({ page }) => {
+test('unknown agent redirects with toast', async ({ page }) => {
   await seedAppState(page, { agents: [] });
   const errors: string[] = [];
   page.on('console', (msg) => {
     if (msg.type() === 'error') errors.push(msg.text());
   });
-  await gotoHash(page, 'agents/999');
+  await gotoHash(page, 'agents/unknown');
   await waitForAppReady(page);
-  await expect(page.getByTestId('agent-not-found')).toBeVisible();
+  await expect(page).toHaveURL(/#\/agents$/);
+  await expect(page.getByText('Agent not found')).toBeVisible();
   expect(errors).toHaveLength(0);
 });
 

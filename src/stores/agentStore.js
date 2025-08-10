@@ -115,7 +115,11 @@ async function fetchAgents() {
   }
 }
 
-async function getById(id) {
+function getById(id) {
+  return state.agentsById[id]
+}
+
+async function ensure(id) {
   const cached = state.agentsById[id]
   if (cached) return cached
   try {
@@ -125,9 +129,10 @@ async function getById(id) {
       state.agentsById[agent.id] = agent
       return agent
     }
-    return undefined
-  } catch {
-    return undefined
+    return null
+  } catch (e) {
+    if (e?.response?.status === 404) return null
+    return null
   }
 }
 
@@ -151,5 +156,6 @@ export const agentStore = {
   effectiveKnowledge,
   fetchAgents,
   getById,
+  ensure,
   agentById,
 }

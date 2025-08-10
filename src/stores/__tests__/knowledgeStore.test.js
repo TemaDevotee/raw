@@ -47,12 +47,13 @@ beforeEach(() => {
 
 describe('knowledgeStore', () => {
   it('fetches collections', async () => {
-    localStorage.setItem('knowledge.collections.v1', JSON.stringify([{ id: '1', name: 'Coll', sources: [] }]))
+    api.listCollections.mockResolvedValue({ data: [{ id: '1', name: 'Coll', sources: [] }] })
     await knowledgeStore.fetchCollections()
     expect(knowledgeStore.state.collections).toHaveLength(1)
   })
 
   it('creates collection', async () => {
+    api.createCollection.mockResolvedValue({ data: { id: 'n1', name: 'New', sources: [], visibility: 'private', createdAt: '0' } })
     await knowledgeStore.createCollection({ name: 'New' })
     expect(knowledgeStore.state.collections.some((c) => c.name === 'New')).toBe(true)
   })

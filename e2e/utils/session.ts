@@ -17,7 +17,7 @@ export async function seedAppState(page: Page, data: SeedData = {}) {
     (payload) => {
       localStorage.setItem('__e2e__', '1')
       localStorage.setItem('app.state.v2', JSON.stringify(payload.state))
-      localStorage.setItem('lang', 'ru')
+      localStorage.setItem('lang', 'en')
       localStorage.setItem('appTheme', 'forest')
       localStorage.setItem('authenticated', 'true')
       localStorage.setItem('auth.user', JSON.stringify(payload.user))
@@ -27,10 +27,7 @@ export async function seedAppState(page: Page, data: SeedData = {}) {
       sessionStorage.setItem('auth.user', JSON.stringify(payload.user))
       sessionStorage.setItem('auth.token', 'e2e')
       if (payload.knowledge?.collections !== undefined) {
-        localStorage.setItem(
-          'knowledge.collections.v1',
-          JSON.stringify(payload.knowledge.collections),
-        )
+        window.__e2eKnowledgeCollections = payload.knowledge.collections
       }
       if (payload.agents !== undefined) {
         window.__e2eAgentsData = payload.agents

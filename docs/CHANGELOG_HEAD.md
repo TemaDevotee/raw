@@ -23,6 +23,7 @@ Use this section to draft release notes for the next version. Copy relevant entr
 ## Agents & Knowledge
 
 - Graceful agent not-found state and Add drawer for knowledge collections
+- Redirect invalid agent ids to agent list with friendly toast
 
 ## Sidebar
 

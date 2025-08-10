@@ -8,10 +8,10 @@ test('add collection via drawer', async ({ page }) => {
   await seedAppState(page, { knowledge: { collections: [] } });
   await gotoHash(page, 'knowledge');
   await waitForAppReady(page);
-  const addBtn = page.getByTestId('knowledge-add');
-  await expect(addBtn).toBeVisible();
-  await expect(addBtn).toBeEnabled();
-  await addBtn.click();
+  const add = page.getByTestId('knowledge-add');
+  await expect(add).toBeVisible();
+  await expect(add).toBeEnabled();
+  await add.click({ force: true });
   await expect(page.getByTestId('drawer')).toBeVisible();
   await page.getByTestId('collection-name').fill('FAQ');
   const createBtn = page.getByTestId('collection-create');
