@@ -1,6 +1,6 @@
-import api from './index.js'
+export async function getBilling() {
+  const res = await fetch('/api/account/billing');
+  if (!res.ok) throw new Error('billing.fetchFailed');
+  return res.json();
+}
 
-export const getUsageSummary = () => api.get('/account/usage')
-export const recordUsage = (payload) => api.post('/usage/record', payload)
-export const aggregateUsage = (params) => api.get('/usage/aggregate', { params })
-export const purchaseTokens = (tokens) => api.post('/account/purchase', { tokens })

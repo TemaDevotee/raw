@@ -1,89 +1,41 @@
-import { reactive } from 'vue'
-import * as billingApi from '@/api/billing'
-
-const STORAGE_KEY = 'billing.summary.v1'
+import { reactive } from 'vue';
+import { getBilling } from '@/api/billing';
 
 const state = reactive({
-  summary: null,
-  loading: false,
-})
+  loaded: false,
+  plan: null,
+  tokenQuota: 0,
+  tokenUsed: 0,
+  period: null,
+  error: null,
+});
 
-function persist() {
-  if (state.summary) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.summary))
-  }
+function tokenLeft() {
+  return Math.max(0, state.tokenQuota - state.tokenUsed);
 }
 
-function load() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) {
-      state.summary = JSON.parse(raw)
-    }
-  } catch {
-    state.summary = null
-  }
+function tokenPct() {
+  return state.tokenQuota
+    ? Math.min(100, Math.round((state.tokenUsed * 100) / state.tokenQuota))
+    : 0;
 }
 
 async function hydrate() {
-  load()
-  await refresh()
-}
-
-async function refresh() {
-  state.loading = true
   try {
-    const { data } = await billingApi.getUsageSummary()
-    state.summary = data
-    persist()
-  } finally {
-    state.loading = false
+    const b = await getBilling();
+    state.plan = b.plan;
+    state.tokenQuota = b.tokenQuota;
+    state.tokenUsed = b.tokenUsed;
+    state.period = b.period;
+    state.loaded = true;
+    state.error = null;
+  } catch (e) {
+    state.error = e;
+    state.loaded = true;
   }
 }
 
-async function purchase(tokens) {
-  const { data } = await billingApi.purchaseTokens(tokens)
-  state.summary = data
-  persist()
-}
+export const billingStore = { state, hydrate, tokenLeft, tokenPct };
 
-function applyLocalDelta(tokens) {
-  if (!state.summary) return
-  state.summary.usedThisPeriod += tokens
-  const included = state.summary.includedMonthlyTokens || 0
-  if (state.summary.usedThisPeriod > included) {
-    const excess = state.summary.usedThisPeriod - included
-    state.summary.remainingInPeriod = 0
-    state.summary.topupBalance = Math.max(0, state.summary.topupBalance - excess)
-  } else {
-    state.summary.remainingInPeriod = included - state.summary.usedThisPeriod
-  }
-  state.summary.totalRemaining =
-    state.summary.remainingInPeriod + state.summary.topupBalance
-  persist()
-}
+export default billingStore;
 
-function periodRemainingPct() {
-  if (!state.summary || !state.summary.includedMonthlyTokens) return 0
-  return state.summary.remainingInPeriod / state.summary.includedMonthlyTokens
-}
-
-function totalRemainingFmt() {
-  if (!state.summary) return '0'
-  const v = state.summary.totalRemaining
-  if (v >= 1000) return (v / 1000).toFixed(1).replace(/\.0$/, '') + 'k'
-  return String(v)
-}
-
-load()
-
-export default {
-  state,
-  hydrate,
-  refresh,
-  purchase,
-  applyLocalDelta,
-  periodRemainingPct,
-  totalRemainingFmt,
-  persist,
-}

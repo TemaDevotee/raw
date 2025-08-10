@@ -34,6 +34,10 @@ Use this section to draft release notes for the next version. Copy relevant entr
 - Bootstrap read-only Simulator Admin app on port 5174
 - Seed admin fixtures and expose read-only `/admin` endpoints for plans and users
 
+## Billing
+
+- Show account plan and token usage with progress bar
+
 ## Template
 
 ```

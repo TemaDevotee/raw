@@ -30,6 +30,12 @@
       }
     ]
   },
+  "billing": {
+    "plan": "Pro",
+    "tokenQuota": 200000,
+    "tokenUsed": 34850,
+    "period": { "start": "2025-08-01", "end": "2025-09-01" }
+  },
   "usage": [
     {
       "id": "u_1",

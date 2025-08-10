@@ -120,6 +120,13 @@ export const messages = {
       total: 'Total',
       avgPerMsg: 'Avg / msg',
     },
+    billing: {
+      plan: 'Plan',
+      tokens: 'Tokens',
+      usedOf: '{used} of {quota}',
+      resets: 'resets {date}',
+      fetchFailed: 'Failed to load billing',
+    },
     presence: {
       participants: 'Participants',
       more: '+{count}',
@@ -246,6 +253,13 @@ export const messages = {
       byAgent: 'По агентам',
       total: 'Итого',
       avgPerMsg: 'Средн. / сообщение',
+    },
+    billing: {
+      plan: 'План',
+      tokens: 'Токены',
+      usedOf: '{used} из {quota}',
+      resets: 'сброс {date}',
+      fetchFailed: 'Не удалось загрузить биллинг',
     },
     presence: {
       participants: 'Участники',

@@ -102,6 +102,15 @@ export function installE2EStubs() {
       })
     }
 
+    if (url.includes('/account/billing')) {
+      return json({
+        plan: 'Pro',
+        tokenQuota: 200000,
+        tokenUsed: 34850,
+        period: { start: '2025-08-01', end: '2025-09-01' },
+      })
+    }
+
     return original(input, init)
   }
 }

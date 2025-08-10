@@ -13,4 +13,12 @@ test('app shell renders', async ({ page }) => {
   await waitForAppReady(page);
   await page.getByTestId('sidebar').waitFor();
   await expect(page.getByTestId('sidebar')).toBeVisible();
+
+  await gotoHash(page, 'account');
+  await waitForAppReady(page);
+  const card = page.getByTestId('billing-card');
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('Pro');
+  await expect(card).toContainText('34,850');
+  await expect(card).toContainText('200,000');
 });

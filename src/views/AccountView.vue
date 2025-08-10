@@ -35,6 +35,45 @@
         </p>
       </section>
 
+      <!-- Plan & Tokens -->
+      <section
+        v-if="billingStore.state.loaded"
+        class="p-6 rounded-xl bg-secondary border border-default space-y-2"
+        data-testid="billing-card"
+      >
+        <h2 class="text-xl font-semibold">
+          {{ langStore.t('billing.plan') }}
+        </h2>
+        <p class="font-medium">{{ billingStore.state.plan }}</p>
+        <div>
+          <div class="h-2 rounded-full bg-secondary overflow-hidden">
+            <div
+              class="h-full bg-brand"
+              :style="{ width: billingStore.tokenPct() + '%' }"
+            ></div>
+          </div>
+          <p class="text-sm mt-1">
+            {{
+              langStore
+                .t('billing.usedOf')
+                .replace('{used}', billingStore.state.tokenUsed.toLocaleString())
+                .replace('{quota}', billingStore.state.tokenQuota.toLocaleString())
+            }}
+            <span v-if="billingStore.state.period">
+              —
+              {{
+                langStore
+                  .t('billing.resets')
+                  .replace(
+                    '{date}',
+                    new Date(billingStore.state.period.end).toLocaleDateString(),
+                  )
+              }}
+            </span>
+          </p>
+        </div>
+      </section>
+
       <!-- Team management -->
       <section class="p-6 rounded-xl bg-secondary border border-default">
         <h2 class="text-xl font-semibold mb-4">
@@ -181,6 +220,7 @@ import langStore from '@/stores/langStore.js'
 import WorkspaceSwitcher from '@/components/WorkspaceSwitcher.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { workspaceStore } from '@/stores/workspaceStore'
+import billingStore from '@/stores/billingStore.js'
 import { orchestratedLogout, getLogoutRisk } from '@/stores/logout.js'
 
 const account = ref({ name: '', email: '', plan: '', team: [] })

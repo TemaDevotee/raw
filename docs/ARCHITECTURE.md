@@ -52,6 +52,7 @@ read-only Simulator Admin lives in [`simulator/`](../simulator/) to browse users
 | [src/stores/toastStore.js](../src/stores/toastStore.js) | Toast queue |
 | [src/stores/logout.js](../src/stores/logout.js) | Logout orchestrator |
 | [src/stores/draftStore.js](../src/stores/draftStore.js) | Draft messages with approve/discard |
+| [src/stores/billingStore.js](../src/stores/billingStore.js) | Account plan and token usage |
 
 ### API
 | File | Purpose |
@@ -61,6 +62,7 @@ read-only Simulator Admin lives in [`simulator/`](../simulator/) to browse users
 | [src/api/knowledge.js](../src/api/knowledge.js) | Knowledge collections and sources |
 | [src/api/account.js](../src/api/account.js) | Pricing and upgrade |
 | [src/api/drafts.js](../src/api/drafts.js) | Draft message approval |
+| [src/api/billing.js](../src/api/billing.js) | Account billing info |
 | [src/api/index.js](../src/api/index.js) | Axios-like client wrapper |
 
 ### Utils and styles

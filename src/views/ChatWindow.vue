@@ -233,7 +233,15 @@
         </div>
       </div>
       <div class="text-xs text-muted" data-testid="composer-estimate">
-        {{ langStore.t('tokens.estimate', { count: draftEstimate }) }}
+        {{ langStore.t('tokens.estimate').replace('{count}', String(draftEstimate)) }}
+        <template v-if="billingStore.state.loaded && !billingStore.state.error && billingStore.state.tokenQuota">
+          ·
+          {{
+            langStore
+              .t('tokens.left')
+              .replace('{left}', billingStore.tokenLeft().toLocaleString())
+          }}
+        </template>
       </div>
     </div>
   </div>
@@ -248,6 +256,7 @@ import apiClient from '@/api';
 import { showToast } from '@/stores/toastStore';
 import { statusColor, badgeColor, statusGradient, statusLabel as statusLabelFn } from './chatsUtils.js';
 import { setStatus as setChatStatus } from '@/api/chats.js';
+import billingStore from '@/stores/billingStore.js';
 import { chatStore } from '@/stores/chatStore.js';
 import draftStore from '@/stores/draftStore.js';
 import usageStore from '@/stores/usageStore.js'

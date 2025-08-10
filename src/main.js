@@ -13,6 +13,7 @@ import { agentStore } from '@/stores/agentStore'
 import { knowledgeStore } from '@/stores/knowledgeStore'
 import { chatStore } from '@/stores/chatStore.js'
 import draftStore from '@/stores/draftStore.js'
+import billingStore from '@/stores/billingStore.js'
 
 if (isE2E) {
   installE2EStubs()
@@ -82,6 +83,7 @@ router.isReady().then(async () => {
     Promise.resolve(workspaceStore.hydrate?.()),
     Promise.resolve(agentStore.hydrate?.()),
     Promise.resolve(knowledgeStore.hydrate?.()),
+    Promise.resolve(billingStore.hydrate?.()),
   ])
   if (isE2E) {
     if ('serviceWorker' in navigator) {
