@@ -28,12 +28,33 @@ const adminRoutes = require('./routes/admin');
 const app = express();
 const PORT = 3001;
 
+app.use(bodyParser.json());
+
+const ADMIN_ORIGIN = process.env.ADMIN_ORIGIN || 'http://localhost:5175';
+const checkAdminAuth = (req, res, next) => {
+  const key = req.header('X-Admin-Key');
+  if (key !== process.env.ADMIN_KEY) {
+    return res.status(401).json({ error: 'unauthorized' });
+  }
+  next();
+};
+
+app.use(
+  '/admin',
+  cors({
+    origin: ADMIN_ORIGIN,
+    methods: ['GET', 'OPTIONS'],
+    allowedHeaders: ['X-Admin-Key', 'Content-Type']
+  }),
+  checkAdminAuth,
+  adminRoutes
+);
+
 app.use(
   cors({
     origin: ['http://localhost:5173', 'http://localhost:5174']
   })
 );
-app.use(bodyParser.json());
 
 // Mount modular routers.  The base path for each module corresponds
 // to the resource it manages.  See the files in mock_backend/routes
@@ -47,7 +68,6 @@ app.use('/api/usage', usageRoutes);
 app.use('/api', presenceRoutes);
 app.use('/api/drafts', draftsRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
-app.use('/admin', adminRoutes);
 
 // Keep the agents and knowledge routes in this file for now.  They
 // operate on the top‑level collections in db.json.  If needed they
@@ -178,9 +198,11 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Mock API server is running on http://localhost:${PORT}`);
 });
+
+module.exports = server;
 
 // MEMBERSHIPS
 app.get('/api/memberships', (req, res) => {
