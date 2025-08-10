@@ -1,13 +1,7 @@
 import { test, expect } from '@playwright/test'
 import './__setup__'
-import {
-  seedAppState,
-  seedDrafts,
-  discardDraft,
-  waitStoreOp,
-  waitDraftCountServer,
-  waitForAppReady,
-} from './utils/session'
+import { seedAppState, seedDrafts, waitForAppReady } from './utils/session'
+import { discardDraft } from './_/helpers/drafts'
 import { gotoHash } from './support/nav'
 
 test.beforeEach(async ({ page }) => {
@@ -20,11 +14,10 @@ test('draft discard removes bubble', async ({ page }) => {
   await gotoHash(page, `chats/${chatId}`)
   await waitForAppReady(page)
   await page.getByTestId('chat-window').waitFor()
-  await waitDraftCountServer(page, chatId, 1)
-  const draftId = 'e2e-draft-0'
-  const waitOp = waitStoreOp(page, 'discard', draftId)
+  const draftId = 'd-e2e-1'
+  await expect(page.locator(`[data-draft-id="${draftId}"]`)).toBeVisible()
+  const before = await page.locator('[data-testid="msg-agent"]').count()
   await discardDraft(page, draftId)
-  await waitOp.catch(() => {})
-  await waitDraftCountServer(page, chatId, 0)
-  await expect(page.getByTestId('msg-agent').last()).not.toHaveText('temp msg')
+  await expect(page.locator(`[data-draft-id="${draftId}"]`)).toHaveCount(0)
+  await expect(page.locator('[data-testid="msg-agent"]')).toHaveCount(before)
 })

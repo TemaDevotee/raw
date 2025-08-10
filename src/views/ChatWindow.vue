@@ -147,17 +147,18 @@
         v-for="d in drafts"
         :key="d.id"
         class="flex justify-start"
-        :data-testid="`draft-bubble-${d.id}`"
+        data-testid="draft-bubble"
+        :data-draft-id="d.id"
         :aria-busy="draftStore.isPending(chatId, d.id) ? 'true' : 'false'"
       >
         <div class="draft-msg">
-          <div class="text-sm">{{ d.text }}</div>
+          <div class="text-sm" data-testid="draft-text">{{ d.text }}</div>
           <div class="mt-1 flex gap-2">
             <Button
               variant="primary"
               size="xs"
               :disabled="(!isHeldByMe && !isE2E) || draftStore.isPending(chatId, d.id)"
-              :data-testid="`draft-approve-${d.id}`"
+              data-testid="draft-approve"
               @click="approveDraft(d)"
             >
               {{ langStore.t('drafts.approve') }}
@@ -166,7 +167,7 @@
               variant="secondary"
               size="xs"
               :disabled="(!isHeldByMe && !isE2E) || draftStore.isPending(chatId, d.id)"
-              :data-testid="`draft-discard-${d.id}`"
+              data-testid="draft-discard"
               @click="rejectDraft(d)"
             >
               {{ langStore.t('drafts.discard') }}

@@ -1,14 +1,7 @@
-import { test } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 import './__setup__'
-import {
-  seedAppState,
-  seedDrafts,
-  approveDraft,
-  waitForAgentMessage,
-  waitStoreOp,
-  waitDraftCountServer,
-  waitForAppReady,
-} from './utils/session'
+import { seedAppState, seedDrafts, waitForAppReady } from './utils/session'
+import { approveDraft } from './_/helpers/drafts'
 import { gotoHash } from './support/nav'
 
 test.beforeEach(async ({ page }) => {
@@ -21,11 +14,11 @@ test('draft approval publishes message', async ({ page }) => {
   await gotoHash(page, `chats/${chatId}`)
   await waitForAppReady(page)
   await page.getByTestId('chat-window').waitFor()
-  await waitDraftCountServer(page, chatId, 1)
-  const draftId = 'e2e-draft-0'
-  const waitOp = waitStoreOp(page, 'approve', draftId)
+  const draftId = 'd-e2e-1'
+  await expect(page.locator(`[data-draft-id="${draftId}"]`)).toBeVisible()
+  const before = await page.locator('[data-testid="msg-agent"]').count()
   await approveDraft(page, draftId)
-  await waitOp.catch(() => {})
-  await waitDraftCountServer(page, chatId, 0)
-  await waitForAgentMessage(page, 'hello from agent')
+  await expect(page.locator(`[data-draft-id="${draftId}"]`)).toHaveCount(0)
+  await expect(page.locator('[data-testid="msg-agent"]')).toHaveCount(before + 1)
+  await expect(page.getByTestId('msg-agent').last()).toHaveText('hello from agent')
 })

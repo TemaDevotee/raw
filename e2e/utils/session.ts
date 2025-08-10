@@ -68,7 +68,7 @@ export async function seedPresence(page: Page, entries: Array<{ chatId: string; 
 
 export async function seedDrafts(page: Page, chatId: string, drafts: any[]) {
   await page.request.post(`${backendBase}/__e2e__/drafts/seed`, {
-    data: { chatId, drafts: drafts.map((d, i) => (typeof d === 'string' ? { id: `e2e-draft-${i}`, text: d } : d)) }
+    data: { chatId, drafts: drafts.map((d, i) => (typeof d === 'string' ? { id: `d-e2e-${i + 1}`, text: d } : d)) }
   })
 }
 
@@ -79,36 +79,6 @@ export async function waitForAppReady(page: Page) {
     timeout: 15_000,
   })
   await page.waitForSelector('[data-test-ready="1"]', { timeout: 15_000 })
-}
-
-export async function approveDraft(page: Page, draftId: string) {
-  function isApprove(r: any) {
-    const u = r.url()
-    return (
-      r.request().method() === 'POST' &&
-      u.includes('/drafts/') &&
-      (u.endsWith('/approve') || u.includes('/approve?'))
-    )
-  }
-  const pClick = page.getByTestId(`draft-approve-${draftId}`).click()
-  const pApi = page.waitForResponse(isApprove)
-  await Promise.all([pClick, pApi])
-  await page.waitForSelector(`[data-testid="draft-bubble-${draftId}"]`, { state: 'detached' })
-}
-
-export async function discardDraft(page: Page, draftId: string) {
-  function isDiscard(r: any) {
-    const u = r.url()
-    return (
-      r.request().method() === 'POST' &&
-      u.includes('/drafts/') &&
-      (u.endsWith('/discard') || u.includes('/discard?'))
-    )
-  }
-  const pClick = page.getByTestId(`draft-discard-${draftId}`).click()
-  const pApi = page.waitForResponse(isDiscard)
-  await Promise.all([pClick, pApi])
-  await page.waitForSelector(`[data-testid="draft-bubble-${draftId}"]`, { state: 'detached' })
 }
 
 export async function waitForDraftCount(page: Page, n: number) {
