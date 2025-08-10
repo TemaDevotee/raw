@@ -26,12 +26,6 @@
         <p class="flex items-center flex-wrap">
           <strong>{{ langStore.t('planLabel') }}:</strong>
           <span class="ml-1">{{ account.plan || 'N/A' }}</span>
-          <router-link
-            to="/account/plan"
-            class="ml-3 text-sm font-semibold text-brand underline hover:text-brand/80"
-          >
-            {{ langStore.t('changePlan') || 'Change' }}
-          </router-link>
         </p>
       </section>
 
@@ -46,7 +40,15 @@
         </h2>
         <p class="font-medium">{{ billingStore.state.plan }}</p>
         <div>
-          <div class="h-2 rounded-full bg-secondary overflow-hidden">
+          <div
+            class="h-2 rounded-full bg-secondary overflow-hidden"
+            role="progressbar"
+            data-testid="billing-progress"
+            aria-valuemin="0"
+            :aria-valuenow="billingStore.state.tokenUsed"
+            :aria-valuemax="billingStore.state.tokenQuota || 0"
+            :aria-label="langStore.t('billing.tokens')"
+          >
             <div
               class="h-full bg-brand"
               :style="{ width: billingStore.tokenPct() + '%' }"
@@ -56,18 +58,15 @@
             {{
               langStore
                 .t('billing.usedOf')
-                .replace('{used}', billingStore.state.tokenUsed.toLocaleString())
-                .replace('{quota}', billingStore.state.tokenQuota.toLocaleString())
+                .replace('{used}', usedFmt)
+                .replace('{quota}', quotaFmt)
             }}
-            <span v-if="billingStore.state.period">
+            <span v-if="resetDate">
               —
               {{
                 langStore
                   .t('billing.resets')
-                  .replace(
-                    '{date}',
-                    new Date(billingStore.state.period.end).toLocaleDateString(),
-                  )
+                  .replace('{date}', resetDate)
               }}
             </span>
           </p>
@@ -210,7 +209,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import apiClient from '@/api'
 import PageHeader from '@/components/PageHeader.vue'
 import { sidePanelStore } from '@/stores/sidePanelStore'
@@ -226,6 +225,20 @@ import { orchestratedLogout, getLogoutRisk } from '@/stores/logout.js'
 const account = ref({ name: '', email: '', plan: '', team: [] })
 const dangerOpen = ref(false)
 const dialog = ref(null)
+
+const nf = computed(() => new Intl.NumberFormat(langStore.current))
+const df = computed(() =>
+  new Intl.DateTimeFormat(langStore.current, { dateStyle: 'medium' }),
+)
+const usedFmt = computed(() => nf.value.format(billingStore.state.tokenUsed))
+const quotaFmt = computed(() =>
+  billingStore.state.tokenQuota ? nf.value.format(billingStore.state.tokenQuota) : '—',
+)
+const resetDate = computed(() =>
+  billingStore.state.period
+    ? df.value.format(new Date(billingStore.state.period.end))
+    : null,
+)
 
 async function fetchAccount() {
   try {

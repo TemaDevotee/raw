@@ -29,5 +29,21 @@ describe('billingStore', () => {
     expect(billingStore.tokenLeft()).toBe(165150);
     expect(billingStore.tokenPct()).toBe(17);
   });
+
+  it('handles zero quota gracefully', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        plan: 'Free',
+        tokenQuota: 0,
+        tokenUsed: 0,
+        period: null,
+      }),
+    } as any);
+
+    await billingStore.hydrate();
+    expect(billingStore.tokenLeft()).toBe(0);
+    expect(billingStore.tokenPct()).toBe(0);
+  });
 });
 

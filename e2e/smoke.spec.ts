@@ -21,4 +21,5 @@ test('app shell renders', async ({ page }) => {
   await expect(card).toContainText('Pro');
   await expect(card).toContainText('34,850');
   await expect(card).toContainText('200,000');
+  await expect(page.getByTestId('billing-progress')).toHaveAttribute('role', 'progressbar');
 });
