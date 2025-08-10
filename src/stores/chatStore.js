@@ -9,7 +9,6 @@ import { isE2E } from '@/utils/e2e'
 
 const state = reactive({
   drafts: {},
-  chatControl: {},
   isLoadingDrafts: false,
   isBulkSubmitting: false,
   chats: [],
@@ -64,6 +63,8 @@ function mergePersisted(list) {
   list.forEach((c) => {
     const p = persisted[c.id]
     if (p) Object.assign(c, p)
+    if (!c.controlBy) c.controlBy = 'agent'
+    if (!('heldBy' in c)) c.heldBy = null
   })
   state.chats = list
   if (state.chats.some((c) => isSlaActive(c))) startSlaTimer()
@@ -75,6 +76,8 @@ function mergePersisted(list) {
 function updateChat(chat) {
   const p = persisted[chat.id]
   if (p) Object.assign(chat, p)
+  if (!chat.controlBy) chat.controlBy = 'agent'
+  if (!('heldBy' in chat)) chat.heldBy = null
   const idx = state.chats.findIndex((c) => c.id === chat.id)
   if (idx !== -1) state.chats[idx] = { ...state.chats[idx], ...chat }
   else state.chats.push(chat)
@@ -145,12 +148,21 @@ function isSlaActive(chat) {
   return chat?.status === 'attention' && !!chat?.slaStartedAt
 }
 
-function setControl(chatId, control) {
-  state.chatControl[chatId] = control
+function isHeldByMe(chatId, meId) {
+  const chat = findChat(chatId)
+  return chat?.controlBy === 'operator' && chat.heldBy === meId
 }
 
-function isApproveActiveForChat(chatId, manualApprove) {
-  return state.chatControl[chatId] === 'operator' ? true : !!manualApprove
+function composerEnabled(chatId, meId) {
+  const chat = findChat(chatId)
+  if (!chat) return false
+  if (['resolved', 'ended', 'paused'].includes(chat.status)) return false
+  return isHeldByMe(chatId, meId)
+}
+
+function effectiveManualApprove(chatId) {
+  const chat = findChat(chatId)
+  return chat?.controlBy === 'operator' ? true : !!agentStore.state.manualApprove
 }
 
 async function fetchDrafts(chatId) {
@@ -330,7 +342,8 @@ async function interfere(id, me) {
   }
   try {
     await chatsApi.interfereChat(id)
-    setControl(id, 'operator')
+    chat.controlBy = 'operator'
+    chat.heldBy = me.id
     touchActivity(id)
   } catch (e) {
     showToast(langStore.t('failedInterfere'), 'error')
@@ -345,7 +358,8 @@ async function returnToAgentAction(id) {
   try {
     await chatsApi.returnToAgent(id)
   } catch { /* noop */ }
-  setControl(id, 'agent')
+  chat.controlBy = 'agent'
+  chat.heldBy = null
   chat.autoReturnAt = null
   persist()
 }
@@ -404,8 +418,9 @@ function clearAutoReturn(id) {
 
 export const chatStore = {
   state,
-  setControl,
-  isApproveActiveForChat,
+  isHeldByMe,
+  composerEnabled,
+  effectiveManualApprove,
   fetchDrafts,
   approveDraft,
   rejectDraft,

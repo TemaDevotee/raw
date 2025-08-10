@@ -8,7 +8,7 @@ test.beforeEach(async ({ page }) => {
   await seedAppState(page);
 });
 
-test.skip('interfere toggles control and status updates', async ({ page }) => {
+test('interfere toggles control and status updates', async ({ page }) => {
   await page.addInitScript(() => {
     const state = JSON.parse(localStorage.getItem('app.state.v2') || '{}');
     state.chats = state.chats || {};
@@ -16,13 +16,13 @@ test.skip('interfere toggles control and status updates', async ({ page }) => {
     localStorage.setItem('app.state.v2', JSON.stringify(state));
   });
   await page.route('**/api/chats/5', (route) => {
-    route.fulfill({ json: { id: 5, clientName: 'David Lee', status: 'attention', messages: [], control: 'agent' } });
+    route.fulfill({ json: { id: 5, clientName: 'David Lee', status: 'attention', messages: [], controlBy: 'agent' } });
   });
   await page.route('**/api/chats/5/interfere', (route) => {
-    route.fulfill({ json: { control: 'operator', status: 'live' } });
+    route.fulfill({ json: { controlBy: 'operator', heldBy: '1', status: 'live' } });
   });
   await page.route('**/api/chats/5/return', (route) => {
-    route.fulfill({ json: { control: 'agent', status: 'attention' } });
+    route.fulfill({ json: { controlBy: 'agent', heldBy: null, status: 'attention' } });
   });
   await page.route('**/api/chats/5/status', (route) => {
     route.fulfill({ json: { status: 'resolved' } });
@@ -41,6 +41,11 @@ test.skip('interfere toggles control and status updates', async ({ page }) => {
   await expect(interfere).toBeEnabled();
   await interfere.click();
   await expect(input).toBeEnabled();
+  await page.evaluate(() => {
+    const store = window.__stores.chatStore;
+    store.state.drafts['5'] = [{ id: 'd1', body: 'Agent draft' }];
+  });
+  await expect(page.getByText('Agent draft')).toBeVisible();
   const ret = page.getByTestId('btn-return');
   await expect(ret).toBeVisible();
   await expect(ret).toBeEnabled();

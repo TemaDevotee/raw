@@ -18,25 +18,24 @@ export async function orchestratedLogout({ force = false } = {}) {
         sessionStorage.getItem('auth.user') ||
         'null',
     ) || { id: null }
-    const chatIds = Object.keys(chatStore.state.chatControl || {})
+    const controlled = chatStore.state.chats.filter((c) => c.controlBy === 'operator')
     await Promise.all(
-      chatIds.map((id) =>
+      controlled.map((c) =>
         apiClient
-          .post('/presence/leave', { chatId: id, userId: user.id })
+          .post('/presence/leave', { chatId: c.id, userId: user.id })
           .catch(() => {}),
       ),
     )
     await Promise.all(
-      chatIds
-        .filter((id) => chatStore.state.chatControl[id] === 'operator')
-        .map((id) =>
-          apiClient.post(`/chats/${id}/return`).catch(() => {}),
-        ),
+      controlled.map((c) => apiClient.post(`/chats/${c.id}/return`).catch(() => {})),
     )
 
     // reset stores
     chatStore.state.drafts = {}
-    chatStore.state.chatControl = {}
+    chatStore.state.chats.forEach((c) => {
+      c.controlBy = 'agent'
+      c.heldBy = null
+    })
     chatStore.state.isLoadingDrafts = false
     chatStore.state.isBulkSubmitting = false
 
@@ -81,9 +80,7 @@ export async function orchestratedLogout({ force = false } = {}) {
 }
 
 export function getLogoutRisk() {
-  const controlCount = Object.values(chatStore.state.chatControl).filter(
-    (v) => v === 'operator',
-  ).length
+  const controlCount = chatStore.state.chats.filter((c) => c.controlBy === 'operator').length
   const draftCount = Object.values(chatStore.state.drafts).reduce(
     (sum, arr) => sum + (arr?.length || 0),
     0,

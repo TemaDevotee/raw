@@ -22,6 +22,8 @@ router.get('/:id', (req, res) => {
   if (!details) {
     return res.status(404).send();
   }
+  details.controlBy = db.chatControl?.[req.params.id] || 'agent';
+  details.heldBy = db.chatHeldBy?.[req.params.id] || null;
   res.json(details);
 });
 
@@ -81,8 +83,9 @@ router.post('/:id/interfere', (req, res) => {
   db.chatDetails = db.chatDetails || {};
   if (!db.chatDetails[chatId]) db.chatDetails[chatId] = { id: chatId, messages: [] };
   db.chatControl = db.chatControl || {};
-  // Set operator control
+  db.chatHeldBy = db.chatHeldBy || {};
   db.chatControl[chatId] = 'operator';
+  db.chatHeldBy[chatId] = req.body?.operatorId || '1';
   // Log system message
   db.chatDetails[chatId].messages.push({
     sender: 'system',
@@ -92,7 +95,7 @@ router.post('/:id/interfere', (req, res) => {
   // Update status on summary list
   updateChatStatus(db, chatId, 'live', wsId);
   writeDb(db);
-  return res.status(200).json({ control: 'operator', status: 'live' });
+  return res.status(200).json({ controlBy: 'operator', heldBy: db.chatHeldBy[chatId], status: 'live' });
 });
 
 // Resolve the chat issue: record resolution message and set status to resolved.
@@ -140,7 +143,9 @@ router.post('/:id/return', (req, res) => {
   db.chatDetails = db.chatDetails || {};
   if (!db.chatDetails[chatId]) db.chatDetails[chatId] = { id: chatId, messages: [] };
   db.chatControl = db.chatControl || {};
+  db.chatHeldBy = db.chatHeldBy || {};
   db.chatControl[chatId] = 'agent';
+  db.chatHeldBy[chatId] = null;
   db.chatDetails[chatId].messages.push({
     sender: 'system',
     text: 'Operator returned control to the agent.',
@@ -148,7 +153,7 @@ router.post('/:id/return', (req, res) => {
   });
   updateChatStatus(db, chatId, 'attention', wsId);
   writeDb(db);
-  return res.status(200).json({ control: 'agent', status: 'attention' });
+  return res.status(200).json({ controlBy: 'agent', heldBy: null, status: 'attention' });
 });
 
 // Generic status change endpoint

@@ -31,6 +31,9 @@ export const messages = {
         locked: 'Agent in control. Interfere to reply.'
       }
     },
+    chat: {
+      heldByOther: 'In control by {name}'
+    },
     statusAttention: 'Attention',
     statusLive: 'Live',
     statusPaused: 'Paused',
@@ -143,6 +146,9 @@ export const messages = {
       placeholder: {
         locked: 'Агент отвечает. Вмешайтесь, чтобы писать.'
       }
+    },
+    chat: {
+      heldByOther: 'В чате уже работает {name}'
     },
     statusAttention: 'Требует внимания',
     statusLive: 'Активен',

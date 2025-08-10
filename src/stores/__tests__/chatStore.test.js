@@ -33,20 +33,11 @@ let chatStore
 beforeEach(async () => {
   chatStore = (await import('../chatStore.js')).chatStore
   chatStore.state.drafts = {}
-  chatStore.state.chatControl = {}
   chatStore.state.isLoadingDrafts = false
   chatStore.state.isBulkSubmitting = false
 })
 
 describe('chatStore', () => {
-  it('isApproveActiveForChat truth table', () => {
-    chatStore.state.chatControl['1'] = 'operator'
-    expect(chatStore.isApproveActiveForChat('1', false)).toBe(true)
-    chatStore.state.chatControl['1'] = 'agent'
-    expect(chatStore.isApproveActiveForChat('1', false)).toBe(false)
-    expect(chatStore.isApproveActiveForChat('1', true)).toBe(true)
-  })
-
   it('fetchDrafts stores data', async () => {
     await chatStore.fetchDrafts('1')
     expect(chatStore.state.drafts['1']).toHaveLength(1)

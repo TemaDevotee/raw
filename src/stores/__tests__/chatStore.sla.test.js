@@ -41,7 +41,6 @@ beforeEach(async () => {
   toast = (await import('@/stores/toastStore')).showToast
   toast.mockReset()
   chatStore.state.drafts = {}
-  chatStore.state.chatControl = {}
   chatStore.state.isLoadingDrafts = false
   chatStore.state.isBulkSubmitting = false
   chatStore.state.chats = []

@@ -202,7 +202,13 @@
           data-testid="btn-interfere"
           class="mr-3"
           :disabled="!canInterfere"
-          :title="!canInterfere ? langStore.t('assign.cannotInterfere', { name: chat?.assignedTo?.name }) : ''"
+          :title="
+            chat?.controlBy === 'operator' && !isHeldByMe
+              ? langStore.t('chat.heldByOther', { name: heldByName })
+              : !canInterfere
+              ? langStore.t('assign.cannotInterfere', { name: chat?.assignedTo?.name })
+              : ''
+          "
           variant="primary"
           size="sm"
           @click="interfere"
@@ -281,7 +287,18 @@ const busyByOthers = computed(() =>
   presenceStore.getParticipants(chatId).some((p) => p.id !== currentUser.id)
 );
 const canInterfere = computed(
-  () => chat.value && chatStore.canInterfere(chat.value, currentUser.id) && !busyByOthers.value
+  () =>
+    chat.value &&
+    chat.value.controlBy === 'agent' &&
+    chatStore.canInterfere(chat.value, currentUser.id) &&
+    !busyByOthers.value,
+);
+const heldByName = computed(() =>
+  chat.value?.heldBy
+    ? presenceStore
+        .getParticipants(chatId)
+        .find((p) => p.id === chat.value.heldBy)?.name || ''
+    : '',
 );
 const assignMenu = computed(() => {
   const items = [];
@@ -359,8 +376,8 @@ function onType() {
   }, 0);
 }
 // control state
-const chatControl = computed(() => chatStore.state.chatControl[chatId] || 'agent');
-const inputEnabled = computed(() => chatControl.value === 'operator');
+const isHeldByMe = computed(() => chatStore.isHeldByMe(chatId, currentUser.id));
+const inputEnabled = computed(() => chatStore.composerEnabled(chatId, currentUser.id));
 // Agents list for resolving assigned agent names
 const agentsList = ref([]);
 const subtitle = computed(() => (chat.value ? `ID: ${chatId}` : ''));
@@ -437,7 +454,8 @@ async function fetchChat() {
     chatStore.updateChat(res.data);
     chatStore.handleStatusChange(chat.value, chat.value.status);
     messages.value = res.data.messages || [];
-    chatStore.setControl(chatId, res.data.control || 'agent');
+    if (!chat.value.controlBy) chat.value.controlBy = res.data.controlBy || 'agent'
+    if (res.data.heldBy) chat.value.heldBy = res.data.heldBy
     const draft = composerStore.get(chatId);
     if (draft) {
       newMessage.value = draft.body;

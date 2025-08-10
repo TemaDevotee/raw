@@ -254,7 +254,9 @@ app.post('/api/chats/:id/interfere', (req, res) => {
   if (!db.chatDetails) db.chatDetails = {};
   if (!db.chatDetails[chatId]) db.chatDetails[chatId] = { id: chatId, messages: [] };
   if (!db.chatControl) db.chatControl = {};
+  if (!db.chatHeldBy) db.chatHeldBy = {};
   db.chatControl[chatId] = 'operator';
+  db.chatHeldBy[chatId] = req.body?.operatorId || '1';
   // Log a system message when operator takes over
   db.chatDetails[chatId].messages.push({
     sender: 'system',
@@ -262,7 +264,7 @@ app.post('/api/chats/:id/interfere', (req, res) => {
     time: new Date().toLocaleTimeString(),
   });
   writeDb(db);
-  res.json({ control: 'operator' });
+  res.json({ controlBy: 'operator', heldBy: db.chatHeldBy[chatId] });
 });
 
 // Control: return control to agent (does NOT change chat status)
@@ -273,7 +275,9 @@ app.post('/api/chats/:id/return', (req, res) => {
   if (!db.chatDetails) db.chatDetails = {};
   if (!db.chatDetails[chatId]) db.chatDetails[chatId] = { id: chatId, messages: [] };
   if (!db.chatControl) db.chatControl = {};
+  if (!db.chatHeldBy) db.chatHeldBy = {};
   db.chatControl[chatId] = 'agent';
+  db.chatHeldBy[chatId] = null;
   // Log a system message when control is returned
   db.chatDetails[chatId].messages.push({
     sender: 'system',
@@ -281,7 +285,7 @@ app.post('/api/chats/:id/return', (req, res) => {
     time: new Date().toLocaleTimeString(),
   });
   writeDb(db);
-  res.json({ control: 'agent' });
+  res.json({ controlBy: 'agent', heldBy: null });
 });
 
 // ---------------------------------------------------------------------------
