@@ -1,7 +1,7 @@
-<script setup lang="ts">
+<script setup>
 import { computed } from 'vue';
 
-const props = defineProps<{ used: number; quota: number }>();
+const props = defineProps({ used: Number, quota: Number });
 const pct = computed(() => (props.quota ? Math.min(100, Math.round((props.used * 100) / props.quota)) : 0));
 const color = computed(() => {
   if (pct.value < 50) return '#16a34a';

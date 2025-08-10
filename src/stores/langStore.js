@@ -61,7 +61,8 @@ const messages = {
         desc: 'The requested agent does not exist.'
       }
     },
-    agents: { back: 'Back to agents' },
+    'agents.back': 'Back to agents',
+    'agents.title': 'Agents',
     knowledge: {
       add: {
         trigger: 'Add',
@@ -82,7 +83,6 @@ const messages = {
     comingSoon: 'This tab is coming soon.',
     all: 'All',
     // Additional navigation and account strings
-    agents: 'Agents',
     knowledgeNav: 'Knowledge',
     logout: 'Log out',
     logoutConfirmTitle: 'Log out now?',
@@ -342,7 +342,8 @@ const messages = {
         desc: 'Запрошенный агент не существует.'
       }
     },
-    agents: { back: 'Назад к агентам' },
+    'agents.back': 'Назад к агентам',
+    'agents.title': 'Агенты',
     knowledge: {
       add: {
         trigger: 'Добавить',
@@ -361,7 +362,6 @@ const messages = {
     comingSoon: 'Эта вкладка скоро появится.',
     all: 'Все',
     // Additional navigation and account strings
-    agents: 'Агенты',
     knowledgeNav: 'Знания',
     logout: 'Выйти',
     logoutConfirmTitle: 'Выйти сейчас?',

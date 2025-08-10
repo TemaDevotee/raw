@@ -312,6 +312,7 @@ import { useAgentKnowledge } from './agentKnowledgeLogic.js';
 import AgentForm from '@/components/AgentForm.vue';
 import SkeletonLoader from '@/components/SkeletonLoader.vue';
 import AgentNotFound from '@/components/AgentNotFound.vue';
+import { showToast } from '@/stores/toastStore';
 
 const route = useRoute();
 const agentId = route.params.id;

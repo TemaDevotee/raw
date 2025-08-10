@@ -1,11 +1,11 @@
-<script setup lang="ts">
+<script setup>
 import { ref, watch, onMounted } from 'vue';
 import { useTenantsStore } from '../stores/tenants';
 import TokenBar from '../components/TokenBar.vue';
 
 const store = useTenantsStore();
 const q = ref('');
-let timer: any;
+let timer;
 
 watch(q, () => {
   clearTimeout(timer);

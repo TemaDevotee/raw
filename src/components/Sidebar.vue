@@ -133,7 +133,7 @@ function doLogout() {
 // Navigation items (без Dashboard)
 const navItems = [
   { key: 'chats', to: '/chats', icon: 'chat' },
-  { key: 'agents', to: '/agents', icon: 'psychology' },
+  { key: 'agents.title', to: '/agents', icon: 'psychology' },
   { key: 'knowledgeNav', to: '/knowledge', icon: 'library_books' },
   { key: 'account', to: '/account', icon: 'account_circle' },
 ]

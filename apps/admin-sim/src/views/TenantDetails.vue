@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useTenantsStore } from '../stores/tenants';
@@ -9,15 +9,14 @@ import {
   postCredit,
   postDebit,
   postReset,
-  getLedger,
-  type LedgerEntry
+  getLedger
 } from '../api/client';
 
 const store = useTenantsStore();
 const route = useRoute();
-const tenant = ref<any>(null);
-const ledger = ref<LedgerEntry[]>([]);
-const id = route.params.id as string;
+const tenant = ref(null);
+const ledger = ref([]);
+const id = route.params.id;
 
 async function refresh() {
   tenant.value = await store.fetchDetails(id);
