@@ -29,6 +29,10 @@ Use this section to draft release notes for the next version. Copy relevant entr
 
 - Themed Trickster brand mark in collapsed sidebar with chevron toggle
 
+## Simulator
+
+- Bootstrap read-only Simulator Admin app on port 5174
+
 ## Template
 
 ```

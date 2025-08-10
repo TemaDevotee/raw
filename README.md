@@ -111,3 +111,16 @@ If you wish to start from scratch, stop the dev servers and delete `localStorage
 ## Screenshots & demos
 
 The `docs/` folder (not provided here) should contain screenshots and GIFs demonstrating the login flow, workspace creation and switching, and pricing plan upgrade.  Please refer to those assets for a visual tour of the application.
+
+## Simulator Admin
+
+An isolated read-only admin interface lives in [simulator/](simulator/). It runs on port **5174** and connects to the same mock backend.
+
+```bash
+cd simulator
+npm install
+npm run dev
+# open http://localhost:5174
+```
+
+The app lists users and their workspaces, agents, knowledge collections and chats without mutating data.

@@ -23,6 +23,7 @@ const usageRoutes = require('./routes/usage');
 const presenceRoutes = require('./routes/presence');
 const draftsRoutes = require('./routes/drafts');
 const knowledgeRoutes = require('./routes/knowledge');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = 3001;
@@ -42,6 +43,7 @@ app.use('/api/usage', usageRoutes);
 app.use('/api', presenceRoutes);
 app.use('/api/drafts', draftsRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
+app.use('/admin', adminRoutes);
 
 // Keep the agents and knowledge routes in this file for now.  They
 // operate on the top‑level collections in db.json.  If needed they
