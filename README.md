@@ -122,3 +122,14 @@ npm run dev:admin
 ```
 
 The simulator lists tenants with plan and token usage and lets you inspect a tenant’s billing summary.
+
+## Admin write-ops
+
+The simulator also supports changing tenant billing via protected `/admin` endpoints.
+
+```
+npm run dev:admin
+# requires ADMIN_KEY and ADMIN_ORIGIN env vars
+```
+
+Endpoints require `X-Admin-Key` header and record every change in a billing ledger.

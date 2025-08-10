@@ -11,4 +11,10 @@ describe('tenants store', () => {
     const pct = store.usagePct({ tokenQuota: 200, tokenUsed: 50 });
     expect(pct).toBe(0.25);
   });
+
+  it('handles zero quota', () => {
+    const store = setup();
+    const pct = store.usagePct({ tokenQuota: 0, tokenUsed: 0 });
+    expect(pct).toBe(0);
+  });
 });

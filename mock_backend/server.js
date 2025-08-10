@@ -39,13 +39,30 @@ const checkAdminAuth = (req, res, next) => {
   next();
 };
 
+const rateLimitMap = new Map();
+const rateLimit = (req, res, next) => {
+  const ip = req.ip || 'global';
+  const now = Date.now();
+  const windowMs = 60_000;
+  const max = 20;
+  let entry = rateLimitMap.get(ip);
+  if (!entry || now - entry.ts > windowMs) {
+    entry = { count: 0, ts: now };
+  }
+  entry.count++;
+  rateLimitMap.set(ip, entry);
+  if (entry.count > max) return res.status(429).json({ error: 'rate_limit' });
+  next();
+};
+
 app.use(
   '/admin',
   cors({
     origin: ADMIN_ORIGIN,
-    methods: ['GET', 'OPTIONS'],
+    methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['X-Admin-Key', 'Content-Type']
   }),
+  rateLimit,
   checkAdminAuth,
   adminRoutes
 );
