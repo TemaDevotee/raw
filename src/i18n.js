@@ -59,6 +59,10 @@ export const messages = {
       create: 'Create',
       empty: 'No sources yet'
     },
+    sidebar: {
+      expand: 'Expand sidebar',
+      collapse: 'Collapse sidebar'
+    },
     workspaces: 'Workspaces',
     createWorkspace: 'Create workspace',
     renameWorkspace: 'Rename workspace',
@@ -167,6 +171,10 @@ export const messages = {
       workspace: 'В воркспейсе',
       create: 'Создать',
       empty: 'Источников пока нет'
+    },
+    sidebar: {
+      expand: 'Развернуть сайдбар',
+      collapse: 'Свернуть сайдбар'
     },
     workspaces: 'Рабочие пространства',
     createWorkspace: 'Создать пространство',

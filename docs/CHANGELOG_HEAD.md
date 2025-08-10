@@ -22,6 +22,10 @@ Use this section to draft release notes for the next version. Copy relevant entr
 
 - Graceful agent not-found state and Add drawer for knowledge collections
 
+## Sidebar
+
+- Themed Trickster brand mark in collapsed sidebar with chevron toggle
+
 ## Template
 
 ```

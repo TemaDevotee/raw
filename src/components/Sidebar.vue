@@ -1,47 +1,52 @@
 <template>
   <div
-    :class="collapsed ? 'w-20' : 'w-72'"
+    :class="ui.isCollapsed ? 'w-20' : 'w-72'"
     class="sidebar h-full flex flex-col transition-all duration-300 overflow-hidden"
     data-testid="sidebar"
   >
     <!-- Top: brand link and collapse toggle -->
     <div class="flex items-center justify-between py-4 pl-6 pr-4">
       <router-link to="/" class="flex items-center space-x-3" data-testid="brand-link">
-        <BrandTricksterMark v-if="collapsed" :size="24" />
+        <span v-if="ui.isCollapsed" data-testid="sidebar-brand-collapsed">
+          <BrandTricksterMark :size="24" />
+        </span>
         <span v-else class="text-2xl font-bold whitespace-nowrap">Trickster</span>
       </router-link>
       <button
-        @click="toggleCollapse"
-        :aria-expanded="(!collapsed).toString()"
-        aria-label="Toggle sidebar navigation"
-        aria-controls="sidebar-navigation"
-        class="flex items-center justify-center h-10 w-10 rounded-full hover-bg-effect transition-colors"
+        @click="ui.toggleSidebar()"
+        :aria-label="ui.isCollapsed ? t('sidebar.expand') : t('sidebar.collapse')"
+        data-testid="sidebar-toggle"
+        class="sidebar-toggle group inline-flex items-center justify-center"
       >
-        <span class="material-icons">
-          {{ collapsed ? 'menu_open' : 'menu' }}
-        </span>
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          class="transition-transform duration-150"
+          :style="{ transform: ui.isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)' }"
+          aria-hidden="true"
+        >
+          <path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z" fill="currentColor" />
+        </svg>
       </button>
     </div>
 
     <!-- Navigation: without Dashboard -->
     <nav id="sidebar-navigation" class="flex-1 mt-4" aria-label="Primary">
-      <router-link
-        v-for="item in navItems"
-        :key="item.to"
-        :to="item.to"
-        :class="[
-          'nav-link',
-          { active: isActiveRoute(item.to), collapsed: collapsed },
-        ]"
-        :title="collapsed ? t(item.key) : ''"
-        :aria-current="isActiveRoute(item.to) ? 'page' : undefined"
-      >
-        <!-- icon -->
-        <span class="material-icons">{{ item.icon }}</span>
-        <!-- label only when not collapsed -->
-        <span v-if="!collapsed" class="label ml-3">{{ t(item.key) }}</span>
-      </router-link>
-    </nav>
+        <router-link
+          v-for="item in navItems"
+          :key="item.to"
+          :to="item.to"
+          :class="['nav-link', { active: isActiveRoute(item.to), collapsed: ui.isCollapsed }]"
+          :title="ui.isCollapsed ? t(item.key) : ''"
+          :aria-current="isActiveRoute(item.to) ? 'page' : undefined"
+        >
+          <!-- icon -->
+          <span class="material-icons">{{ item.icon }}</span>
+          <!-- label only when not collapsed -->
+          <span v-if="!ui.isCollapsed" class="label ml-3">{{ t(item.key) }}</span>
+        </router-link>
+      </nav>
 
     <footer class="pb-6 px-4 mt-auto sidebar__footer">
       <WorkspaceSwitcher
@@ -49,10 +54,10 @@
         data-testid="workspace-switcher"
         class="mb-4"
       />
-      <div class="flex flex-col gap-2" :class="{ 'items-center': collapsed }">
-        <ThemeSwitcher />
-        <LanguageSwitcher />
-        <button
+        <div class="flex flex-col gap-2" :class="{ 'items-center': ui.isCollapsed }">
+          <ThemeSwitcher />
+          <LanguageSwitcher />
+          <button
           @click="themeStore.toggleDarkMode()"
           :title="themeStore.isDarkMode ? t('lightMode') : t('darkMode')"
           class="h-10 w-10 p-2 rounded-full hover-bg-effect text-muted transition-colors flex items-center justify-center"
@@ -96,10 +101,33 @@ import { workspaceStore } from '@/stores/workspaceStore'
 import BrandTricksterMark from '@/components/BrandTricksterMark.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { orchestratedLogout, getLogoutRisk } from '@/stores/logout.js'
+import { uiStore as ui } from '@/stores/uiStore.js'
 
-const collapsed = ref(false)
-const toggleCollapse = () => {
-  collapsed.value = !collapsed.value
+const showConfirm = ref(false)
+const confirmBody = ref('')
+
+function attemptLogout() {
+  const { controlCount, draftCount } = getLogoutRisk()
+  if (controlCount || draftCount) {
+    const parts = []
+    if (controlCount)
+      parts.push(
+        langStore.t('logoutHoldChats').replace('{n}', String(controlCount))
+      )
+    if (draftCount)
+      parts.push(
+        langStore.t('logoutDrafts').replace('{n}', String(draftCount))
+      )
+    confirmBody.value = parts.join('\n')
+    showConfirm.value = true
+  } else {
+    orchestratedLogout()
+  }
+}
+
+function doLogout() {
+  showConfirm.value = false
+  orchestratedLogout()
 }
 
 // Navigation items (без Dashboard)
@@ -167,5 +195,20 @@ const showSwitcher = computed(
 .hover-bg-effect:hover {
   background-color: var(--c-bg-hover);
   color: var(--c-text-accent);
+}
+
+.sidebar-toggle {
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  color: var(--c-text-secondary);
+  background: var(--c-bg-secondary);
+}
+.sidebar-toggle:hover {
+  background: var(--c-bg-hover);
+}
+.sidebar-toggle:focus-visible {
+  outline: 2px solid var(--brand-logo);
+  outline-offset: 2px;
 }
 </style>

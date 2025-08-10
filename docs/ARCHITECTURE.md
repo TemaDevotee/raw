@@ -136,7 +136,7 @@ Data is persisted to `localStorage['app.state.v2']` while a mock backend under `
 
 ## 5. UI theming
 - Status colors, gradients and chips derive from [`statusTheme.js`](../src/utils/statusTheme.js).
-- Trickster logo uses CSS variables `--logo-1..4` with palettes defined in [`tokens.css`](../src/styles/tokens.css).
+- Trickster brand mark colour comes from the `--brand-logo` token defined per theme in [`tokens.css`](../src/styles/tokens.css).
 - Components respect `prefers-reduced-motion` and provide `aria-label` attributes for timers and badges.
 
 ## 6. API (mock)
@@ -166,7 +166,7 @@ Data is persisted to `localStorage['app.state.v2']` while a mock backend under `
 - Status values: `attention`, `live`, `paused`, `resolved`, `ended`.
 - Toast messages use `toastStore.showToast(message, type)`.
 - New i18n keys are added to [`src/i18n.js`](../src/i18n.js) with both `en` and `ru` entries.
-- Adding a new theme requires defining `--logo-1..4` and any status palette overrides in [`tokens.css`](../src/styles/tokens.css).
+- Adding a new theme requires defining `--brand-logo` and any status palette overrides in [`tokens.css`](../src/styles/tokens.css).
 
 ## 9. Roadmap (Next)
 - Token metering and billing integration
