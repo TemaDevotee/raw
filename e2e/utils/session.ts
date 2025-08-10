@@ -32,23 +32,12 @@ export async function seedAppState(page: Page, data: SeedData = {}) {
           JSON.stringify(payload.knowledge.collections),
         )
       }
-    },
-    { state, user, knowledge: data.knowledge },
-  )
-
-  if (data.agents) {
-    await page.route('**/api/agents*', (route) => {
-      const url = new URL(route.request().url())
-      const parts = url.pathname.split('/')
-      const last = parts[parts.length - 1]
-      if (last && last !== 'agents') {
-        const agent = data.agents!.find((a) => a.id === last)
-        route.fulfill({ json: agent || {}, status: agent ? 200 : 404 })
-      } else {
-        route.fulfill({ json: data.agents })
+      if (payload.agents !== undefined) {
+        window.__e2eAgentsData = payload.agents
       }
-    })
-  }
+    },
+    { state, user, knowledge: data.knowledge, agents: data.agents },
+  )
 
   await page.route('**/api/knowledge_groups*', (route) => {
     route.fulfill({ json: [] })

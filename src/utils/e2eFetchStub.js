@@ -4,9 +4,9 @@ export function installE2EStubs() {
   if (!isE2E || typeof window === 'undefined' || !window.fetch) return
 
   const original = window.fetch.bind(window)
-  const json = (obj) =>
+  const json = (obj, status = 200) =>
     new Response(JSON.stringify(obj), {
-      status: 200,
+      status,
       headers: { 'Content-Type': 'application/json' },
     })
 
@@ -47,6 +47,16 @@ export function installE2EStubs() {
           agentId: 2,
         },
       ])
+    }
+
+    if (url.includes('/agents')) {
+      const match = url.match(/\/agents\/([^/?]+)(?:\?|$)/)
+      const data = window.__e2eAgentsData || []
+      if (match) {
+        const agent = data.find((a) => String(a.id) === match[1])
+        return json(agent || {})
+      }
+      return json(data)
     }
 
     if (url.includes('/presence/list')) {

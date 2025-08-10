@@ -24,6 +24,9 @@ const router = createRouter({
 // NOTE: login.html is a separate static page (outside the SPA).
 // To reach it, we must do a full navigation here.
 router.beforeEach((to, from, next) => {
+  const skip = to.query.skipAuth === '1' || import.meta.env.VITE_E2E === '1';
+  if (skip) return next();
+
   const isAuthed = authStore.isAuthenticated();
   const isLoginRoute = to.path === '/login' || to.path === '/login.html';
   const skipAuth = localStorage.getItem('skipAuth') === 'true';

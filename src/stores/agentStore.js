@@ -121,8 +121,11 @@ async function getById(id) {
   try {
     const res = await apiClient.get(`/agents/${id}`)
     const agent = res.data
-    if (agent && agent.id) state.agentsById[agent.id] = agent
-    return agent
+    if (agent && agent.id) {
+      state.agentsById[agent.id] = agent
+      return agent
+    }
+    return undefined
   } catch {
     return undefined
   }
