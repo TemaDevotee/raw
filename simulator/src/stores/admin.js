@@ -1,25 +1,32 @@
 import { defineStore } from 'pinia';
-
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+import * as api from '../api/AdminApi';
 
 export const useAdminStore = defineStore('admin', {
   state: () => ({
-    users: []
+    plans: [],
+    users: [],
+    total: 0,
+    page: 1,
+    pageSize: 20
   }),
+  getters: {
+    totalPages: (s) => Math.ceil(s.total / s.pageSize)
+  },
   actions: {
-    async fetchUsers() {
-      const res = await fetch(`${API_BASE}/admin/users`);
-      this.users = await res.json();
+    async loadPlans() {
+      this.plans = await api.getPlans();
     },
-    async fetchUser(id) {
-      const res = await fetch(`${API_BASE}/admin/users/${id}`);
-      if (!res.ok) return null;
-      return await res.json();
+    async fetchUsers(params = {}) {
+      const resp = await api.getUsers(params);
+      this.users = resp.items;
+      this.total = resp.total;
+      this.page = resp.page;
+      this.pageSize = resp.pageSize;
     },
-    async fetchList(id, type) {
-      const res = await fetch(`${API_BASE}/admin/users/${id}/${type}`);
-      if (!res.ok) return [];
-      return await res.json();
-    }
+    fetchUser: api.getUser,
+    fetchWorkspaces: api.getUserWorkspaces,
+    fetchAgents: api.getUserAgents,
+    fetchKnowledge: api.getUserKnowledge,
+    fetchChats: api.getUserChats
   }
 });

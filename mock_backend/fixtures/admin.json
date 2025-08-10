@@ -1,0 +1,70 @@
+{
+  "plans": [
+    { "id": "FREE", "name": "Free", "monthlyTokens": 20000, "storageMb": 200, "agentsMax": 1 },
+    { "id": "STARTER", "name": "Starter", "monthlyTokens": 100000, "storageMb": 2000, "agentsMax": 3 },
+    { "id": "PRO", "name": "Pro", "monthlyTokens": 500000, "storageMb": 10000, "agentsMax": 10 }
+  ],
+  "users": [
+    {
+      "id": "u1",
+      "name": "Tema",
+      "email": "tema@wsl.ru",
+      "plan": "PRO",
+      "billing": {
+        "cycleStart": "2025-08-01",
+        "cycleEnd": "2025-09-01",
+        "tokens": { "total": 500000, "used": 12345 },
+        "storage": { "totalMb": 10000, "usedMb": 512 }
+      },
+      "workspaces": [
+        { "id": "w1", "name": "Default" },
+        { "id": "w2", "name": "Shop" }
+      ],
+      "agents": [
+        { "id": "a1", "name": "Sales Assistant", "workspaceId": "w2", "model": "gpt-4o-mini", "manualApprove": false, "avatar": "/assets/avatars/a1.png" },
+        { "id": "a2", "name": "Support Bot",     "workspaceId": "w1", "model": "claude-3-haiku", "manualApprove": true,  "avatar": "/assets/avatars/a2.png" }
+      ],
+      "knowledge": [
+        { "id": "k1", "name": "FAQ", "workspaceId": "w1", "sources": [
+          { "id": "s1", "type": "url",  "title": "Docs Home", "url": "https://example.com/docs" },
+          { "id": "s2", "type": "file", "title": "policy.pdf", "fileId": "file_policy_pdf", "sizeKb": 380 }
+        ]},
+        { "id": "k2", "name": "Catalog", "workspaceId": "w2", "sources": [
+          { "id": "s3", "type": "file", "title": "catalog.xlsx", "fileId": "file_catalog_xlsx", "sizeKb": 920 }
+        ]}
+      ],
+      "chats": [
+        { "id": "c1", "title": "David Lee", "workspaceId": "w2", "status": "live", "updatedAt": "2025-08-10T12:31:00Z",
+          "participants": [{ "type": "client", "name": "David Lee" }, { "type": "agent", "agentId": "a1" }],
+          "messages": [
+            { "id": "m1", "role": "client", "text": "Do you ship to Australia?", "ts": "2025-08-10T12:30:00Z" },
+            { "id": "m2", "role": "agent",  "text": "We ship worldwide. Where are you located?", "ts": "2025-08-10T12:31:00Z" }
+          ]
+        },
+        { "id": "c2", "title": "Order #4310", "workspaceId": "w1", "status": "attention", "updatedAt": "2025-08-10T10:05:00Z" }
+      ]
+    },
+    {
+      "id": "u2",
+      "name": "Alex",
+      "email": "alex@example.com",
+      "plan": "STARTER",
+      "billing": { "cycleStart":"2025-08-01","cycleEnd":"2025-09-01","tokens":{"total":100000,"used":900},"storage":{"totalMb":2000,"usedMb":120} },
+      "workspaces": [{ "id": "w3", "name": "Support" }],
+      "agents": [{ "id": "a3", "name": "Helpdesk", "workspaceId": "w3", "model":"gpt-4o-mini", "manualApprove": false }],
+      "knowledge": [],
+      "chats": []
+    },
+    {
+      "id": "u3",
+      "name": "Sam",
+      "email": "sam@example.com",
+      "plan": "FREE",
+      "billing": { "cycleStart":"2025-08-01","cycleEnd":"2025-09-01","tokens":{"total":20000,"used":1200},"storage":{"totalMb":200,"usedMb":20} },
+      "workspaces": [{ "id": "w4", "name": "Default" }],
+      "agents": [],
+      "knowledge": [],
+      "chats": []
+    }
+  ]
+}

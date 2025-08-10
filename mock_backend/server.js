@@ -28,7 +28,11 @@ const adminRoutes = require('./routes/admin');
 const app = express();
 const PORT = 3001;
 
-app.use(cors());
+app.use(
+  cors({
+    origin: ['http://localhost:5173', 'http://localhost:5174']
+  })
+);
 app.use(bodyParser.json());
 
 // Mount modular routers.  The base path for each module corresponds
