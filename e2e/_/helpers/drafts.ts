@@ -1,23 +1,36 @@
 import { Page } from '@playwright/test'
 
-export async function approveDraft(page: Page, draftId: string) {
-  const before = await page.evaluate(() => (window as any).__draft_op_done__ ?? 0)
-  await Promise.all([
-    page.waitForResponse(r =>
-      r.url().includes(`/drafts/${draftId}/approve`) && r.status() === 200
-    ),
-    page.locator(`[data-draft-id="${draftId}"] [data-testid="draft-approve"]`).click(),
-  ])
-  await page.waitForFunction(prev => (window as any).__draft_op_done__ === prev + 1, before)
+const BASE = process.env.MOCK_BASE_URL ?? 'http://localhost:3100'
+
+export async function seedDraft(
+  page: Page,
+  chatId: string,
+  payload: Partial<{ id: string; text: string }> = {},
+) {
+  await page.request.post(`${BASE}/__e2e__/drafts/seed`, {
+    data: { chatId, payload },
+  })
 }
 
-export async function discardDraft(page: Page, draftId: string) {
-  const before = await page.evaluate(() => (window as any).__draft_op_done__ ?? 0)
-  await Promise.all([
-    page.waitForResponse(r =>
-      r.url().includes(`/drafts/${draftId}/discard`) && r.status() === 200
-    ),
-    page.locator(`[data-draft-id="${draftId}"] [data-testid="draft-discard"]`).click(),
-  ])
-  await page.waitForFunction(prev => (window as any).__draft_op_done__ === prev + 1, before)
+export async function waitForDraftOp(
+  page: Page,
+  chatId: string,
+  draftId: string,
+  op: 'approve' | 'discard',
+) {
+  await page.evaluate(
+    ({ chatId, draftId, op }) =>
+      new Promise<void>((resolve) => {
+        const handler = (e: any) => {
+          const d = e.detail || {}
+          if (d.chatId === chatId && d.draftId === draftId && d.op === op) {
+            window.removeEventListener('__draft_op_done__', handler)
+            resolve()
+          }
+        }
+        window.addEventListener('__draft_op_done__', handler)
+      }),
+    { chatId, draftId, op },
+  )
 }
+

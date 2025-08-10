@@ -111,8 +111,42 @@
     <div aria-live="polite" class="text-center text-sm text-muted h-5">{{ typingLine }}</div>
     <!-- Messages list -->
     <div ref="messagesContainer" class="flex-1 p-6 overflow-y-auto space-y-4 bg-secondary">
-      <div v-if="drafts.length" class="text-right text-xs text-muted" data-testid="draft-count">
-        {{ drafts.length }}
+      <div data-testid="drafts-container" :data-count="drafts.length">
+        <div v-if="drafts.length" class="text-right text-xs text-muted" data-testid="drafts-badge">
+          {{ drafts.length }}
+        </div>
+        <div
+          v-for="d in drafts"
+          :key="d.id"
+          class="flex justify-start"
+          data-testid="draft"
+          :data-draft-id="d.id"
+          :aria-busy="draftStore.isPending(chatId, d.id) ? 'true' : 'false'"
+        >
+          <div class="draft-msg">
+            <div class="text-sm" data-testid="draft-text">{{ d.text }}</div>
+            <div class="mt-1 flex gap-2">
+              <Button
+                variant="primary"
+                size="xs"
+                :disabled="(!isHeldByMe && !isE2E) || draftStore.isPending(chatId, d.id)"
+                data-testid="draft-approve"
+                @click="approveDraft(d)"
+              >
+                {{ langStore.t('drafts.approve') }}
+              </Button>
+              <Button
+                variant="secondary"
+                size="xs"
+                :disabled="(!isHeldByMe && !isE2E) || draftStore.isPending(chatId, d.id)"
+                data-testid="draft-discard"
+                @click="rejectDraft(d)"
+              >
+                {{ langStore.t('drafts.discard') }}
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
       <!-- Placeholder when no chat selected -->
       <div v-if="!chat" class="text-center text-muted mt-10">
@@ -141,38 +175,6 @@
               {{ langStore.t('retry') }}
             </button>
           </span>
-        </div>
-      </div>
-      <div
-        v-for="d in drafts"
-        :key="d.id"
-        class="flex justify-start"
-        data-testid="draft-bubble"
-        :data-draft-id="d.id"
-        :aria-busy="draftStore.isPending(chatId, d.id) ? 'true' : 'false'"
-      >
-        <div class="draft-msg">
-          <div class="text-sm" data-testid="draft-text">{{ d.text }}</div>
-          <div class="mt-1 flex gap-2">
-            <Button
-              variant="primary"
-              size="xs"
-              :disabled="(!isHeldByMe && !isE2E) || draftStore.isPending(chatId, d.id)"
-              data-testid="draft-approve"
-              @click="approveDraft(d)"
-            >
-              {{ langStore.t('drafts.approve') }}
-            </Button>
-            <Button
-              variant="secondary"
-              size="xs"
-              :disabled="(!isHeldByMe && !isE2E) || draftStore.isPending(chatId, d.id)"
-              data-testid="draft-discard"
-              @click="rejectDraft(d)"
-            >
-              {{ langStore.t('drafts.discard') }}
-            </Button>
-          </div>
         </div>
       </div>
     </div>

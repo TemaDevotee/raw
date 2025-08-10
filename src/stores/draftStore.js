@@ -1,4 +1,4 @@
-import { reactive } from 'vue'
+import { reactive, nextTick } from 'vue'
 import * as api from '@/api/drafts'
 
 const state = reactive({
@@ -9,8 +9,20 @@ const state = reactive({
   capture: new Set(),
 })
 
+let opCounter = 0
 if (typeof window !== 'undefined') {
-  window.__draft_op_done__ = window.__draft_op_done__ ?? 0
+  window.__draft_op_done__ = opCounter
+}
+function emitOpDone(detail) {
+  opCounter++
+  if (typeof window !== 'undefined') {
+    window.__draft_op_done__ = opCounter
+    window.dispatchEvent(new CustomEvent('__draft_op_done__', { detail }))
+  }
+}
+
+export function getOpCounter() {
+  return opCounter
 }
 
 export async function fetchDrafts(chatId) {
@@ -46,7 +58,8 @@ export async function approve(chatId, id) {
       arr.splice(idx, 1)
       state.draftsByChat[chatId] = [...arr]
     }
-    if (typeof window !== 'undefined') window.__draft_op_done__++
+    await nextTick()
+    emitOpDone({ chatId, draftId: id, op: 'approve' })
     return res.data
   } finally {
     state.pendingApprove[chatId].delete(id)
@@ -64,7 +77,8 @@ export async function discard(chatId, id) {
       arr.splice(idx, 1)
       state.draftsByChat[chatId] = [...arr]
     }
-    if (typeof window !== 'undefined') window.__draft_op_done__++
+    await nextTick()
+    emitOpDone({ chatId, draftId: id, op: 'discard' })
     return res.data
   } finally {
     state.pendingDiscard[chatId].delete(id)

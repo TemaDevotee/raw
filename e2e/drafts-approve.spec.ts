@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import './__setup__'
-import { seedAppState, seedDrafts, waitForAppReady } from './utils/session'
-import { approveDraft } from './_/helpers/drafts'
+import { seedAppState, waitForAppReady } from './utils/session'
+import { seedDraft, waitForDraftOp } from './_/helpers/drafts'
 import { gotoHash } from './support/nav'
 
 test.beforeEach(async ({ page }) => {
@@ -10,15 +10,18 @@ test.beforeEach(async ({ page }) => {
 
 test('draft approval publishes message', async ({ page }) => {
   const chatId = '5'
-  await seedDrafts(page, chatId, ['hello from agent'])
+  await seedDraft(page, chatId, { id: 'd1', text: 'hello from agent' })
   await gotoHash(page, `chats/${chatId}`)
   await waitForAppReady(page)
-  await page.getByTestId('chat-window').waitFor()
-  const draftId = 'd-e2e-1'
-  await expect(page.locator(`[data-draft-id="${draftId}"]`)).toBeVisible()
-  const before = await page.locator('[data-testid="msg-agent"]').count()
-  await approveDraft(page, draftId)
-  await expect(page.locator(`[data-draft-id="${draftId}"]`)).toHaveCount(0)
-  await expect(page.locator('[data-testid="msg-agent"]')).toHaveCount(before + 1)
-  await expect(page.getByTestId('msg-agent').last()).toHaveText('hello from agent')
+  await expect(page.getByTestId('drafts-container')).toHaveAttribute('data-count', '1')
+  const bubble = page.getByTestId('draft').first()
+  await expect(bubble).toBeVisible()
+  const draftId = await bubble.getAttribute('data-draft-id')
+  await Promise.all([
+    page.waitForResponse((r) => r.url().includes(`/api/chats/${chatId}/drafts/${draftId}/approve`) && r.ok()),
+    waitForDraftOp(page, chatId, draftId!, 'approve'),
+    bubble.getByTestId('draft-approve').click(),
+  ])
+  await expect(page.getByTestId('drafts-container')).toHaveAttribute('data-count', '0')
+  await expect(page.getByText('hello from agent')).toBeVisible()
 })

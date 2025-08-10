@@ -118,7 +118,7 @@
     "tokenQuota": 200000,
     "tokenUsed": 34850,
     "storageQuotaMB": 5000,
-    "storageUsedMB": 0.0000209808349609375,
+    "storageUsedMB": 0.00003147125244140625,
     "period": {
       "start": "2025-08-01",
       "end": "2025-09-01"
@@ -926,6 +926,13 @@
       "name": "Docs",
       "createdAt": "2025-08-10T16:07:23.302Z",
       "sourcesCount": 1
+    },
+    {
+      "id": "1754856929900",
+      "tenantId": "t1",
+      "name": "Docs",
+      "createdAt": "2025-08-10T20:15:29.900Z",
+      "sourcesCount": 1
     }
   ],
   "knowledgeSources": [
@@ -950,6 +957,17 @@
       "path": "t1/1754842043302/1754842043324/file.bin",
       "createdAt": "2025-08-10T16:07:23.324Z",
       "status": "uploaded"
+    },
+    {
+      "id": "1754856929935",
+      "tenantId": "t1",
+      "collectionId": "1754856929900",
+      "name": "hello.txt",
+      "mime": "text/plain",
+      "size": 11,
+      "path": "t1/1754856929900/1754856929935/file.bin",
+      "createdAt": "2025-08-10T20:15:29.936Z",
+      "status": "uploaded"
     }
   ],
   "draftsByChat": {
@@ -961,6 +979,22 @@
         "text": "Need clarification on shipping.",
         "createdAt": "2025-08-10T12:30:00Z",
         "state": "queued"
+      },
+      {
+        "id": "d1",
+        "chatId": "5",
+        "author": "agent",
+        "text": "hello from agent",
+        "createdAt": "2025-08-10T20:16:20.481Z",
+        "state": "queued"
+      },
+      {
+        "id": "d1",
+        "chatId": "5",
+        "author": "agent",
+        "text": "hello from agent",
+        "createdAt": "2025-08-10T20:18:21.961Z",
+        "state": "queued"
       }
     ],
     "6": [
@@ -970,6 +1004,22 @@
         "author": "agent",
         "text": "Awaiting invoice details.",
         "createdAt": "2025-08-10T12:31:00Z",
+        "state": "queued"
+      },
+      {
+        "id": "d1",
+        "chatId": "6",
+        "author": "agent",
+        "text": "temp msg",
+        "createdAt": "2025-08-10T20:16:28.218Z",
+        "state": "queued"
+      },
+      {
+        "id": "d1",
+        "chatId": "6",
+        "author": "agent",
+        "text": "temp msg",
+        "createdAt": "2025-08-10T20:18:21.341Z",
         "state": "queued"
       }
     ]
