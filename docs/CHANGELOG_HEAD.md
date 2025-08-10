@@ -13,6 +13,7 @@ Use this section to draft release notes for the next version. Copy relevant entr
 - Run dev server in CI with e2e flag for deterministic navigation
 - Stabilize agent not-found and knowledge drawer flows with dedicated test ids
 - Wait for explicit app readiness and disable animations to remove e2e flakiness
+- Deterministic draft hook and composer lock test ids for Interfere flow
 
 ## Chat window
 

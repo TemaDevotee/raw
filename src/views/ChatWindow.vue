@@ -112,9 +112,14 @@
     <!-- Messages list -->
     <div ref="messagesContainer" class="flex-1 p-6 overflow-y-auto space-y-4 bg-secondary">
       <!-- Drafts panel -->
-      <div v-if="drafts.length" class="mb-3 rounded-lg border border-default bg-white/5">
+      <div
+        v-if="drafts.length"
+        data-testid="drafts-panel"
+        class="mb-3 rounded-lg border border-default bg-white/5"
+      >
         <div
           class="flex items-center justify-between px-3 py-2 cursor-pointer"
+          data-testid="drafts-badge"
           @click="draftsExpanded = !draftsExpanded"
         >
           <strong>{{ langStore.t('drafts') }} ({{ drafts.length }})</strong>
@@ -228,8 +233,9 @@
         <input
           v-model="newMessage"
           type="text"
-          data-testid="composer-input"
+          data-testid="composer"
           :disabled="!inputEnabled"
+          :data-locked="String(!inputEnabled)"
           :placeholder="placeholderText"
           class="flex-1 form-input mr-3 rounded-full"
           @keyup.enter="sendMessage"

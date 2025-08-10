@@ -345,6 +345,7 @@ async function interfere(id, me) {
     chat.controlBy = 'operator'
     chat.heldBy = me.id
     touchActivity(id)
+    return chat
   } catch (e) {
     showToast(langStore.t('failedInterfere'), 'error')
     throw e
@@ -362,6 +363,7 @@ async function returnToAgentAction(id) {
   chat.heldBy = null
   chat.autoReturnAt = null
   persist()
+  return chat
 }
 
 function touchActivity(id) {
@@ -414,6 +416,13 @@ function clearAutoReturn(id) {
   if (r) clearTimeout(r)
   warnTimeouts.delete(id)
   returnTimeouts.delete(id)
+}
+
+if (import.meta.env.VITE_E2E) {
+  window.__e2e_addDraft = ({ chatId, text = 'stubbed agent reply' }) => {
+    const arr = state.drafts[chatId] || (state.drafts[chatId] = [])
+    arr.push({ id: Date.now(), sender: 'agent', text })
+  }
 }
 
 export const chatStore = {
