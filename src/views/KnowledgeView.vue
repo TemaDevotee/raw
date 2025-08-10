@@ -37,6 +37,9 @@
       </div>
     </div>
     <div class="flex-1" v-if="selected">
+      <div class="mb-2 text-sm" data-testid="storage-usage">
+        {{ billing.state.storageUsedMB }} / {{ billing.state.storageQuotaMB }} MB
+      </div>
       <div class="flex justify-between items-center mb-2">
         <h2 class="font-semibold text-default">{{ t('knowledgeSources') }}</h2>
         <ActionMenu :items="addMenu">
@@ -197,6 +200,7 @@ import SourceFormQA from '@/components/SourceFormQA.vue'
 import SourcePreviewDrawer from '@/components/SourcePreviewDrawer.vue'
 import Drawer from '@/components/ui/Drawer.vue'
 import { showToast } from '@/stores/toastStore'
+import { billingStore as billing } from '@/stores/billingStore'
 
 const t = langStore.t
 const selectedId = ref(null)

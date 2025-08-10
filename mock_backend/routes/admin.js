@@ -212,7 +212,7 @@ router.get('/users/:id/knowledge', (req, res) => {
     id: c.id,
     name: c.name,
     workspaceId: c.workspaceId,
-    sourceCount: c.sources.length
+    sourcesCount: c.sources.length
   }));
   res.json(k);
 });

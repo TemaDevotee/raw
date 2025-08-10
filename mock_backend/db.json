@@ -7,7 +7,11 @@
         "plan": "Free",
         "tokenQuota": 20000,
         "tokenUsed": 4500,
-        "period": { "start": "2025-08-01", "end": "2025-08-31" },
+        "storageQuotaMB": 100,
+        "period": {
+          "start": "2025-08-01",
+          "end": "2025-08-31"
+        },
         "ledger": [
           {
             "id": "seed-t1",
@@ -30,7 +34,11 @@
         "plan": "Pro",
         "tokenQuota": 200000,
         "tokenUsed": 34850,
-        "period": { "start": "2025-08-01", "end": "2025-08-31" },
+        "storageQuotaMB": 5000,
+        "period": {
+          "start": "2025-08-01",
+          "end": "2025-08-31"
+        },
         "ledger": [
           {
             "id": "seed-t2",
@@ -53,7 +61,11 @@
         "plan": "Team",
         "tokenQuota": 1000000,
         "tokenUsed": 780230,
-        "period": { "start": "2025-08-01", "end": "2025-08-31" },
+        "storageQuotaMB": 50000,
+        "period": {
+          "start": "2025-08-01",
+          "end": "2025-08-31"
+        },
         "ledger": [
           {
             "id": "seed-t3",
@@ -105,7 +117,12 @@
     "plan": "Pro",
     "tokenQuota": 200000,
     "tokenUsed": 34850,
-    "period": { "start": "2025-08-01", "end": "2025-09-01" }
+    "storageQuotaMB": 5000,
+    "storageUsedMB": 0.00001049041748046875,
+    "period": {
+      "start": "2025-08-01",
+      "end": "2025-09-01"
+    }
   },
   "usage": [
     {
@@ -122,10 +139,30 @@
   ],
   "presence": {
     "1": [
-      { "id": "u1", "name": "Alice", "role": "operator", "online": true },
-      { "id": "u2", "name": "Bob", "role": "operator", "online": true },
-      { "id": "u3", "name": "Charlie", "role": "observer", "online": true },
-      { "id": "u4", "name": "Dana", "role": "observer", "online": true }
+      {
+        "id": "u1",
+        "name": "Alice",
+        "role": "operator",
+        "online": true
+      },
+      {
+        "id": "u2",
+        "name": "Bob",
+        "role": "operator",
+        "online": true
+      },
+      {
+        "id": "u3",
+        "name": "Charlie",
+        "role": "observer",
+        "online": true
+      },
+      {
+        "id": "u4",
+        "name": "Dana",
+        "role": "observer",
+        "online": true
+      }
     ]
   },
   "agents": [
@@ -875,5 +912,38 @@
   },
   "bots": [],
   "knowledge": [],
-  "draftsByChat": {}
+  "knowledgeCollections": [
+    {
+      "id": "1754840599733",
+      "tenantId": "t1",
+      "name": "Docs",
+      "createdAt": "2025-08-10T15:43:19.733Z",
+      "sourcesCount": 1
+    }
+  ],
+  "knowledgeSources": [
+    {
+      "id": "1754840599755",
+      "tenantId": "t1",
+      "collectionId": "1754840599733",
+      "name": "hello.txt",
+      "mime": "text/plain",
+      "size": 11,
+      "path": "t1/1754840599733/1754840599755/file.bin",
+      "createdAt": "2025-08-10T15:43:19.756Z",
+      "status": "uploaded"
+    }
+  ],
+  "draftsByChat": {},
+  "membershipsByWs": {},
+  "chatDrafts": {},
+  "users": [
+    {
+      "id": 1,
+      "username": "app",
+      "email": "app@example.com",
+      "name": "App User",
+      "password": "123qweQWE!@#"
+    }
+  ]
 }

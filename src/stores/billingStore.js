@@ -6,6 +6,8 @@ const state = reactive({
   plan: null,
   tokenQuota: 0,
   tokenUsed: 0,
+  storageQuotaMB: 0,
+  storageUsedMB: 0,
   period: null,
   error: null,
 });
@@ -20,12 +22,20 @@ function tokenPct() {
     : 0;
 }
 
+function storagePct() {
+  return state.storageQuotaMB
+    ? Math.min(100, Math.round((state.storageUsedMB * 100) / state.storageQuotaMB))
+    : 0;
+}
+
 async function hydrate() {
   try {
     const b = await getBilling();
     state.plan = b.plan;
     state.tokenQuota = b.tokenQuota;
     state.tokenUsed = b.tokenUsed;
+    state.storageQuotaMB = b.storageQuotaMB || 0;
+    state.storageUsedMB = b.storageUsedMB || 0;
     state.period = b.period;
     state.loaded = true;
     state.error = null;
@@ -35,7 +45,7 @@ async function hydrate() {
   }
 }
 
-export const billingStore = { state, hydrate, tokenLeft, tokenPct };
+export const billingStore = { state, hydrate, tokenLeft, tokenPct, storagePct };
 
 export default billingStore;
 

@@ -67,7 +67,7 @@ export function installE2EStubs() {
           id: Date.now().toString(),
           name: body.name || '',
           createdAt: new Date().toISOString(),
-          sourceCount: 0,
+         sourcesCount: 0,
         }
         list.push(coll)
         window.__e2eKnowledgeCollections = list

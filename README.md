@@ -133,3 +133,16 @@ npm run dev:admin
 ```
 
 Endpoints require `X-Admin-Key` header and record every change in a billing ledger.
+
+## Knowledge (mock storage)
+
+The mock backend persists uploaded knowledge files on disk under `mock_backend/storage/`.
+Supported types: plain text, markdown, PDF, PNG and JPEG up to 10 MB each.
+
+```
+POST /api/knowledge/upload      # multipart: tenantId, collectionId, file
+GET  /api/knowledge/collections?tenantId=t1
+GET  /api/knowledge/sources?collectionId=<id>
+```
+
+Storage usage and quota are exposed via `/api/account/billing` (`storageUsedMB` / `storageQuotaMB`).

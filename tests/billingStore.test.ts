@@ -20,6 +20,8 @@ describe('billingStore', () => {
         plan: 'Pro',
         tokenQuota: 200000,
         tokenUsed: 34850,
+        storageQuotaMB: 5000,
+        storageUsedMB: 50,
         period: { start: '2025-08-01', end: '2025-09-01' },
       }),
     } as any);
@@ -28,6 +30,7 @@ describe('billingStore', () => {
     expect(billingStore.state.plan).toBe('Pro');
     expect(billingStore.tokenLeft()).toBe(165150);
     expect(billingStore.tokenPct()).toBe(17);
+    expect(billingStore.storagePct()).toBe(1);
   });
 
   it('handles zero quota gracefully', async () => {
@@ -37,6 +40,8 @@ describe('billingStore', () => {
         plan: 'Free',
         tokenQuota: 0,
         tokenUsed: 0,
+        storageQuotaMB: 0,
+        storageUsedMB: 0,
         period: null,
       }),
     } as any);

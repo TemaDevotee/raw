@@ -4,3 +4,12 @@ export async function getBilling() {
   return res.json();
 }
 
+// Mock helpers for usage tracking
+export async function recordUsage() {
+  return {};
+}
+
+export async function aggregateUsage() {
+  return {};
+}
+
