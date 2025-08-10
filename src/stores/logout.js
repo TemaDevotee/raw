@@ -1,5 +1,6 @@
 import apiClient from '@/api'
 import { chatStore } from '@/stores/chatStore.js'
+import draftStore from '@/stores/draftStore.js'
 import { workspaceStore } from '@/stores/workspaceStore.js'
 import { agentStore } from '@/stores/agentStore.js'
 import langStore from '@/stores/langStore.js'
@@ -31,13 +32,12 @@ export async function orchestratedLogout({ force = false } = {}) {
     )
 
     // reset stores
-    chatStore.state.drafts = {}
+    draftStore.state.draftsByChat = {}
+    draftStore.state.capture.clear()
     chatStore.state.chats.forEach((c) => {
       c.controlBy = 'agent'
       c.heldBy = null
     })
-    chatStore.state.isLoadingDrafts = false
-    chatStore.state.isBulkSubmitting = false
 
     workspaceStore.state.workspaces = [
       { id: workspaceStore.DEFAULT_WORKSPACE_ID, name: 'Default' },
@@ -81,7 +81,7 @@ export async function orchestratedLogout({ force = false } = {}) {
 
 export function getLogoutRisk() {
   const controlCount = chatStore.state.chats.filter((c) => c.controlBy === 'operator').length
-  const draftCount = Object.values(chatStore.state.drafts).reduce(
+  const draftCount = Object.values(draftStore.state.draftsByChat).reduce(
     (sum, arr) => sum + (arr?.length || 0),
     0,
   )

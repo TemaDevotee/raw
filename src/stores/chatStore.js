@@ -1,16 +1,13 @@
 import { reactive, ref } from 'vue'
 import { showToast } from '@/stores/toastStore'
-import * as draftsApi from '@/api/drafts'
 import * as chatsApi from '@/api/chats'
+import draftStore from '@/stores/draftStore.js'
 import langStore from '@/stores/langStore.js'
 import { settingsStore } from '@/stores/settingsStore.js'
 import { agentStore } from '@/stores/agentStore.js'
 import { isE2E } from '@/utils/e2e'
 
 const state = reactive({
-  drafts: {},
-  isLoadingDrafts: false,
-  isBulkSubmitting: false,
   chats: [],
 })
 
@@ -165,96 +162,6 @@ function effectiveManualApprove(chatId) {
   return chat?.controlBy === 'operator' ? true : !!agentStore.state.manualApprove
 }
 
-async function fetchDrafts(chatId) {
-  state.isLoadingDrafts = true
-  try {
-    const res = await draftsApi.fetchDrafts(chatId)
-    state.drafts[chatId] = res.data || []
-  } catch (e) {
-    showToast(langStore.t('failedToLoadDrafts'), 'error')
-  } finally {
-    state.isLoadingDrafts = false
-  }
-}
-
-async function approveDraft(chatId, draftId) {
-  const arr = state.drafts[chatId] || []
-  const idx = arr.findIndex((d) => d.id === draftId)
-  if (idx === -1) return
-  const draft = arr[idx]
-  arr.splice(idx, 1)
-  try {
-    await draftsApi.approveDraft(chatId, draftId)
-    showToast(langStore.t('draftSent'), 'success')
-  } catch (e) {
-    arr.splice(idx, 0, draft)
-    showToast(langStore.t('failedToSendDraft'), 'error')
-  }
-}
-
-async function rejectDraft(chatId, draftId) {
-  const arr = state.drafts[chatId] || []
-  const idx = arr.findIndex((d) => d.id === draftId)
-  if (idx === -1) return
-  const draft = arr[idx]
-  arr.splice(idx, 1)
-  try {
-    await draftsApi.rejectDraft(chatId, draftId)
-    showToast(langStore.t('draftRejected'), 'success')
-  } catch (e) {
-    arr.splice(idx, 0, draft)
-    showToast(langStore.t('failedToRejectDraft'), 'error')
-  }
-}
-
-async function editAndSend(chatId, draftId, body) {
-  const arr = state.drafts[chatId] || []
-  const idx = arr.findIndex((d) => d.id === draftId)
-  if (idx === -1) return
-  const draft = arr[idx]
-  arr.splice(idx, 1)
-  try {
-    await draftsApi.editAndSend(chatId, draftId, body)
-    showToast(langStore.t('draftSent'), 'success')
-  } catch (e) {
-    arr.splice(idx, 0, draft)
-    showToast(langStore.t('failedToSendDraft'), 'error')
-  }
-}
-
-async function sendAll(chatId) {
-  const arr = state.drafts[chatId] || []
-  if (arr.length === 0) return
-  state.isBulkSubmitting = true
-  const backup = [...arr]
-  state.drafts[chatId] = []
-  try {
-    await draftsApi.sendAll(chatId)
-    showToast(langStore.t('allDraftsSent'), 'success')
-  } catch (e) {
-    state.drafts[chatId] = backup
-    showToast(langStore.t('failedToSendDraft'), 'error')
-  } finally {
-    state.isBulkSubmitting = false
-  }
-}
-
-async function rejectAll(chatId) {
-  const arr = state.drafts[chatId] || []
-  if (arr.length === 0) return
-  state.isBulkSubmitting = true
-  const backup = [...arr]
-  state.drafts[chatId] = []
-  try {
-    await draftsApi.rejectAll(chatId)
-    showToast(langStore.t('allDraftsRejected'), 'success')
-  } catch (e) {
-    state.drafts[chatId] = backup
-    showToast(langStore.t('failedToRejectDraft'), 'error')
-  } finally {
-    state.isBulkSubmitting = false
-  }
-}
 
 async function snoozeChat(chat, minutes) {
   if (!chat) return
@@ -344,6 +251,7 @@ async function interfere(id, me) {
     await chatsApi.interfereChat(id)
     chat.controlBy = 'operator'
     chat.heldBy = me.id
+    draftStore.captureAgentReplies(id, true)
     touchActivity(id)
     return chat
   } catch (e) {
@@ -362,6 +270,7 @@ async function returnToAgentAction(id) {
   chat.controlBy = 'agent'
   chat.heldBy = null
   chat.autoReturnAt = null
+  draftStore.captureAgentReplies(id, false)
   persist()
   return chat
 }
@@ -418,24 +327,11 @@ function clearAutoReturn(id) {
   returnTimeouts.delete(id)
 }
 
-if (import.meta.env.VITE_E2E) {
-  window.__e2e_addDraft = ({ chatId, text = 'stubbed agent reply' }) => {
-    const arr = state.drafts[chatId] || (state.drafts[chatId] = [])
-    arr.push({ id: Date.now(), sender: 'agent', text })
-  }
-}
-
 export const chatStore = {
   state,
   isHeldByMe,
   composerEnabled,
   effectiveManualApprove,
-  fetchDrafts,
-  approveDraft,
-  rejectDraft,
-  editAndSend,
-  sendAll,
-  rejectAll,
   snoozeChat,
   unsnoozeChat,
   claim,

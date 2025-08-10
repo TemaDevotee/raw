@@ -94,6 +94,12 @@ export const messages = {
       cancel: 'Cancel',
       returned: 'Control returned to agent',
     },
+    drafts: {
+      approve: 'Approve',
+      discard: 'Discard',
+      onlyVisibleToOperators: 'Only visible to operators',
+      addedAt: 'Added at {time}',
+    },
     tokens: {
       quota: 'Tokens',
       usedOf: '{used} of {included}',
@@ -209,6 +215,12 @@ export const messages = {
       warn: 'Через 60 сек управление вернётся агенту',
       cancel: 'Отмена',
       returned: 'Управление возвращено агенту',
+    },
+    drafts: {
+      approve: 'Опубликовать',
+      discard: 'Удалить',
+      onlyVisibleToOperators: 'Видно только операторам',
+      addedAt: 'Добавлено {time}',
     },
     tokens: {
       quota: 'Токены',

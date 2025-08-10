@@ -797,5 +797,6 @@
     "ws-1754439269451": []
   },
   "bots": [],
-  "knowledge": []
+  "knowledge": [],
+  "draftsByChat": {}
 }

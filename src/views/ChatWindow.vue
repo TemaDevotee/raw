@@ -111,60 +111,8 @@
     <div aria-live="polite" class="text-center text-sm text-muted h-5">{{ typingLine }}</div>
     <!-- Messages list -->
     <div ref="messagesContainer" class="flex-1 p-6 overflow-y-auto space-y-4 bg-secondary">
-      <!-- Drafts panel -->
-      <div
-        v-if="drafts.length"
-        data-testid="drafts-panel"
-        class="mb-3 rounded-lg border border-default bg-white/5"
-      >
-        <div
-          class="flex items-center justify-between px-3 py-2 cursor-pointer"
-          data-testid="drafts-badge"
-          @click="draftsExpanded = !draftsExpanded"
-        >
-          <strong>{{ langStore.t('drafts') }} ({{ drafts.length }})</strong>
-          <div class="flex items-center gap-2" v-if="draftsExpanded">
-            <Button
-              variant="primary"
-              size="sm"
-              :disabled="chatStore.state.isBulkSubmitting"
-              @click.stop="sendAllDrafts"
-            >
-              {{ langStore.t('sendAll') }}
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              :disabled="chatStore.state.isBulkSubmitting"
-              @click.stop="rejectAllDrafts"
-            >
-              {{ langStore.t('rejectAll') }}
-            </Button>
-          </div>
-        </div>
-        <div v-if="draftsExpanded">
-          <div
-            v-for="d in drafts"
-            :key="d.id"
-            class="border-t border-default p-3"
-          >
-            <div v-if="editingDraft && editingDraft.id === d.id">
-              <textarea v-model="editBody" class="form-input w-full mb-2"></textarea>
-              <div class="flex gap-2">
-                <Button variant="primary" size="sm" @click="submitEdit">{{ langStore.t('editAndSend') }}</Button>
-                <Button variant="secondary" size="sm" @click="cancelEdit">{{ langStore.t('cancel') }}</Button>
-              </div>
-            </div>
-            <div v-else class="flex items-center justify-between">
-              <span class="text-sm max-w-xs truncate">{{ d.body || d.text }}</span>
-              <div class="flex gap-2">
-                <Button variant="primary" size="sm" @click="approveDraft(d)">{{ langStore.t('approveAndSend') }}</Button>
-                <Button variant="secondary" size="sm" @click="startEdit(d)">{{ langStore.t('editAndSend') }}</Button>
-                <Button variant="secondary" size="sm" @click="rejectDraft(d)">{{ langStore.t('reject') }}</Button>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div v-if="drafts.length" class="text-right text-xs text-muted" data-testid="drafts-badge">
+        {{ drafts.length }}
       </div>
       <!-- Placeholder when no chat selected -->
       <div v-if="!chat" class="text-center text-muted mt-10">
@@ -193,6 +141,36 @@
               {{ langStore.t('retry') }}
             </button>
           </span>
+        </div>
+      </div>
+      <div
+        v-for="d in drafts"
+        :key="d.id"
+        class="flex justify-start"
+        data-testid="draft-bubble"
+      >
+        <div class="draft-msg">
+          <div class="text-sm">{{ d.text }}</div>
+          <div class="mt-1 flex gap-2">
+            <Button
+              variant="primary"
+              size="xs"
+              :disabled="!isHeldByMe"
+              data-testid="draft-approve"
+              @click="approveDraft(d)"
+            >
+              {{ langStore.t('drafts.approve') }}
+            </Button>
+            <Button
+              variant="secondary"
+              size="xs"
+              :disabled="!isHeldByMe"
+              data-testid="draft-discard"
+              @click="rejectDraft(d)"
+            >
+              {{ langStore.t('drafts.discard') }}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
@@ -271,6 +249,7 @@ import { showToast } from '@/stores/toastStore';
 import { statusColor, badgeColor, statusGradient, statusLabel as statusLabelFn } from './chatsUtils.js';
 import { setStatus as setChatStatus } from '@/api/chats.js';
 import { chatStore } from '@/stores/chatStore.js';
+import draftStore from '@/stores/draftStore.js';
 import usageStore from '@/stores/usageStore.js'
 import { estimateTokensForText } from '@/utils/tokenEstimate.js'
 import TokenBadge from '@/components/TokenBadge.vue'
@@ -363,15 +342,7 @@ const chat = ref(null);
 const newMessage = ref('');
 const draftEstimate = computed(() => estimateTokensForText(newMessage.value));
 const savedAt = ref(null);
-const drafts = computed(() => chatStore.state.drafts[chatId] || []);
-const draftsExpanded = ref(false);
-watch(
-  () => drafts.value.length,
-  (len) => {
-    if (len > 0) draftsExpanded.value = true;
-  },
-  { immediate: true },
-);
+const drafts = computed(() => draftStore.listByChat(chatId));
 let typingNotify;
 function onType() {
   if (!inputEnabled.value) return;
@@ -584,44 +555,16 @@ async function setStatus(s) {
   chatStore.handleStatusChange(chat.value, prev);
 }
 async function fetchDrafts() {
-  await chatStore.fetchDrafts(chatId);
+  await draftStore.fetchDrafts(chatId);
 }
 
-function approveDraft(d) {
-  chatStore.approveDraft(chatId, d.id);
+async function approveDraft(d) {
+  const res = await draftStore.approve(d.id);
+  if (res.message) messages.value.push(res.message);
 }
 
-function rejectDraft(d) {
-  chatStore.rejectDraft(chatId, d.id);
-}
-
-const editingDraft = ref(null);
-const editBody = ref('');
-function startEdit(d) {
-  editingDraft.value = d;
-  editBody.value = d.body || d.text || '';
-}
-async function submitEdit() {
-  if (!editingDraft.value) return;
-  await chatStore.editAndSend(chatId, editingDraft.value.id, editBody.value);
-  editingDraft.value = null;
-  editBody.value = '';
-}
-function cancelEdit() {
-  editingDraft.value = null;
-  editBody.value = '';
-}
-
-function sendAllDrafts() {
-  if (window.confirm(langStore.t('confirmSendAllBody'))) {
-    chatStore.sendAll(chatId);
-  }
-}
-
-function rejectAllDrafts() {
-  if (window.confirm(langStore.t('confirmRejectAllBody'))) {
-    chatStore.rejectAll(chatId);
-  }
+async function rejectDraft(d) {
+  await draftStore.discard(d.id);
 }
 
 function statusLabelMsg(s) {
@@ -685,5 +628,12 @@ function statusLabelMsg(s) {
   background: var(--header-gradient);
   opacity: var(--chatHeaderGradientOpacity);
   pointer-events: none;
+}
+.draft-msg {
+  background: var(--panel);
+  color: var(--c-text-secondary);
+  opacity: 0.8;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
 }
 </style>

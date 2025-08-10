@@ -47,10 +47,11 @@ describe('orchestratedLogout', () => {
   it('cleans state and broadcasts', async () => {
     const { workspaceStore } = await import('../workspaceStore.js')
     const { chatStore } = await import('../chatStore.js')
+    const draftStore = (await import('../draftStore.js')).default
     const { orchestratedLogout } = await import('../logout.js')
     workspaceStore.createWorkspace('Extra')
     chatStore.state.chats = [{ id: '1', controlBy: 'operator', heldBy: 'u1' }]
-    chatStore.state.drafts['1'] = [{ id: 'd1' }]
+    draftStore.state.draftsByChat['1'] = [{ id: 'd1', text: 't' }]
     localStorage.setItem('auth.token', 't')
     const api = (await import('@/api')).default
     await orchestratedLogout()

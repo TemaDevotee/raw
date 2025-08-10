@@ -29,7 +29,7 @@ test('operator interferes and agent reply becomes draft', async ({ page }) => {
       },
     });
   });
-  await page.route('**/api/chats/5/drafts', (route) => {
+  await page.route('**/api/drafts/list/5', (route) => {
     route.fulfill({ json: [] });
   });
   await page.route('**/api/chats/5/interfere', (route) => {
@@ -68,8 +68,8 @@ test('operator interferes and agent reply becomes draft', async ({ page }) => {
     // @ts-ignore
     window.__e2e_addDraft({ chatId: '5', text: 'hello from agent' });
   });
-
-  await expect(page.getByTestId('drafts-panel')).toBeVisible();
+  await expect(page.getByTestId('draft-bubble')).toBeVisible();
+  await expect(page.getByTestId('drafts-badge')).toHaveText('1');
 
   const ret = page.getByTestId('btn-return');
   await ret.click();

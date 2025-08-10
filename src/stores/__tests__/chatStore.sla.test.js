@@ -3,14 +3,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 vi.useFakeTimers()
 
 vi.mock('@/stores/toastStore', () => ({ showToast: vi.fn() }))
-vi.mock('@/api/drafts', () => ({
-  fetchDrafts: vi.fn(),
-  approveDraft: vi.fn(),
-  rejectDraft: vi.fn(),
-  editAndSend: vi.fn(),
-  sendAll: vi.fn(),
-  rejectAll: vi.fn(),
-}))
 vi.mock('@/api/chats', () => ({
   snooze: vi.fn(),
   unsnooze: vi.fn(),
@@ -40,9 +32,6 @@ beforeEach(async () => {
   chatStore = (await import('../chatStore.js')).chatStore
   toast = (await import('@/stores/toastStore')).showToast
   toast.mockReset()
-  chatStore.state.drafts = {}
-  chatStore.state.isLoadingDrafts = false
-  chatStore.state.isBulkSubmitting = false
   chatStore.state.chats = []
 })
 

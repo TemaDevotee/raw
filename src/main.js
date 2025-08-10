@@ -12,6 +12,7 @@ import { authStore } from '@/stores/authStore'
 import { agentStore } from '@/stores/agentStore'
 import { knowledgeStore } from '@/stores/knowledgeStore'
 import { chatStore } from '@/stores/chatStore.js'
+import draftStore from '@/stores/draftStore.js'
 
 if (isE2E) {
   installE2EStubs()
@@ -92,7 +93,7 @@ router.isReady().then(async () => {
     document.documentElement.classList.add('e2e-mode')
     window.__E2E_READY__ = true
     document.documentElement.setAttribute('data-test-ready', '1')
-    window.__stores = { chatStore }
+    window.__stores = { chatStore, draftStore }
   }
 })
 

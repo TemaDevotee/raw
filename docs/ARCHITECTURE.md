@@ -50,6 +50,7 @@ Data is persisted to `localStorage['app.state.v2']` while a mock backend under `
 | [src/stores/typingStore.js](../src/stores/typingStore.js) | Typing indicators |
 | [src/stores/toastStore.js](../src/stores/toastStore.js) | Toast queue |
 | [src/stores/logout.js](../src/stores/logout.js) | Logout orchestrator |
+| [src/stores/draftStore.js](../src/stores/draftStore.js) | Draft messages with approve/discard |
 
 ### API
 | File | Purpose |
