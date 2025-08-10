@@ -4,6 +4,7 @@ import * as api from '@/api/drafts'
 const state = reactive({
   draftsByChat: {},
   loadingByChat: {},
+  pendingByChat: {},
   capture: new Set(),
 })
 
@@ -32,24 +33,46 @@ export function count(chatId) {
 export async function approve(chatId, id) {
   const arr = state.draftsByChat[chatId] || []
   const idx = arr.findIndex((d) => String(d.id) === String(id))
-  if (idx !== -1) {
-    arr.splice(idx, 1)
-    state.draftsByChat[chatId] = [...arr]
+  const draft = idx !== -1 ? arr[idx] : null
+  state.pendingByChat[chatId] = state.pendingByChat[chatId] || new Set()
+  state.pendingByChat[chatId].add(id)
+  if (draft) draft._pending = true
+  try {
+    const res = await api.approveDraft(chatId, id)
+    if (idx !== -1) {
+      arr.splice(idx, 1)
+      state.draftsByChat[chatId] = [...arr]
+    }
+    const { message } = res.data || {}
+    return { chatId, message }
+  } finally {
+    if (draft) draft._pending = false
+    state.pendingByChat[chatId].delete(id)
   }
-  const res = await api.approveDraft(chatId, id)
-  const { message } = res.data || {}
-  return { chatId, message }
 }
 
 export async function discard(chatId, id) {
-  const res = await api.discardDraft(chatId, id)
   const arr = state.draftsByChat[chatId] || []
   const idx = arr.findIndex((d) => String(d.id) === String(id))
-  if (idx !== -1) {
-    arr.splice(idx, 1)
-    state.draftsByChat[chatId] = [...arr]
+  const draft = idx !== -1 ? arr[idx] : null
+  state.pendingByChat[chatId] = state.pendingByChat[chatId] || new Set()
+  state.pendingByChat[chatId].add(id)
+  if (draft) draft._pending = true
+  try {
+    const res = await api.discardDraft(chatId, id)
+    if (idx !== -1) {
+      arr.splice(idx, 1)
+      state.draftsByChat[chatId] = [...arr]
+    }
+    return res.data
+  } finally {
+    if (draft) draft._pending = false
+    state.pendingByChat[chatId].delete(id)
   }
-  return res.data
+}
+
+export function isPending(chatId, id) {
+  return !!state.pendingByChat[chatId]?.has(id)
 }
 
 export function captureAgentReplies(chatId, enabled) {
@@ -70,6 +93,7 @@ if (import.meta.env.VITE_E2E) {
     state.draftsByChat[chatId] = state.draftsByChat[chatId] || []
     state.draftsByChat[chatId].push(draft)
   }
+  window.__draftStoreState = state
 }
 
 export default {
@@ -81,4 +105,5 @@ export default {
   approve,
   discard,
   captureAgentReplies,
+  isPending,
 }

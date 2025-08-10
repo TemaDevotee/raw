@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col h-full">
+  <div class="flex flex-col h-full" data-testid="chat-window">
     <!-- Gradient header with controls -->
     <div class="chat-header shadow-sm" data-testid="chat-header-gradient" :style="headerStyle">
       <div class="flex items-center justify-between px-6 py-4">
@@ -125,7 +125,7 @@
         class="flex"
         :class="messageAlignment(msg.sender)"
       >
-        <div :class="messageBubbleClasses(msg.sender)">
+        <div :class="messageBubbleClasses(msg.sender)" :data-testid="msg.sender === 'agent' ? 'msg-agent' : undefined">
           <p class="text-sm whitespace-pre-wrap">{{ msg.text }}</p>
           <span class="text-xs block mt-1 flex items-center gap-1">
             {{ formatMessageTime(msg.time) }}
@@ -148,6 +148,7 @@
         :key="d.id"
         class="flex justify-start"
         data-testid="draft-bubble"
+        :aria-busy="d._pending ? 'true' : 'false'"
       >
         <div class="draft-msg">
           <div class="text-sm">{{ d.text }}</div>
@@ -155,7 +156,7 @@
             <Button
               variant="primary"
               size="xs"
-              :disabled="!isHeldByMe"
+              :disabled="(!isHeldByMe && !isE2E) || d._pending"
               data-testid="draft-approve"
               @click="approveDraft(d)"
             >
@@ -164,7 +165,7 @@
             <Button
               variant="secondary"
               size="xs"
-              :disabled="!isHeldByMe"
+              :disabled="(!isHeldByMe && !isE2E) || d._pending"
               data-testid="draft-discard"
               @click="rejectDraft(d)"
             >
@@ -259,6 +260,7 @@ import { setStatus as setChatStatus } from '@/api/chats.js';
 import billingStore from '@/stores/billingStore.js';
 import { chatStore } from '@/stores/chatStore.js';
 import draftStore from '@/stores/draftStore.js';
+import { isE2E } from '@/utils/e2e';
 import usageStore from '@/stores/usageStore.js'
 import { estimateTokensForText } from '@/utils/tokenEstimate.js'
 import TokenBadge from '@/components/TokenBadge.vue'
@@ -568,12 +570,12 @@ async function fetchDrafts() {
 }
 
 async function approveDraft(d) {
-  const res = await draftStore.approve(d.id);
+  const res = await draftStore.approve(chatId, d.id);
   if (res.message) messages.value.push(res.message);
 }
 
 async function rejectDraft(d) {
-  await draftStore.discard(d.id);
+  await draftStore.discard(chatId, d.id);
 }
 
 function statusLabelMsg(s) {

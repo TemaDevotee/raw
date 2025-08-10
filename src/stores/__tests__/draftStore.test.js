@@ -40,4 +40,17 @@ describe('draftStore', () => {
     draftStore.captureAgentReplies('1', false)
     expect(draftStore.state.capture.has('1')).toBe(false)
   })
+
+  it('removes draft on approve and restores on error', async () => {
+    draftStore.state.draftsByChat['2'] = [
+      { id: 'd1', chatId: '2', text: 'hi', state: 'queued' },
+    ]
+    const api = await import('@/api/drafts')
+    api.approveDraft.mockRejectedValueOnce(new Error('fail'))
+    await expect(draftStore.approve('2', 'd1')).rejects.toThrow()
+    expect(draftStore.listByChat('2').length).toBe(1)
+    api.approveDraft.mockResolvedValueOnce({ data: { chatId: '2' } })
+    await draftStore.approve('2', 'd1')
+    expect(draftStore.listByChat('2').length).toBe(0)
+  })
 })

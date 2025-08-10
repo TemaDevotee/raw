@@ -13,7 +13,7 @@ export function installE2EStubs() {
   window.fetch = async (input, init) => {
     const url = typeof input === 'string' ? input : input.url
 
-    if (url.includes('/chats')) {
+    if (/\/chats\/?(\?.*)?$/.test(url)) {
       return json([
         {
           id: 1,
