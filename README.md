@@ -112,15 +112,13 @@ If you wish to start from scratch, stop the dev servers and delete `localStorage
 
 The `docs/` folder (not provided here) should contain screenshots and GIFs demonstrating the login flow, workspace creation and switching, and pricing plan upgrade.  Please refer to those assets for a visual tour of the application.
 
-## Simulator Admin
+## Admin Simulator (read-only)
 
-An isolated read-only admin interface lives in [simulator/](simulator/). It runs on port **5174** and connects to the same mock backend.
+A separate admin interface lives in [apps/admin-sim](apps/admin-sim) and runs on port **5175**. It reads tenant billing data via `/admin` endpoints.
 
 ```bash
-cd simulator
-npm install
-npm run dev
-# open http://localhost:5174
+npm run dev:admin
+# open http://localhost:5175
 ```
 
-The app lists users and their workspaces, agents, knowledge collections and chats without mutating data.
+The simulator lists tenants with plan and token usage and lets you inspect a tenant’s billing summary.

@@ -31,7 +31,7 @@ Use this section to draft release notes for the next version. Copy relevant entr
 
 ## Simulator
 
-- Bootstrap read-only Simulator Admin app on port 5174
+- Bootstrap read-only Admin Simulator app on port 5175 under `apps/admin-sim`
 - Seed admin fixtures and expose read-only `/admin` endpoints for plans and users
 
 ## Billing

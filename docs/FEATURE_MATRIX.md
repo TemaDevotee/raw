@@ -23,4 +23,4 @@
 | ActionMenu/Popover | [src/components/ActionMenu.vue](../src/components/ActionMenu.vue) | – | – | [src/components/__tests__/ActionMenu.test.js](../src/components/__tests__/ActionMenu.test.js) |
 | Notifications | [src/components/ToastNotification.vue](../src/components/ToastNotification.vue) | [src/stores/toastStore.js](../src/stores/toastStore.js), [src/stores/settingsStore.js](../src/stores/settingsStore.js) | – | – |
 | E2E scaffold | [e2e/chats-smoke.spec.ts](../e2e/chats-smoke.spec.ts), [e2e/sidebar.spec.ts](../e2e/sidebar.spec.ts) | – | – | – |
-| Simulator Admin | [simulator](../simulator) | – | `GET /admin/*` | – |
+| Simulator Admin | [apps/admin-sim](../apps/admin-sim) | – | `GET /admin/*` | – |
