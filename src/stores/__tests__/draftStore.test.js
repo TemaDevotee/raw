@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 vi.mock('@/api/drafts', () => ({
   listDrafts: vi.fn().mockResolvedValue({ data: [] }),
-  approveDraft: vi.fn().mockResolvedValue({ chatId: '1', message: { sender: 'agent', text: 'hi', time: 'now' } }),
+  approveDraft: vi.fn().mockResolvedValue({ data: { id: 'm1', sender: 'agent', text: 'hi', time: 'now' } }),
   discardDraft: vi.fn().mockResolvedValue({ ok: true }),
 }))
 
@@ -41,16 +41,14 @@ describe('draftStore', () => {
     expect(draftStore.state.capture.has('1')).toBe(false)
   })
 
-  it('removes draft on approve and restores on error', async () => {
+  it('marks pending during approve', async () => {
     draftStore.state.draftsByChat['2'] = [
       { id: 'd1', chatId: '2', text: 'hi', state: 'queued' },
     ]
-    const api = await import('@/api/drafts')
-    api.approveDraft.mockRejectedValueOnce(new Error('fail'))
-    await expect(draftStore.approve('2', 'd1')).rejects.toThrow()
-    expect(draftStore.listByChat('2').length).toBe(1)
-    api.approveDraft.mockResolvedValueOnce({ data: { chatId: '2' } })
-    await draftStore.approve('2', 'd1')
+    const p = draftStore.approve('2', 'd1')
+    expect(draftStore.isPending('2', 'd1')).toBe(true)
+    await p
     expect(draftStore.listByChat('2').length).toBe(0)
+    expect(draftStore.isPending('2', 'd1')).toBe(false)
   })
 })

@@ -20,7 +20,7 @@ const chatsRoutes = require('./routes/chats');
 const teamsRoutes = require('./routes/teams');
 const connectionsRoutes = require('./routes/connections');
 const usageRoutes = require('./routes/usage');
-const { router: draftsRoutes, seedDrafts } = require('./routes/drafts');
+const { router: draftsRoutes } = require('./routes/drafts');
 const { router: presenceRoutes, seedPresence } = require('./routes/presence');
 const knowledgeRoutes = require('./routes/knowledge');
 const adminRoutes = require('./routes/admin');
@@ -293,11 +293,8 @@ if (process.env.NODE_ENV !== 'production') {
     seedPresence(data || []);
     res.json({ ok: true });
   });
-  app.post('/__e2e__/drafts', (req, res) => {
-    const map = req.body && req.body.data ? req.body.data : req.body;
-    seedDrafts(map || {});
-    res.json({ ok: true });
-  });
+  const e2eDraftRoutes = require('./routes/e2e-drafts');
+  app.use('/__e2e__/drafts', e2eDraftRoutes);
 }
 
 

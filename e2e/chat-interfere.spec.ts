@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import './__setup__';
-import { seedAppState } from './utils/session';
+import { seedAppState, seedDrafts } from './utils/session';
 import { gotoHash } from './support/nav';
 import { waitForAppReady } from './support/wait';
 
@@ -64,12 +64,9 @@ test.skip('operator interferes and agent reply becomes draft', async ({ page }) 
   await expect(page.getByTestId('btn-return')).toBeVisible();
   await expect(input).toHaveAttribute('data-locked', 'false');
 
-  await page.evaluate(() => {
-    // @ts-ignore
-    window.__e2e_addDraft({ chatId: '5', text: 'hello from agent' });
-  });
+  await seedDrafts(page, '5', ['hello from agent']);
   await expect(page.getByTestId('draft-bubble')).toBeVisible();
-  await expect(page.getByTestId('drafts-badge')).toHaveText('1');
+  await expect(page.getByTestId('draft-count')).toHaveText('1');
 
   const ret = page.getByTestId('btn-return');
   await ret.click();

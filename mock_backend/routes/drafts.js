@@ -26,10 +26,17 @@ router.post('/chats/:chatId/drafts/:draftId/approve', (req, res) => {
   const draft = list.splice(idx, 1)[0];
   db.chatDetails = db.chatDetails || {};
   if (!db.chatDetails[req.params.chatId]) db.chatDetails[req.params.chatId] = { id: req.params.chatId, messages: [] };
-  const msg = { sender: 'agent', text: draft.text, time: new Date().toISOString(), visibility: 'public' };
+  const msg = {
+    id: `m_${Date.now()}`,
+    chatId: req.params.chatId,
+    sender: 'agent',
+    text: draft.text,
+    time: new Date().toISOString(),
+    visibility: 'public'
+  };
   db.chatDetails[req.params.chatId].messages.push(msg);
   writeDb(db);
-  res.json({ chatId: req.params.chatId, message: msg });
+  res.json(msg);
 });
 
 router.post('/chats/:chatId/drafts/:draftId/discard', (req, res) => {
@@ -41,11 +48,4 @@ router.post('/chats/:chatId/drafts/:draftId/discard', (req, res) => {
   res.json({ ok: true });
 });
 
-// e2e seeding
-function seedDrafts(map) {
-  const db = ensureScopes(readDb());
-  db.draftsByChat = map;
-  writeDb(db);
-}
-
-module.exports = { router, seedDrafts };
+module.exports = { router };

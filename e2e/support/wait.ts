@@ -6,7 +6,7 @@ export async function waitForDraftCount(page, n) {
 }
 
 export async function waitForBadgeCount(page, n) {
-  const badge = page.getByTestId('drafts-badge');
+  const badge = page.getByTestId('draft-count');
   if (n === 0) {
     await expect(badge).toHaveCount(0);
   } else {

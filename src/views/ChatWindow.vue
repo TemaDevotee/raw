@@ -111,7 +111,7 @@
     <div aria-live="polite" class="text-center text-sm text-muted h-5">{{ typingLine }}</div>
     <!-- Messages list -->
     <div ref="messagesContainer" class="flex-1 p-6 overflow-y-auto space-y-4 bg-secondary">
-      <div v-if="drafts.length" class="text-right text-xs text-muted" data-testid="drafts-badge">
+      <div v-if="drafts.length" class="text-right text-xs text-muted" data-testid="draft-count">
         {{ drafts.length }}
       </div>
       <!-- Placeholder when no chat selected -->
@@ -148,7 +148,7 @@
         :key="d.id"
         class="flex justify-start"
         data-testid="draft-bubble"
-        :aria-busy="d._pending ? 'true' : 'false'"
+        :aria-busy="draftStore.isPending(chatId, d.id) ? 'true' : 'false'"
       >
         <div class="draft-msg">
           <div class="text-sm">{{ d.text }}</div>
@@ -156,7 +156,7 @@
             <Button
               variant="primary"
               size="xs"
-              :disabled="(!isHeldByMe && !isE2E) || d._pending"
+              :disabled="(!isHeldByMe && !isE2E) || draftStore.isPending(chatId, d.id)"
               data-testid="draft-approve"
               @click="approveDraft(d)"
             >
@@ -165,7 +165,7 @@
             <Button
               variant="secondary"
               size="xs"
-              :disabled="(!isHeldByMe && !isE2E) || d._pending"
+              :disabled="(!isHeldByMe && !isE2E) || draftStore.isPending(chatId, d.id)"
               data-testid="draft-discard"
               @click="rejectDraft(d)"
             >
@@ -570,8 +570,8 @@ async function fetchDrafts() {
 }
 
 async function approveDraft(d) {
-  const res = await draftStore.approve(chatId, d.id);
-  if (res.message) messages.value.push(res.message);
+  const msg = await draftStore.approve(chatId, d.id);
+  if (msg) messages.value.push(msg);
 }
 
 async function rejectDraft(d) {

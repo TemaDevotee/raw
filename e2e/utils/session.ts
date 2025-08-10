@@ -54,16 +54,22 @@ export async function seedAppState(page: Page, data: SeedData = {}) {
     await seedPresence(page, data.presence)
   }
   if (data.drafts) {
-    await seedDrafts(page, data.drafts)
+    for (const [chatId, drafts] of Object.entries(data.drafts)) {
+      await seedDrafts(page, chatId, drafts)
+    }
   }
 }
 
+const backendBase = process.env.PLAYWRIGHT_API_URL || 'http://127.0.0.1:3001'
+
 export async function seedPresence(page: Page, entries: Array<{ chatId: string; participants: any[] }>) {
-  await page.request.post('/__e2e__/presence', { data: entries })
+  await page.request.post(`${backendBase}/__e2e__/presence`, { data: entries })
 }
 
-export async function seedDrafts(page: Page, map: Record<string, any[]>) {
-  await page.request.post('/__e2e__/drafts', { data: map })
+export async function seedDrafts(page: Page, chatId: string, drafts: any[]) {
+  await page.request.post(`${backendBase}/__e2e__/drafts/seed`, {
+    data: { chatId, drafts: drafts.map((d, i) => (typeof d === 'string' ? { id: `e2e-draft-${i}`, text: d } : d)) }
+  })
 }
 
 export async function waitForAppReady(page: Page) {

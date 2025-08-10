@@ -4,7 +4,8 @@ import * as api from '@/api/drafts'
 const state = reactive({
   draftsByChat: {},
   loadingByChat: {},
-  pendingByChat: {},
+  pendingApprove: {},
+  pendingDiscard: {},
   capture: new Set(),
 })
 
@@ -33,31 +34,25 @@ export function count(chatId) {
 export async function approve(chatId, id) {
   const arr = state.draftsByChat[chatId] || []
   const idx = arr.findIndex((d) => String(d.id) === String(id))
-  const draft = idx !== -1 ? arr[idx] : null
-  state.pendingByChat[chatId] = state.pendingByChat[chatId] || new Set()
-  state.pendingByChat[chatId].add(id)
-  if (draft) draft._pending = true
+  state.pendingApprove[chatId] = state.pendingApprove[chatId] || new Set()
+  state.pendingApprove[chatId].add(id)
   try {
     const res = await api.approveDraft(chatId, id)
     if (idx !== -1) {
       arr.splice(idx, 1)
       state.draftsByChat[chatId] = [...arr]
     }
-    const { message } = res.data || {}
-    return { chatId, message }
+    return res.data
   } finally {
-    if (draft) draft._pending = false
-    state.pendingByChat[chatId].delete(id)
+    state.pendingApprove[chatId].delete(id)
   }
 }
 
 export async function discard(chatId, id) {
   const arr = state.draftsByChat[chatId] || []
   const idx = arr.findIndex((d) => String(d.id) === String(id))
-  const draft = idx !== -1 ? arr[idx] : null
-  state.pendingByChat[chatId] = state.pendingByChat[chatId] || new Set()
-  state.pendingByChat[chatId].add(id)
-  if (draft) draft._pending = true
+  state.pendingDiscard[chatId] = state.pendingDiscard[chatId] || new Set()
+  state.pendingDiscard[chatId].add(id)
   try {
     const res = await api.discardDraft(chatId, id)
     if (idx !== -1) {
@@ -66,13 +61,26 @@ export async function discard(chatId, id) {
     }
     return res.data
   } finally {
-    if (draft) draft._pending = false
-    state.pendingByChat[chatId].delete(id)
+    state.pendingDiscard[chatId].delete(id)
   }
 }
 
 export function isPending(chatId, id) {
-  return !!state.pendingByChat[chatId]?.has(id)
+  return !!state.pendingApprove[chatId]?.has(id) || !!state.pendingDiscard[chatId]?.has(id)
+}
+
+export function seedDrafts(chatId, drafts) {
+  state.draftsByChat[chatId] = drafts
+}
+
+export function waitUntilIdle(chatId) {
+  return new Promise((resolve) => {
+    const check = () => {
+      if (!state.pendingApprove[chatId]?.size && !state.pendingDiscard[chatId]?.size) resolve()
+      else setTimeout(check, 20)
+    }
+    check()
+  })
 }
 
 export function captureAgentReplies(chatId, enabled) {
@@ -81,19 +89,8 @@ export function captureAgentReplies(chatId, enabled) {
 }
 
 if (import.meta.env.VITE_E2E) {
-  window.__e2e_addDraft = ({ chatId, text = 'stubbed agent reply' }) => {
-    const draft = {
-      id: Date.now().toString(),
-      chatId,
-      author: 'agent',
-      text,
-      createdAt: Date.now(),
-      state: 'queued',
-    }
-    state.draftsByChat[chatId] = state.draftsByChat[chatId] || []
-    state.draftsByChat[chatId].push(draft)
-  }
   window.__draftStoreState = state
+  window.__draftStoreWaitUntilIdle = waitUntilIdle
 }
 
 export default {
@@ -106,4 +103,6 @@ export default {
   discard,
   captureAgentReplies,
   isPending,
+  seedDrafts,
+  waitUntilIdle,
 }
