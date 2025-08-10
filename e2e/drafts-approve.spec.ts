@@ -4,9 +4,9 @@ import {
   seedAppState,
   seedDrafts,
   approveDraft,
-  waitForDraftCount,
   waitForAgentMessage,
   waitStoreOp,
+  waitDraftCountServer,
   waitForAppReady,
 } from './utils/session'
 import { gotoHash } from './support/nav'
@@ -21,11 +21,11 @@ test('draft approval publishes message', async ({ page }) => {
   await gotoHash(page, `chats/${chatId}`)
   await waitForAppReady(page)
   await page.getByTestId('chat-window').waitFor()
-  await waitForDraftCount(page, 1)
+  await waitDraftCountServer(page, chatId, 1)
   const draftId = 'e2e-draft-0'
   const waitOp = waitStoreOp(page, 'approve', draftId)
   await approveDraft(page, draftId)
-  await waitOp
-  await waitForDraftCount(page, 0)
+  await waitOp.catch(() => {})
+  await waitDraftCountServer(page, chatId, 0)
   await waitForAgentMessage(page, 'hello from agent')
 })

@@ -82,16 +82,32 @@ export async function waitForAppReady(page: Page) {
 }
 
 export async function approveDraft(page: Page, draftId: string) {
-  const click = page.getByTestId(`draft-approve-${draftId}`).click()
-  const api = page.waitForResponse((r) => /\/drafts\/.*\/approve$/.test(r.url()))
-  await Promise.all([click, api])
+  function isApprove(r: any) {
+    const u = r.url()
+    return (
+      r.request().method() === 'POST' &&
+      u.includes('/drafts/') &&
+      (u.endsWith('/approve') || u.includes('/approve?'))
+    )
+  }
+  const pClick = page.getByTestId(`draft-approve-${draftId}`).click()
+  const pApi = page.waitForResponse(isApprove)
+  await Promise.all([pClick, pApi])
   await page.waitForSelector(`[data-testid="draft-bubble-${draftId}"]`, { state: 'detached' })
 }
 
 export async function discardDraft(page: Page, draftId: string) {
-  const click = page.getByTestId(`draft-discard-${draftId}`).click()
-  const api = page.waitForResponse((r) => /\/drafts\/.*\/discard$/.test(r.url()))
-  await Promise.all([click, api])
+  function isDiscard(r: any) {
+    const u = r.url()
+    return (
+      r.request().method() === 'POST' &&
+      u.includes('/drafts/') &&
+      (u.endsWith('/discard') || u.includes('/discard?'))
+    )
+  }
+  const pClick = page.getByTestId(`draft-discard-${draftId}`).click()
+  const pApi = page.waitForResponse(isDiscard)
+  await Promise.all([pClick, pApi])
   await page.waitForSelector(`[data-testid="draft-bubble-${draftId}"]`, { state: 'detached' })
 }
 
@@ -117,4 +133,12 @@ export async function waitStoreOp(page: Page, type: 'approve' | 'discard', draft
       }),
     { type, draftId },
   )
+}
+
+export async function waitDraftCountServer(page: Page, chatId: string, n: number) {
+  await expect.poll(async () => {
+    const res = await page.request.get(`${backendBase}/__e2e__/drafts?chatId=${chatId}`)
+    const data = await res.json()
+    return Array.isArray(data) ? data.length : 0
+  }, { timeout: 3000 }).toBe(n)
 }

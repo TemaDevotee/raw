@@ -1,4 +1,4 @@
-import { reactive } from 'vue'
+import { reactive, nextTick } from 'vue'
 import * as api from '@/api/drafts'
 
 const state = reactive({
@@ -9,12 +9,14 @@ const state = reactive({
   capture: new Set(),
 })
 
-function emitE2E(type, chatId, draftId) {
-  if (window && window.__E2E__) {
+async function emitE2E(type, chatId, draftId) {
+  if (!(window && window.__E2E__)) return
+  await nextTick()
+  queueMicrotask(() =>
     window.dispatchEvent(
       new CustomEvent('__draft_op_done__', { detail: { type, chatId, draftId } })
-    )
-  }
+    ),
+  )
 }
 
 export async function fetchDrafts(chatId) {
@@ -53,7 +55,7 @@ export async function approve(chatId, id) {
     return res.data
   } finally {
     state.pendingApprove[chatId].delete(id)
-    emitE2E('approve', chatId, id)
+    await emitE2E('approve', chatId, id)
   }
 }
 
@@ -71,7 +73,7 @@ export async function discard(chatId, id) {
     return res.data
   } finally {
     state.pendingDiscard[chatId].delete(id)
-    emitE2E('discard', chatId, id)
+    await emitE2E('discard', chatId, id)
   }
 }
 
