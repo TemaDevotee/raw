@@ -6,19 +6,22 @@
         <button
           class="btn-primary"
           type="button"
-          data-testid="knowledge-add"
+          data-testid="knowledge-add-trigger"
           @click="openDrawer = true"
         >
           {{ t('knowledge.add.trigger') }}
         </button>
       </div>
-      <ul v-if="store.state.collections.length">
+      <ul
+        v-if="store.state.collections.length"
+        data-testid="knowledge-collections"
+      >
         <li
           v-for="c in store.state.collections"
           :key="c.id"
           @click="select(c)"
           :class="rowClass(c.id)"
-          data-testid="collection-row"
+          data-testid="knowledge-collection-item"
           :data-id="c.id"
         >
           <span>{{ c.name }}</span>
@@ -100,7 +103,9 @@
         {{ t('knowledgeNoResults') }}
       </div>
     </div>
-    <div v-else class="flex-1 text-muted py-8 text-center">{{ t('knowledge.noSources') }}</div>
+    <div v-else class="flex-1 text-muted py-8 text-center pointer-events-none">
+      {{ t('knowledge.noSources') }}
+    </div>
   </div>
   <div v-if="showUpload" class="fixed inset-0 bg-black/40 flex items-center justify-center">
     <div class="bg-white dark:bg-gray-800 p-6 rounded shadow-lg w-96">
@@ -136,7 +141,11 @@
     </div>
   </div>
   <SourcePreviewDrawer v-if="previewId" :collection-id="selected.id" :source-id="previewId" @close="previewId=null" />
-  <Drawer v-model="openDrawer" aria-labelledby="drawer-title">
+  <Drawer
+    v-model="openDrawer"
+    aria-labelledby="drawer-title"
+    data-testid="knowledge-add-drawer"
+  >
     <div class="p-6 space-y-4">
       <h2 id="drawer-title" data-testid="drawer-title" class="text-lg font-semibold">
         {{ t('knowledge.add.title') }}
@@ -146,7 +155,7 @@
         <input
           id="coll-name"
           ref="nameInput"
-          data-testid="collection-name"
+          data-testid="collection-name-input"
           v-model="form.name"
           class="form-input w-full"
           autofocus
@@ -167,7 +176,7 @@
         <button
           class="btn-primary"
           type="button"
-          data-testid="collection-create"
+          data-testid="collection-create-submit"
           @click="submit"
           :disabled="!form.name.trim()"
         >

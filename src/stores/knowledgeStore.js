@@ -50,19 +50,13 @@ async function fetchCollections() {
 async function createCollection(payload) {
   const name = (payload?.name || '').trim()
   if (!name) throw new Error('Collection name required')
-  const { data } = await api.createCollection({
-    name,
-    description: payload.description || '',
-    visibility: payload.visibility || 'private',
-  })
+  const { data } = await api.createCollection({ name })
   const coll =
     data || {
       id: crypto.randomUUID(),
       name,
-      description: payload.description || '',
-      visibility: payload.visibility || 'private',
       createdAt: new Date().toISOString(),
-      sources: [],
+      sourceCount: 0,
     }
   state.collections.push(coll)
   persist()

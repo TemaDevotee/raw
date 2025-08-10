@@ -8,14 +8,12 @@ router.get('/collections', (req, res) => {
 })
 
 router.post('/collections', (req, res) => {
-  const { name = '', description = '', visibility = 'private' } = req.body || {}
+  const { name = '' } = req.body || {}
   const coll = {
     id: Date.now().toString(),
     name,
-    description,
-    visibility,
     createdAt: new Date().toISOString(),
-    sources: [],
+    sourceCount: 0,
   }
   collections.push(coll)
   res.status(201).json(coll)

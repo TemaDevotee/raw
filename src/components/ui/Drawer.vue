@@ -7,8 +7,8 @@
         :style="{ zIndex: 'calc(var(--z-popover) - 1)' }"
       />
       <div
-        data-testid="drawer"
         ref="panel"
+        v-bind="$attrs"
         class="absolute top-0 right-0 h-full bg-[var(--popover-bg)] border-l border-[var(--popover-border)] shadow-lg transition-transform duration-200 z-[var(--z-popover)]"
         :style="{ width, transform: open ? 'translateX(0)' : 'translateX(100%)' }"
         role="dialog"
@@ -23,6 +23,7 @@
 
 <script setup>
 import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+defineOptions({ inheritAttrs: false })
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },

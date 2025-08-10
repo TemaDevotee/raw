@@ -66,10 +66,8 @@ export function installE2EStubs() {
         const coll = {
           id: Date.now().toString(),
           name: body.name || '',
-          description: body.description || '',
-          visibility: body.visibility || 'private',
           createdAt: new Date().toISOString(),
-          sources: [],
+          sourceCount: 0,
         }
         list.push(coll)
         window.__e2eKnowledgeCollections = list
