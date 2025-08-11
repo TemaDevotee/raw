@@ -10,22 +10,20 @@ test('draft approval publishes message', async ({ page }) => {
   await seedDraft(page, chatId, { id: 'd1', text: 'hello from agent' })
   await gotoHash(page, `chats/${chatId}`)
   await waitForAppReady(page)
-  await expect(page.getByTestId('drafts-container')).toHaveAttribute('data-count', '1')
-  const bubble = page.getByTestId('draft').first()
-  await expect(bubble).toBeVisible()
-  const draftId = await bubble.getAttribute('data-draft-id')
+  await expect(page.getByTestId('drafts')).toHaveAttribute('data-count', '1')
+  const draftId = await page.locator('[data-testid="draft"]').first().getAttribute('data-draft-id')
   const before = await page.evaluate(() => (window as any).__draft_op_done__ || 0)
-  await Promise.all([
-    page.waitForResponse(
-      (r) =>
-        r.url().includes(`/api/chats/${chatId}/drafts/${draftId}/approve`) &&
-        r.request().method() === 'POST' &&
-        r.ok(),
-    ),
-    page.waitForFunction((prev) => (window as any).__draft_op_done__ === prev + 1, before),
-    bubble.getByTestId('draft-approve').click(),
-  ])
-  await page.waitForSelector(`[data-testid="draft"][data-draft-id="${draftId}"]`, { state: 'detached' })
-  await expect(page.getByTestId('drafts-container')).toHaveAttribute('data-count', '0')
-  await expect(page.getByText('hello from agent')).toBeVisible()
+  const responsePromise = page.waitForResponse(
+    (r) =>
+      r.url().includes(`/api/chats/${chatId}/drafts/${draftId}/approve`) &&
+      r.request().method() === 'POST' &&
+      r.ok(),
+  )
+  await page.locator(`[data-draft-id="${draftId}"] [data-testid="draft-approve"]`).click()
+  const res = await responsePromise
+  console.log('approve status', res.status())
+  await page.waitForFunction((prev) => (window as any).__draft_op_done__ > prev, before)
+  await expect(page.locator(`[data-draft-id="${draftId}"]`)).toHaveCount(0)
+  await expect(page.getByTestId('drafts')).toHaveAttribute('data-count', '0')
+  await expect(page.getByTestId('msg-agent').last()).toContainText('hello from agent')
 })

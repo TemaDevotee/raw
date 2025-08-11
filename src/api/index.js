@@ -11,7 +11,7 @@
 import { workspaceStore } from '@/stores/workspaceStore';
 import { showToast } from '@/stores/toastStore';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+const RAW_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 /**
  * Build a full request URL.  When the path begins with a scoped
@@ -23,7 +23,8 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api
  * @param {Object} params Optional query parameters
  */
 function buildUrl(path, params = {}) {
-  const url = new URL(API_BASE + path);
+  const base = RAW_BASE.startsWith('http') ? RAW_BASE : `${window.location.origin}${RAW_BASE}`;
+  const url = new URL(base + path);
   // Automatically attach workspaceId for scoped resources
   const scopedPrefixes = ['/chats', '/teams', '/connections'];
   if (scopedPrefixes.some((p) => path.startsWith(p))) {

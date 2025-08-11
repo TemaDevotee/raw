@@ -87,6 +87,13 @@ function findChat(id) {
   return state.chats.find((c) => c.id === id)
 }
 
+function addMessage(chatId, msg) {
+  const chat = findChat(chatId)
+  if (!chat) return
+  chat.messages = chat.messages || []
+  chat.messages.push(msg)
+}
+
 function handleStatusChange(chat, prev) {
   if (!chat) return
   if (chat.status === 'attention') {
@@ -341,6 +348,7 @@ export const chatStore = {
   returnToAgentAction,
   isAssignedToMe,
   canInterfere,
+  addMessage,
   touchActivity,
   cancelAutoReturn,
   mergePersisted,

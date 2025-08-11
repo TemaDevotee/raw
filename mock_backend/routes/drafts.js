@@ -25,18 +25,20 @@ router.post('/chats/:chatId/drafts/:draftId/approve', (req, res) => {
   if (idx === -1) return res.status(404).send();
   const draft = list.splice(idx, 1)[0];
   db.chatDetails = db.chatDetails || {};
-  if (!db.chatDetails[req.params.chatId]) db.chatDetails[req.params.chatId] = { id: req.params.chatId, messages: [] };
-  const msg = {
-    id: `m_${Date.now()}`,
+  if (!db.chatDetails[req.params.chatId]) {
+    db.chatDetails[req.params.chatId] = { id: req.params.chatId, messages: [] };
+  }
+  const message = {
+    id: `msg_${draft.id}`,
     chatId: req.params.chatId,
     sender: 'agent',
     text: draft.text,
     time: new Date().toISOString(),
     visibility: 'public'
   };
-  db.chatDetails[req.params.chatId].messages.push(msg);
+  db.chatDetails[req.params.chatId].messages.push(message);
   writeDb(db);
-  res.json(msg);
+  res.json({ ok: true, message });
 });
 
 router.post('/chats/:chatId/drafts/:draftId/discard', (req, res) => {

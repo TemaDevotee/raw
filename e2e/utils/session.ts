@@ -1,5 +1,5 @@
 import { Page, expect } from '@playwright/test'
-import { MOCK_BASE } from '../__setup__'
+import { API_BASE } from '../__setup__'
 
 interface SeedData {
   agents?: Array<Record<string, any>>
@@ -66,11 +66,11 @@ export async function seedAppState(page: Page, data: SeedData = {}) {
 }
 
 export async function seedPresence(page: Page, entries: Array<{ chatId: string; participants: any[] }>) {
-  await page.request.post(`${MOCK_BASE}/__e2e__/presence`, { data: entries })
+  await page.request.post(`${API_BASE}/__e2e__/presence`, { data: entries })
 }
 
 export async function seedDrafts(page: Page, chatId: string, drafts: any[]) {
-  await page.request.post(`${MOCK_BASE}/__e2e__/drafts/seed`, {
+  await page.request.post(`${API_BASE}/__e2e__/drafts/seed`, {
     data: { chatId, drafts: drafts.map((d, i) => (typeof d === 'string' ? { id: `d-e2e-${i + 1}`, text: d } : d)) }
   })
 }

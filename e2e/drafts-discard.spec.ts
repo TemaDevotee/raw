@@ -13,7 +13,7 @@ test('draft discard removes bubble', async ({ page }) => {
   await seedDraft(page, chatId, { id: 'd1', text: 'temp msg' })
   await gotoHash(page, `chats/${chatId}`)
   await waitForAppReady(page)
-  await expect(page.getByTestId('drafts-container')).toHaveAttribute('data-count', '1')
+  await expect(page.getByTestId('drafts')).toHaveAttribute('data-count', '1')
   const bubble = page.getByTestId('draft').first()
   await expect(bubble).toBeVisible()
   const draftId = await bubble.getAttribute('data-draft-id')
@@ -22,6 +22,6 @@ test('draft discard removes bubble', async ({ page }) => {
     waitForDraftOp(page, chatId, draftId!, 'discard'),
     bubble.getByTestId('draft-discard').click(),
   ])
-  await expect(page.getByTestId('drafts-container')).toHaveAttribute('data-count', '0')
+  await expect(page.getByTestId('drafts')).toHaveAttribute('data-count', '0')
   await expect(page.getByText('temp msg')).toHaveCount(0)
 })

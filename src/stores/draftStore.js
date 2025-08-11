@@ -1,5 +1,6 @@
 import { reactive, nextTick } from 'vue'
 import * as api from '@/api/drafts'
+import { chatStore } from '@/stores/chatStore.js'
 
 const state = reactive({
   draftsByChat: {},
@@ -58,9 +59,13 @@ export async function approve(chatId, id) {
       arr.splice(idx, 1)
       state.draftsByChat[chatId] = [...arr]
     }
-    await nextTick()
-    emitOpDone({ chatId, draftId: id, op: 'approve' })
-    return res.data
+    if (res.data?.message) {
+      const msg = res.data.message
+      chatStore.addMessage(chatId, msg)
+      await nextTick()
+      emitOpDone({ chatId, draftId: id, op: 'approve' })
+      return msg
+    }
   } finally {
     state.pendingApprove[chatId].delete(id)
   }

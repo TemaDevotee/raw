@@ -1,13 +1,12 @@
 import { Page } from '@playwright/test'
-
-const BASE = process.env.MOCK_BASE_URL ?? 'http://localhost:3100'
+import { API_BASE } from '../../__setup__'
 
 export async function seedDraft(
   page: Page,
   chatId: string,
   payload: Partial<{ id: string; text: string }> = {},
 ) {
-  await page.request.post(`${BASE}/__e2e__/drafts/seed`, {
+  await page.request.post(`${API_BASE}/__e2e__/drafts/seed`, {
     data: { chatId, payload },
   })
   await page.addInitScript(

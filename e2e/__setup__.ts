@@ -1,8 +1,10 @@
 import { test as base } from '@playwright/test';
 import { wire404Debug } from './support/log';
 
-export const APP_BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:5173';
-export const MOCK_BASE = process.env.MOCK_BASE_URL ?? 'http://localhost:3100';
+export const APP_BASE =
+  process.env.PLAYWRIGHT_APP_URL ?? process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:5173';
+export const API_BASE =
+  process.env.PLAYWRIGHT_BACKEND_URL ?? process.env.MOCK_BASE_URL ?? 'http://localhost:3100';
 
 base.beforeEach(async ({ page }) => {
   wire404Debug(page)
