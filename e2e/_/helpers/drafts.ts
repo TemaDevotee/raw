@@ -10,6 +10,15 @@ export async function seedDraft(
   await page.request.post(`${BASE}/__e2e__/drafts/seed`, {
     data: { chatId, payload },
   })
+  await page.addInitScript(
+    ({ chatId, payload }) => {
+      const list = (window as any).__e2eDraftsData || {};
+      list[chatId] = list[chatId] || [];
+      list[chatId].push({ id: payload.id || 'seed', text: payload.text || '' });
+      (window as any).__e2eDraftsData = list;
+    },
+    { chatId, payload },
+  );
 }
 
 export async function waitForDraftOp(

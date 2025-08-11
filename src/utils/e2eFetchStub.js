@@ -36,6 +36,19 @@ export function installE2EStubs() {
       ])
     }
 
+    const matchDrafts = url.match(/\/chats\/([^/]+)\/drafts(?:\?|$)/)
+    if (matchDrafts) {
+      const drafts = (window.__e2eDraftsData || {})[matchDrafts[1]] || []
+      return json(drafts)
+    }
+
+    const matchChat = url.match(/\/chats\/([^/?]+)(?:\?|$)/)
+    if (matchChat) {
+      const chats = window.__e2eChatsData || {}
+      const chat = chats[matchChat[1]] || { id: matchChat[1], messages: [], status: 'live' }
+      return json(chat)
+    }
+
     if (url.includes('/agents')) {
       const match = url.match(/\/agents\/([^/?]+)(?:\?|$)/)
       const data = window.__e2eAgentsData || []
@@ -63,8 +76,11 @@ export function installE2EStubs() {
       return json(list)
     }
 
+    if (url.includes('/presence/list')) {
+      return json([])
+    }
     if (url.match(/\/presence\/(join|leave)/)) {
-      return original(input, init)
+      return json({ ok: true })
     }
 
     if (url.includes('/account/usage')) {

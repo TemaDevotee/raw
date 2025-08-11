@@ -7,6 +7,7 @@ interface SeedData {
   presence?: Array<{ chatId: string; participants: any[] }>
   drafts?: Record<string, any[]>
   workspaces?: any[]
+  chats?: Record<string, any>
 }
 
 export async function seedAppState(page: Page, data: SeedData = {}) {
@@ -36,8 +37,11 @@ export async function seedAppState(page: Page, data: SeedData = {}) {
       if (payload.agents !== undefined) {
         window.__e2eAgentsData = payload.agents
       }
+      if (payload.chats !== undefined) {
+        window.__e2eChatsData = payload.chats
+      }
     },
-    { state, user, knowledge: data.knowledge, agents: data.agents },
+    { state, user, knowledge: data.knowledge, agents: data.agents, chats: data.chats },
   )
 
   await page.route('**/api/knowledge_groups*', (route) => {
