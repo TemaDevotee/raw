@@ -70,9 +70,17 @@ export async function seedPresence(page: Page, entries: Array<{ chatId: string; 
 }
 
 export async function seedDrafts(page: Page, chatId: string, drafts: any[]) {
+  const norm = drafts.map((d, i) =>
+    typeof d === 'string' ? { id: `d-e2e-${i + 1}`, text: d } : d,
+  )
   await page.request.post(`${API_BASE}/__e2e__/drafts/seed`, {
-    data: { chatId, drafts: drafts.map((d, i) => (typeof d === 'string' ? { id: `d-e2e-${i + 1}`, text: d } : d)) }
+    data: { chatId, drafts: norm }
   })
+  await page.addInitScript(({ chatId, drafts }) => {
+    const list = window.__e2eDraftsData || {}
+    list[chatId] = drafts
+    window.__e2eDraftsData = list
+  }, { chatId, drafts: norm })
 }
 
 export async function waitForAppReady(page: Page) {
