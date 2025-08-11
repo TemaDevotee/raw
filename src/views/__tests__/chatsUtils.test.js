@@ -95,13 +95,13 @@ describe('chats utils', () => {
   it('template contains accessibility hooks', () => {
     const src = readFileSync(resolve('src/views/ChatsView.vue'), 'utf8')
     expect(src).toMatch(/role="button"/)
-    expect(src).toMatch(/aria-label="statusAria/)
+    expect(src).toMatch(/aria-label="statusLabel/)
   })
 
   it('chat window template exposes menu and presence roles', () => {
     const src = readFileSync(resolve('src/views/ChatWindow.vue'), 'utf8')
     expect(src).toMatch(/role="menu"/)
-    expect(src).toMatch(/testid="presence-stack-header"/)
+    expect(src).toMatch(/testid="presence-stack"/)
   })
 })
 

@@ -11,6 +11,21 @@ const state = reactive({
   polling: {},
 })
 
+const STORAGE_KEY = 'knowledge.collections.v1'
+
+function persist() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.collections))
+}
+
+function hydrate() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    state.collections = raw ? JSON.parse(raw) : []
+  } catch {
+    state.collections = []
+  }
+}
+
 function getSources(collectionId) {
   return state.sourcesByCollection[collectionId] || (state.sourcesByCollection[collectionId] = [])
 }
@@ -19,25 +34,35 @@ function getSelection(collectionId) {
   return state.selectionByCollection[collectionId] || (state.selectionByCollection[collectionId] = new Set())
 }
 
-async function fetchCollections(workspaceId) {
+async function fetchCollections() {
   state.isLoading = true
   try {
-    const { data } = await api.listCollections(workspaceId)
+    const tenantId = authStore.state.user?.tenantId || 't1'
+    const { data } = await api.listCollections(tenantId)
     state.collections = Array.isArray(data) ? data : []
-  } catch (e) {
-    console.error('Failed to load collections', e)
+    persist()
+  } catch {
     state.collections = []
   } finally {
     state.isLoading = false
   }
 }
 
-async function createCollection(name, workspaceId) {
-  const trimmed = (name || '').trim()
-  if (!trimmed) throw new Error('Collection name required')
-  const { data } = await api.createCollection({ name: trimmed, workspaceId })
-  const coll = data || { id: crypto.randomUUID(), name: trimmed, workspaceId, visibility: 'private', editors: [] }
+async function createCollection(payload) {
+  const name = (payload?.name || '').trim()
+  if (!name) throw new Error('Collection name required')
+  const tenantId = authStore.state.user?.tenantId || 't1'
+  const { data } = await api.createCollection({ tenantId, name })
+  const coll =
+    data || {
+      id: crypto.randomUUID(),
+      tenantId,
+      name,
+      createdAt: new Date().toISOString(),
+      sourcesCount: 0,
+    }
   state.collections.push(coll)
+  persist()
   return coll
 }
 
@@ -142,7 +167,8 @@ async function uploadFiles(collectionId, files) {
   list.push(...entries)
   state.isUploading = true
   try {
-    await api.uploadFiles(collectionId, Array.from(files), (evt) => {
+    const tenantId = authStore.state.user?.tenantId || 't1'
+    await api.uploadFiles(tenantId, collectionId, Array.from(files), (evt) => {
       const percent = Math.round((evt.loaded / evt.total) * 100)
       entries.forEach((e) => (e.progress = percent))
     })
@@ -274,6 +300,8 @@ function startPolling(collectionId) {
   tick()
 }
 
+hydrate()
+
 export const knowledgeStore = {
   state,
   fetchCollections,
@@ -294,4 +322,5 @@ export const knowledgeStore = {
   deleteSources,
   batchAction,
   startPolling,
+  hydrate,
 }

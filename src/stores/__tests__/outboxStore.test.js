@@ -22,17 +22,7 @@ beforeAll(async () => {
       this.store = {}
     },
   }
-  global.navigator = { onLine: true }
-  const listeners = {}
-  global.window = {
-    addEventListener(event, cb) {
-      listeners[event] = cb
-    },
-    dispatchEvent(ev) {
-      const fn = listeners[ev.type]
-      if (fn) fn(ev)
-    },
-  }
+  vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(true)
   apiClient = (await import('@/api')).default
   outboxStore = (await import('@/stores/outboxStore.js')).outboxStore
 })

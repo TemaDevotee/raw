@@ -15,7 +15,12 @@
       <img v-if="p.avatarUrl" :src="p.avatarUrl" alt="" class="w-full h-full rounded-full" />
       <span v-else>{{ initials(p.name) }}</span>
     </div>
-    <div v-if="overflow > 0" class="avatar overflow" :style="avatarStyle(top.length)">
+    <div
+      v-if="overflow > 0"
+      class="avatar overflow"
+      :style="avatarStyle(top.length)"
+      data-testid="presence-overflow"
+    >
       {{ overflowText.replace('{n}', overflow).replace('{count}', overflow) }}
     </div>
   </div>

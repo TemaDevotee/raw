@@ -1,3 +1,5 @@
+import langStore from '@/stores/langStore.js'
+
 export { statusColor, statusGradient, badgeColor } from '@/utils/statusTheme.js'
 
 export function chatTimestamp(chat) {
@@ -47,6 +49,11 @@ export function filterChatsList(chats, status = '', query = '', agentsById = {})
 }
 
 export const GROUPS_KEY = 'chats.groups.v1'
+
+export function statusLabel(status) {
+  const dict = langStore.messages[langStore.current]?.status || {}
+  return dict[status] || langStore.messages.en.status?.[status] || status
+}
 
 export function toggleGroupState(openGroups, status, storage = globalThis.sessionStorage) {
   openGroups[status] = openGroups[status] !== false ? false : true

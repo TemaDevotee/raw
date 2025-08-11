@@ -31,6 +31,24 @@ module.exports = {
     'no-irregular-whitespace': 'off'
   },
   overrides: [
-    { files: ['e2e/**', '**/*.test.*'], env: { jest: true, node: true } }
+    {
+      files: ['src/**/*.{ts,js,vue}'],
+      env: { browser: true, es2022: true },
+      globals: {
+        __E2E__: 'readonly',
+        __E2E_READY__: 'writable',
+        PLAYWRIGHT_BASE_URL: 'readonly',
+        VITE_E2E: 'readonly'
+      }
+    },
+    {
+      files: ['e2e/**/*.{ts,js}'],
+      env: { browser: true, es2022: true },
+      globals: {
+        __E2E__: 'readonly',
+        PLAYWRIGHT_BASE_URL: 'readonly',
+        VITE_E2E: 'readonly'
+      }
+    }
   ]
 }

@@ -1,7 +1,7 @@
 <template>
   <div>
     <PageHeader
-      :title="langStore.t('agents')"
+      :title="langStore.t('agents.title')"
       :subtitle="langStore.t('agentsSubtitle')"
     >
       <button @click="openCreateForm()" class="btn-primary">

@@ -26,13 +26,51 @@
         <p class="flex items-center flex-wrap">
           <strong>{{ langStore.t('planLabel') }}:</strong>
           <span class="ml-1">{{ account.plan || 'N/A' }}</span>
-          <router-link
-            to="/account/plan"
-            class="ml-3 text-sm font-semibold text-brand underline hover:text-brand/80"
-          >
-            {{ langStore.t('changePlan') || 'Change' }}
-          </router-link>
         </p>
+      </section>
+
+      <!-- Plan & Tokens -->
+      <section
+        v-if="billingStore.state.loaded"
+        class="p-6 rounded-xl bg-secondary border border-default space-y-2"
+        data-testid="billing-card"
+      >
+        <h2 class="text-xl font-semibold">
+          {{ langStore.t('billing.plan') }}
+        </h2>
+        <p class="font-medium">{{ billingStore.state.plan }}</p>
+        <div>
+          <div
+            class="h-2 rounded-full bg-secondary overflow-hidden"
+            role="progressbar"
+            data-testid="billing-progress"
+            aria-valuemin="0"
+            :aria-valuenow="billingStore.state.tokenUsed"
+            :aria-valuemax="billingStore.state.tokenQuota || 0"
+            :aria-label="langStore.t('billing.tokens')"
+          >
+            <div
+              class="h-full bg-brand"
+              :style="{ width: billingStore.tokenPct() + '%' }"
+            ></div>
+          </div>
+          <p class="text-sm mt-1">
+            {{
+              langStore
+                .t('billing.usedOf')
+                .replace('{used}', usedFmt)
+                .replace('{quota}', quotaFmt)
+            }}
+            <span v-if="resetDate">
+              —
+              {{
+                langStore
+                  .t('billing.resets')
+                  .replace('{date}', resetDate)
+              }}
+            </span>
+          </p>
+        </div>
       </section>
 
       <!-- Team management -->
@@ -171,7 +209,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import apiClient from '@/api'
 import PageHeader from '@/components/PageHeader.vue'
 import { sidePanelStore } from '@/stores/sidePanelStore'
@@ -181,11 +219,26 @@ import langStore from '@/stores/langStore.js'
 import WorkspaceSwitcher from '@/components/WorkspaceSwitcher.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { workspaceStore } from '@/stores/workspaceStore'
+import billingStore from '@/stores/billingStore.js'
 import { orchestratedLogout, getLogoutRisk } from '@/stores/logout.js'
 
 const account = ref({ name: '', email: '', plan: '', team: [] })
 const dangerOpen = ref(false)
 const dialog = ref(null)
+
+const nf = computed(() => new Intl.NumberFormat(langStore.current))
+const df = computed(() =>
+  new Intl.DateTimeFormat(langStore.current, { dateStyle: 'medium' }),
+)
+const usedFmt = computed(() => nf.value.format(billingStore.state.tokenUsed))
+const quotaFmt = computed(() =>
+  billingStore.state.tokenQuota ? nf.value.format(billingStore.state.tokenQuota) : '—',
+)
+const resetDate = computed(() =>
+  billingStore.state.period
+    ? df.value.format(new Date(billingStore.state.period.end))
+    : null,
+)
 
 async function fetchAccount() {
   try {

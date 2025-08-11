@@ -27,19 +27,34 @@ beforeEach(() => {
   knowledgeStore.state.collections = []
   knowledgeStore.state.sourcesByCollection = {}
   knowledgeStore.state.selectionByCollection = {}
+  globalThis.localStorage = {
+    store: {},
+    getItem(key) {
+      return this.store[key] || null
+    },
+    setItem(key, val) {
+      this.store[key] = String(val)
+    },
+    removeItem(key) {
+      delete this.store[key]
+    },
+    clear() {
+      this.store = {}
+    },
+  }
   vi.resetAllMocks()
 })
 
 describe('knowledgeStore', () => {
   it('fetches collections', async () => {
-    api.listCollections.mockResolvedValue({ data: [{ id: '1', name: 'Coll' }] })
+    api.listCollections.mockResolvedValue({ data: [{ id: '1', name: 'Coll', createdAt: '0', sourcesCount: 0 }] })
     await knowledgeStore.fetchCollections()
     expect(knowledgeStore.state.collections).toHaveLength(1)
   })
 
   it('creates collection', async () => {
-    api.createCollection.mockResolvedValue({ data: { id: '2', name: 'New' } })
-    await knowledgeStore.createCollection('New')
+    api.createCollection.mockResolvedValue({ data: { id: 'n1', name: 'New', createdAt: '0', sourcesCount: 0 } })
+    await knowledgeStore.createCollection({ name: 'New' })
     expect(knowledgeStore.state.collections.some((c) => c.name === 'New')).toBe(true)
   })
 

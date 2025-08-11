@@ -10,6 +10,17 @@ const presenceMap = new Map(
   }])
 )
 
+function seedPresence(data = []) {
+  presenceMap.clear()
+  data.forEach(({ chatId, participants }) => {
+    presenceMap.set(String(chatId), {
+      chatId: String(chatId),
+      participants: participants.map((p) => ({ ...p })),
+      updatedAt: new Date().toISOString(),
+    })
+  })
+}
+
 function sort(list) {
   return list.sort((a, b) => {
     if (a.role !== b.role) return a.role === 'operator' ? -1 : 1
@@ -54,4 +65,4 @@ router.post('/presence/leave', (req, res) => {
   res.json(pres)
 })
 
-module.exports = router
+module.exports = { router, seedPresence }

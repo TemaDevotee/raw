@@ -4,7 +4,7 @@ import { reactive } from 'vue';
  * Reactive language store with translations for English and Russian.
  * It remembers the selected language in localStorage (key: 'lang').
  */
-const savedLang = localStorage.getItem('lang') || 'en';
+const savedLang = globalThis.localStorage?.getItem('lang') || 'en';
 
 const messages = {
   en: {
@@ -25,6 +25,11 @@ const messages = {
     dangerZone: 'Danger Zone',
     transferOwnership: 'Transfer Ownership',
     deleteAccount: 'Delete Account',
+    created: 'Created',
+    theme: 'Theme',
+    language: 'Language',
+    langEnglish: 'English',
+    langRussian: 'Russian',
     lightMode: 'Light mode',
     darkMode: 'Dark mode',
     classic: 'Classic',
@@ -33,12 +38,44 @@ const messages = {
     graphite: 'Graphite',
     sapphire: 'Sapphire',
     violet: 'Violet',
+    'controls.interfere': 'Interfere',
+    'controls.return': 'Return to agent',
+    'controls.changeStatus': 'Change status',
+    'composer.placeholder.locked': 'Agent in control. Interfere to reply.',
     // Chat status labels
     attention: 'Requires Attention',
     live: 'Live',
     paused: 'Paused',
     resolved: 'Resolved',
     idle: 'Idle',
+    status: {
+      live: 'Live',
+      attention: 'Attention',
+      paused: 'Paused',
+      resolved: 'Resolved',
+      idle: 'Idle'
+    },
+    agent: {
+      notFound: {
+        title: 'Agent not found',
+        desc: 'The requested agent does not exist.'
+      }
+    },
+    'agents.back': 'Back to agents',
+    'agents.title': 'Agents',
+    knowledge: {
+      add: {
+        trigger: 'Add',
+        title: 'Create collection',
+        submit: 'Create'
+      },
+      name: 'Name',
+      description: 'Description',
+      visibility: 'Visibility',
+      private: 'Private',
+      workspace: 'Workspace',
+      noSources: 'No sources yet'
+    },
     // Sandbox messages
     send: 'Send',
     typeMessage: 'Type a message…',
@@ -46,8 +83,7 @@ const messages = {
     comingSoon: 'This tab is coming soon.',
     all: 'All',
     // Additional navigation and account strings
-    agents: 'Agents',
-    knowledge: 'Knowledge',
+    knowledgeNav: 'Knowledge',
     logout: 'Log out',
     logoutConfirmTitle: 'Log out now?',
     logoutHoldChats: 'You\'re interfering in {n} chat(s). Return control and log out?',
@@ -86,6 +122,15 @@ const messages = {
     discard: 'Discard',
     savedAt: 'Saved {time}',
     sentQueuedMessages: 'Sent {count} queued messages',
+    'tokens.quota': 'Tokens',
+    'tokens.usedOf': '{used} of {included}',
+    'tokens.left': '{left} left',
+    'tokens.estimate': '\u2248 {count} tok',
+    'billing.plan': 'Plan',
+    'billing.tokens': 'Tokens',
+    'billing.usedOf': '{used} of {quota}',
+    'billing.resets': 'resets {date}',
+    'billing.fetchFailed': 'Failed to load billing',
     // 404 page
     pageNotFound: 'Page not found',
     goHome: 'Go to dashboard',
@@ -262,6 +307,11 @@ const messages = {
     dangerZone: 'Опасная зона',
     transferOwnership: 'Передать владение',
     deleteAccount: 'Удалить аккаунт',
+    created: 'Создано',
+    theme: 'Тема',
+    language: 'Язык',
+    langEnglish: 'Английский',
+    langRussian: 'Русский',
     lightMode: 'Светлая тема',
     darkMode: 'Тёмная тема',
     classic: 'Классическая',
@@ -270,18 +320,49 @@ const messages = {
     graphite: 'Графит',
     sapphire: 'Сапфир',
     violet: 'Фиолетовая',
+    'controls.interfere': 'Вмешаться',
+    'controls.return': 'Вернуть агенту',
+    'controls.changeStatus': 'Изменить статус',
+    'composer.placeholder.locked': 'Агент отвечает. Вмешайтесь, чтобы писать.',
     attention: 'Требует внимания',
     live: 'Активный',
     paused: 'На паузе',
     resolved: 'Решён',
     idle: 'Закрыт',
+    status: {
+      live: 'В эфире',
+      attention: 'Требует внимания',
+      paused: 'На паузе',
+      resolved: 'Решён',
+      idle: 'Неактивен'
+    },
+    agent: {
+      notFound: {
+        title: 'Агент не найден',
+        desc: 'Запрошенный агент не существует.'
+      }
+    },
+    'agents.back': 'Назад к агентам',
+    'agents.title': 'Агенты',
+    knowledge: {
+      add: {
+        trigger: 'Добавить',
+        title: 'Новая коллекция',
+        submit: 'Создать'
+      },
+      name: 'Название',
+      description: 'Описание',
+      visibility: 'Доступ',
+      private: 'Личный',
+      workspace: 'В воркспейсе',
+      noSources: 'Источников пока нет'
+    },
     send: 'Отправить',
     typeMessage: 'Введите сообщение…',
     comingSoon: 'Эта вкладка скоро появится.',
     all: 'Все',
     // Additional navigation and account strings
-    agents: 'Агенты',
-    knowledge: 'Знания',
+    knowledgeNav: 'Знания',
     logout: 'Выйти',
     logoutConfirmTitle: 'Выйти сейчас?',
     logoutHoldChats: 'Вы вмешиваетесь в {n} чат(ов). Вернуть управление и выйти?',
@@ -320,6 +401,15 @@ const messages = {
     discard: 'Отменить',
     savedAt: 'Сохранено {time}',
     sentQueuedMessages: 'Отправлено {count} сообщений из очереди',
+    'tokens.quota': 'Токены',
+    'tokens.usedOf': '{used} из {included}',
+    'tokens.left': 'осталось {left}',
+    'tokens.estimate': '\u2248 {count} ток',
+    'billing.plan': 'План',
+    'billing.tokens': 'Токены',
+    'billing.usedOf': '{used} из {quota}',
+    'billing.resets': 'сброс {date}',
+    'billing.fetchFailed': 'Не удалось загрузить биллинг',
     // 404 page
     pageNotFound: 'Страница не найдена',
     goHome: 'На главную',
@@ -485,7 +575,7 @@ const store = reactive({
   messages,
   setLang(lang) {
     store.current = lang;
-    localStorage.setItem('lang', lang);
+    globalThis.localStorage?.setItem('lang', lang);
   },
   // Стрелочная функция не зависит от this и использует замыкание на store
   t: (key) => {

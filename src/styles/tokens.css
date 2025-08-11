@@ -11,6 +11,7 @@
   --status-gradient-resolved: linear-gradient(to right, #A3E635, #84CC16);
   --status-gradient-ended: linear-gradient(to right, #F87171, #EF4444);
   --status-gradient-idle: linear-gradient(to right, #e5e7eb, #d1d5db);
+  --chatHeaderGradientOpacity: 0.12;
 
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -21,7 +22,14 @@
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
   --shadow-xs: 0 0 0 1px rgba(0, 0, 0, 0.05);
 
-  --z-popover: 1300;
+  --panel: var(--c-bg-secondary);
+  --border: var(--c-border);
+
+  --z-popover: 1000;
+  --popover-radius: 10px;
+  --popover-shadow: 0 8px 24px rgba(0,0,0,.16);
+  --popover-bg: var(--panel);
+  --popover-border: var(--border);
   --z-modal: 1400;
   --z-toast: 1500;
 
@@ -39,54 +47,28 @@
   --presence-radius: 9999px;
   --presence-border: 1px;
   --presence-shadow: var(--shadow-xs);
+
+  --brand-logo: #4b5563;
 }
 
-/* Trickster logo palettes */
-:root {
-  --logo-1: #345003;
-  --logo-2: #639405;
-  --logo-3: #834202;
-  --logo-4: #CD6502;
+body[data-theme="classic"] {
+  --brand-logo: #639405;
 }
-
-:root[data-theme="forest"] {
-  --logo-1: #345003;
-  --logo-2: #639405;
-  --logo-3: #834202;
-  --logo-4: #CD6502;
+body[data-theme="emerald"] {
+  --brand-logo: #10b981;
 }
-
-:root[data-theme="ice"] {
-  --logo-1: #979797;
-  --logo-2: #D6D6D6;
-  --logo-3: #77B4DA;
-  --logo-4: #A1DBFF;
+body[data-theme="wine"] {
+  --brand-logo: #be123c;
 }
-
-:root[data-theme="violet"] {
-  --logo-1: #49207A;
-  --logo-2: #8A5DDB;
-  --logo-3: #7A124E;
-  --logo-4: #FF66B3;
+body[data-theme="graphite"] {
+  --brand-logo: #9ca3af;
 }
-
-:root[data-theme="sunset"] {
-  --logo-1: #8A3A00;
-  --logo-2: #FF9153;
-  --logo-3: #8A0039;
-  --logo-4: #FF6A88;
+body[data-theme="sapphire"] {
+  --brand-logo: #38bdf8;
 }
-
-:root[data-theme="slate"] {
-  --logo-1: #434957;
-  --logo-2: #9AA3B2;
-  --logo-3: #0D5A58;
-  --logo-4: #42BFB6;
+body[data-theme="violet"] {
+  --brand-logo: #8b5cf6;
 }
-
-:root[data-theme="cyber"] {
-  --logo-1: #2C1E4A;
-  --logo-2: #7D5CFF;
-  --logo-3: #005B4A;
-  --logo-4: #40FFD9;
+html.dark {
+  --brand-logo: #e5e7eb;
 }

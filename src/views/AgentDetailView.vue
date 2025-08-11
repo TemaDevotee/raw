@@ -1,12 +1,17 @@
 <template>
   <div class="p-10 space-y-6">
-    <header class="flex items-center mb-8 space-x-4">
-      <router-link to="/agents" class="btn-secondary">
-        <span class="material-icons-outlined mr-1">arrow_back</span>
-        {{ langStore.t('backToAll') }}
-      </router-link>
-      <h1 class="text-3xl font-bold">{{ agent.name }}</h1>
-    </header>
+    <div v-if="loading" data-testid="agent-skeleton">
+      <SkeletonLoader />
+    </div>
+    <AgentNotFound v-else-if="!agent" />
+    <div v-else>
+      <header class="flex items-center mb-8 space-x-4">
+        <router-link to="/agents" class="btn-secondary">
+          <span class="material-icons-outlined mr-1">arrow_back</span>
+          {{ langStore.t('backToAll') }}
+        </router-link>
+        <h1 class="text-3xl font-bold" data-testid="agent-name">{{ agent.name }}</h1>
+      </header>
 
     <!-- Tabs -->
     <div class="flex space-x-4 border-b border-default mb-4">
@@ -291,6 +296,7 @@
         <p>{{ langStore.t('comingSoon') }}</p>
       </div>
     </template>
+    </div>
   </div>
 </template>
 
@@ -298,17 +304,20 @@
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import apiClient from '@/api';
-import { showToast } from '@/stores/toastStore';
 import langStore from '@/stores/langStore';
 import { agentStore } from '@/stores/agentStore.js';
 import { knowledgeStore } from '@/stores/knowledgeStore.js';
 import { workspaceStore } from '@/stores/workspaceStore.js';
 import { useAgentKnowledge } from './agentKnowledgeLogic.js';
 import AgentForm from '@/components/AgentForm.vue';
+import SkeletonLoader from '@/components/SkeletonLoader.vue';
+import AgentNotFound from '@/components/AgentNotFound.vue';
+import { showToast } from '@/stores/toastStore';
 
 const route = useRoute();
 const agentId = route.params.id;
-const agent = ref({ name: '' });
+const agent = ref(null);
+const loading = ref(true);
 // When true, the in‑place edit form is shown instead of the info details
 const editing = ref(false);
 // Knowledge groups are fetched to map agent.knowledgeIds to names.
@@ -323,18 +332,19 @@ const testMessages = ref([]);
 const sandboxInput = ref('');
 
 async function fetchAgent() {
-  try {
-    const res = await apiClient.get(`/agents/${agentId}`);
-    agent.value = res.data;
-    agentStore.setManualApprove(!!res.data.approveRequired);
-    agentStore.setKnowledgeLinks(res.data.knowledgeLinks || []);
+  loading.value = true;
+  const res = await agentStore.ensure(agentId);
+  agent.value = res;
+  if (agent.value) {
+    agentStore.setManualApprove(!!agent.value.approveRequired);
+    agentStore.setKnowledgeLinks(agent.value.knowledgeLinks || []);
     knowledge.links.value = agentStore.state.knowledgeLinks.map((l) => ({
       ...l,
       params: { ...l.params },
     }));
-  } catch (e) {
-    console.error(e);
   }
+  await new Promise((r) => setTimeout(r, 300));
+  loading.value = false;
 }
 onMounted(fetchAgent);
 

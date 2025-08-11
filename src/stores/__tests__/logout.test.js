@@ -47,16 +47,17 @@ describe('orchestratedLogout', () => {
   it('cleans state and broadcasts', async () => {
     const { workspaceStore } = await import('../workspaceStore.js')
     const { chatStore } = await import('../chatStore.js')
+    const draftStore = (await import('../draftStore.js')).default
     const { orchestratedLogout } = await import('../logout.js')
     workspaceStore.createWorkspace('Extra')
-    chatStore.state.chatControl['1'] = 'operator'
-    chatStore.state.drafts['1'] = [{ id: 'd1' }]
+    chatStore.state.chats = [{ id: '1', controlBy: 'operator', heldBy: 'u1' }]
+    draftStore.state.draftsByChat['1'] = [{ id: 'd1', text: 't' }]
     localStorage.setItem('auth.token', 't')
     const api = (await import('@/api')).default
     await orchestratedLogout()
     expect(api.post).toHaveBeenCalledWith('/presence/leave', expect.anything())
     expect(workspaceStore.state.workspaces).toHaveLength(1)
-    expect(chatStore.state.chatControl).toEqual({})
+    expect(chatStore.state.chats[0].controlBy).toBe('agent')
     expect(localStorage.getItem('auth.token')).toBe(null)
     expect(localStorage.getItem('auth.logoutAt')).not.toBeNull()
     expect(window.location.assign).toHaveBeenCalledWith('/login.html')

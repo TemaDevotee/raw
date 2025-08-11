@@ -16,15 +16,61 @@ export const messages = {
     dangerZone: 'Danger Zone',
     transferOwnership: 'Transfer Ownership',
     deleteAccount: 'Delete Account',
-    interfere: 'Interfere',
-    returnToAgent: 'Return to agent',
-    changeStatus: 'Change status',
+    created: 'Created',
+    theme: 'Theme',
+    language: 'Language',
+    langEnglish: 'English',
+    langRussian: 'Russian',
+    controls: {
+      interfere: 'Interfere',
+      return: 'Return to agent',
+      changeStatus: 'Change status'
+    },
+    composer: {
+      placeholder: {
+        locked: 'Agent in control. Interfere to reply.'
+      }
+    },
+    chat: {
+      heldByOther: 'In control by {name}'
+    },
     statusAttention: 'Attention',
     statusLive: 'Live',
     statusPaused: 'Paused',
     statusResolved: 'Resolved',
     statusEnded: 'Ended',
     statusIdle: 'Idle',
+    status: {
+      live: 'Live',
+      attention: 'Attention',
+      paused: 'Paused',
+      resolved: 'Resolved',
+      idle: 'Idle'
+    },
+    agent: {
+      notFound: {
+        title: 'Agent not found',
+        desc: 'The requested agent does not exist.',
+      },
+    },
+    agents: { back: 'Back to agents' },
+    knowledge: {
+      add: {
+        trigger: 'Add',
+        title: 'Create collection',
+        submit: 'Create',
+      },
+      name: 'Name',
+      description: 'Description',
+      visibility: 'Visibility',
+      private: 'Private',
+      workspace: 'Workspace',
+      noSources: 'No sources yet',
+    },
+    sidebar: {
+      expand: 'Expand sidebar',
+      collapse: 'Collapse sidebar'
+    },
     workspaces: 'Workspaces',
     createWorkspace: 'Create workspace',
     renameWorkspace: 'Rename workspace',
@@ -53,6 +99,12 @@ export const messages = {
       cancel: 'Cancel',
       returned: 'Control returned to agent',
     },
+    drafts: {
+      approve: 'Approve',
+      discard: 'Discard',
+      onlyVisibleToOperators: 'Only visible to operators',
+      addedAt: 'Added at {time}',
+    },
     tokens: {
       quota: 'Tokens',
       usedOf: '{used} of {included}',
@@ -67,6 +119,13 @@ export const messages = {
       byAgent: 'By agent',
       total: 'Total',
       avgPerMsg: 'Avg / msg',
+    },
+    billing: {
+      plan: 'Plan',
+      tokens: 'Tokens',
+      usedOf: '{used} of {quota}',
+      resets: 'resets {date}',
+      fetchFailed: 'Failed to load billing',
     },
     presence: {
       participants: 'Participants',
@@ -91,15 +150,61 @@ export const messages = {
     dangerZone: 'Опасная зона',
     transferOwnership: 'Передать владение',
     deleteAccount: 'Удалить аккаунт',
-    interfere: 'Вмешаться',
-    returnToAgent: 'Вернуть агенту',
-    changeStatus: 'Изменить статус',
+    created: 'Создано',
+    theme: 'Тема',
+    language: 'Язык',
+    langEnglish: 'Английский',
+    langRussian: 'Русский',
+    controls: {
+      interfere: 'Вмешаться',
+      return: 'Вернуть агенту',
+      changeStatus: 'Изменить статус'
+    },
+    composer: {
+      placeholder: {
+        locked: 'Агент отвечает. Вмешайтесь, чтобы писать.'
+      }
+    },
+    chat: {
+      heldByOther: 'В чате уже работает {name}'
+    },
     statusAttention: 'Требует внимания',
     statusLive: 'Активен',
     statusPaused: 'На паузе',
     statusResolved: 'Решён',
     statusEnded: 'Завершён',
     statusIdle: 'Неактивен',
+    status: {
+      live: 'В эфире',
+      attention: 'Требует внимания',
+      paused: 'На паузе',
+      resolved: 'Решён',
+      idle: 'Неактивен'
+    },
+    agent: {
+      notFound: {
+        title: 'Агент не найден',
+        desc: 'Запрошенный агент не существует.',
+      },
+    },
+    agents: { back: 'Назад к агентам' },
+    knowledge: {
+      add: {
+        trigger: 'Добавить',
+        title: 'Новая коллекция',
+        submit: 'Создать',
+      },
+      name: 'Название',
+      description: 'Описание',
+      visibility: 'Доступ',
+      private: 'Личный',
+      workspace: 'В воркспейсе',
+      noSources: 'Источников пока нет',
+    },
+    sidebar: {
+      expand: 'Развернуть сайдбар',
+      collapse: 'Свернуть сайдбар'
+    },
     workspaces: 'Рабочие пространства',
     createWorkspace: 'Создать пространство',
     renameWorkspace: 'Переименовать пространство',
@@ -128,6 +233,12 @@ export const messages = {
       cancel: 'Отмена',
       returned: 'Управление возвращено агенту',
     },
+    drafts: {
+      approve: 'Опубликовать',
+      discard: 'Удалить',
+      onlyVisibleToOperators: 'Видно только операторам',
+      addedAt: 'Добавлено {time}',
+    },
     tokens: {
       quota: 'Токены',
       usedOf: '{used} из {included}',
@@ -142,6 +253,13 @@ export const messages = {
       byAgent: 'По агентам',
       total: 'Итого',
       avgPerMsg: 'Средн. / сообщение',
+    },
+    billing: {
+      plan: 'План',
+      tokens: 'Токены',
+      usedOf: '{used} из {quota}',
+      resets: 'сброс {date}',
+      fetchFailed: 'Не удалось загрузить биллинг',
     },
     presence: {
       participants: 'Участники',

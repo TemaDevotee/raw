@@ -1,17 +1,13 @@
 import { reactive, ref } from 'vue'
 import { showToast } from '@/stores/toastStore'
-import * as draftsApi from '@/api/drafts'
 import * as chatsApi from '@/api/chats'
+import draftStore from '@/stores/draftStore.js'
 import langStore from '@/stores/langStore.js'
 import { settingsStore } from '@/stores/settingsStore.js'
 import { agentStore } from '@/stores/agentStore.js'
 import { isE2E } from '@/utils/e2e'
 
 const state = reactive({
-  drafts: {},
-  chatControl: {},
-  isLoadingDrafts: false,
-  isBulkSubmitting: false,
   chats: [],
 })
 
@@ -64,6 +60,8 @@ function mergePersisted(list) {
   list.forEach((c) => {
     const p = persisted[c.id]
     if (p) Object.assign(c, p)
+    if (!c.controlBy) c.controlBy = 'agent'
+    if (!('heldBy' in c)) c.heldBy = null
   })
   state.chats = list
   if (state.chats.some((c) => isSlaActive(c))) startSlaTimer()
@@ -75,6 +73,8 @@ function mergePersisted(list) {
 function updateChat(chat) {
   const p = persisted[chat.id]
   if (p) Object.assign(chat, p)
+  if (!chat.controlBy) chat.controlBy = 'agent'
+  if (!('heldBy' in chat)) chat.heldBy = null
   const idx = state.chats.findIndex((c) => c.id === chat.id)
   if (idx !== -1) state.chats[idx] = { ...state.chats[idx], ...chat }
   else state.chats.push(chat)
@@ -85,6 +85,13 @@ function updateChat(chat) {
 
 function findChat(id) {
   return state.chats.find((c) => c.id === id)
+}
+
+function addMessage(chatId, msg) {
+  const chat = findChat(chatId)
+  if (!chat) return
+  chat.messages = chat.messages || []
+  chat.messages.push(msg)
 }
 
 function handleStatusChange(chat, prev) {
@@ -145,104 +152,23 @@ function isSlaActive(chat) {
   return chat?.status === 'attention' && !!chat?.slaStartedAt
 }
 
-function setControl(chatId, control) {
-  state.chatControl[chatId] = control
+function isHeldByMe(chatId, meId) {
+  const chat = findChat(chatId)
+  return chat?.controlBy === 'operator' && chat.heldBy === meId
 }
 
-function isApproveActiveForChat(chatId, manualApprove) {
-  return state.chatControl[chatId] === 'operator' ? true : !!manualApprove
+function composerEnabled(chatId, meId) {
+  const chat = findChat(chatId)
+  if (!chat) return false
+  if (['resolved', 'ended', 'paused'].includes(chat.status)) return false
+  return isHeldByMe(chatId, meId)
 }
 
-async function fetchDrafts(chatId) {
-  state.isLoadingDrafts = true
-  try {
-    const res = await draftsApi.fetchDrafts(chatId)
-    state.drafts[chatId] = res.data || []
-  } catch (e) {
-    showToast(langStore.t('failedToLoadDrafts'), 'error')
-  } finally {
-    state.isLoadingDrafts = false
-  }
+function effectiveManualApprove(chatId) {
+  const chat = findChat(chatId)
+  return chat?.controlBy === 'operator' ? true : !!agentStore.state.manualApprove
 }
 
-async function approveDraft(chatId, draftId) {
-  const arr = state.drafts[chatId] || []
-  const idx = arr.findIndex((d) => d.id === draftId)
-  if (idx === -1) return
-  const draft = arr[idx]
-  arr.splice(idx, 1)
-  try {
-    await draftsApi.approveDraft(chatId, draftId)
-    showToast(langStore.t('draftSent'), 'success')
-  } catch (e) {
-    arr.splice(idx, 0, draft)
-    showToast(langStore.t('failedToSendDraft'), 'error')
-  }
-}
-
-async function rejectDraft(chatId, draftId) {
-  const arr = state.drafts[chatId] || []
-  const idx = arr.findIndex((d) => d.id === draftId)
-  if (idx === -1) return
-  const draft = arr[idx]
-  arr.splice(idx, 1)
-  try {
-    await draftsApi.rejectDraft(chatId, draftId)
-    showToast(langStore.t('draftRejected'), 'success')
-  } catch (e) {
-    arr.splice(idx, 0, draft)
-    showToast(langStore.t('failedToRejectDraft'), 'error')
-  }
-}
-
-async function editAndSend(chatId, draftId, body) {
-  const arr = state.drafts[chatId] || []
-  const idx = arr.findIndex((d) => d.id === draftId)
-  if (idx === -1) return
-  const draft = arr[idx]
-  arr.splice(idx, 1)
-  try {
-    await draftsApi.editAndSend(chatId, draftId, body)
-    showToast(langStore.t('draftSent'), 'success')
-  } catch (e) {
-    arr.splice(idx, 0, draft)
-    showToast(langStore.t('failedToSendDraft'), 'error')
-  }
-}
-
-async function sendAll(chatId) {
-  const arr = state.drafts[chatId] || []
-  if (arr.length === 0) return
-  state.isBulkSubmitting = true
-  const backup = [...arr]
-  state.drafts[chatId] = []
-  try {
-    await draftsApi.sendAll(chatId)
-    showToast(langStore.t('allDraftsSent'), 'success')
-  } catch (e) {
-    state.drafts[chatId] = backup
-    showToast(langStore.t('failedToSendDraft'), 'error')
-  } finally {
-    state.isBulkSubmitting = false
-  }
-}
-
-async function rejectAll(chatId) {
-  const arr = state.drafts[chatId] || []
-  if (arr.length === 0) return
-  state.isBulkSubmitting = true
-  const backup = [...arr]
-  state.drafts[chatId] = []
-  try {
-    await draftsApi.rejectAll(chatId)
-    showToast(langStore.t('allDraftsRejected'), 'success')
-  } catch (e) {
-    state.drafts[chatId] = backup
-    showToast(langStore.t('failedToRejectDraft'), 'error')
-  } finally {
-    state.isBulkSubmitting = false
-  }
-}
 
 async function snoozeChat(chat, minutes) {
   if (!chat) return
@@ -330,8 +256,11 @@ async function interfere(id, me) {
   }
   try {
     await chatsApi.interfereChat(id)
-    setControl(id, 'operator')
+    chat.controlBy = 'operator'
+    chat.heldBy = me.id
+    draftStore.captureAgentReplies(id, true)
     touchActivity(id)
+    return chat
   } catch (e) {
     showToast(langStore.t('failedInterfere'), 'error')
     throw e
@@ -345,9 +274,12 @@ async function returnToAgentAction(id) {
   try {
     await chatsApi.returnToAgent(id)
   } catch { /* noop */ }
-  setControl(id, 'agent')
+  chat.controlBy = 'agent'
+  chat.heldBy = null
   chat.autoReturnAt = null
+  draftStore.captureAgentReplies(id, false)
   persist()
+  return chat
 }
 
 function touchActivity(id) {
@@ -404,14 +336,9 @@ function clearAutoReturn(id) {
 
 export const chatStore = {
   state,
-  setControl,
-  isApproveActiveForChat,
-  fetchDrafts,
-  approveDraft,
-  rejectDraft,
-  editAndSend,
-  sendAll,
-  rejectAll,
+  isHeldByMe,
+  composerEnabled,
+  effectiveManualApprove,
   snoozeChat,
   unsnoozeChat,
   claim,
@@ -421,6 +348,7 @@ export const chatStore = {
   returnToAgentAction,
   isAssignedToMe,
   canInterfere,
+  addMessage,
   touchActivity,
   cancelAutoReturn,
   mergePersisted,

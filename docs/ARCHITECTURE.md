@@ -4,7 +4,8 @@
 Trickster is a multi-tenant chat console for managing AI agents and human operators. Key sections of the app include:
 - **Chats** and **ChatWindow** for conversations
 - **Agents**, **Knowledge**, **Pricing**, and **Settings** areas
-Data is persisted to `localStorage['app.state.v2']` while a mock backend under `mock_backend/` provides API endpoints.
+Data is persisted to `localStorage['app.state.v2']` while a mock backend under `mock_backend/` provides API endpoints. A separate
+read-only Simulator Admin lives in [`apps/admin-sim/`](../apps/admin-sim/) to browse tenants and billing data.
 
 ## 2. Directory map
 
@@ -50,6 +51,8 @@ Data is persisted to `localStorage['app.state.v2']` while a mock backend under `
 | [src/stores/typingStore.js](../src/stores/typingStore.js) | Typing indicators |
 | [src/stores/toastStore.js](../src/stores/toastStore.js) | Toast queue |
 | [src/stores/logout.js](../src/stores/logout.js) | Logout orchestrator |
+| [src/stores/draftStore.js](../src/stores/draftStore.js) | Draft messages with approve/discard |
+| [src/stores/billingStore.js](../src/stores/billingStore.js) | Account plan and token usage |
 
 ### API
 | File | Purpose |
@@ -59,6 +62,7 @@ Data is persisted to `localStorage['app.state.v2']` while a mock backend under `
 | [src/api/knowledge.js](../src/api/knowledge.js) | Knowledge collections and sources |
 | [src/api/account.js](../src/api/account.js) | Pricing and upgrade |
 | [src/api/drafts.js](../src/api/drafts.js) | Draft message approval |
+| [src/api/billing.js](../src/api/billing.js) | Account billing info |
 | [src/api/index.js](../src/api/index.js) | Axios-like client wrapper |
 
 ### Utils and styles
@@ -136,7 +140,7 @@ Data is persisted to `localStorage['app.state.v2']` while a mock backend under `
 
 ## 5. UI theming
 - Status colors, gradients and chips derive from [`statusTheme.js`](../src/utils/statusTheme.js).
-- Trickster logo uses CSS variables `--logo-1..4` with palettes defined in [`tokens.css`](../src/styles/tokens.css).
+- Trickster brand mark colour comes from the `--brand-logo` token defined per theme in [`tokens.css`](../src/styles/tokens.css).
 - Components respect `prefers-reduced-motion` and provide `aria-label` attributes for timers and badges.
 
 ## 6. API (mock)
@@ -166,7 +170,7 @@ Data is persisted to `localStorage['app.state.v2']` while a mock backend under `
 - Status values: `attention`, `live`, `paused`, `resolved`, `ended`.
 - Toast messages use `toastStore.showToast(message, type)`.
 - New i18n keys are added to [`src/i18n.js`](../src/i18n.js) with both `en` and `ru` entries.
-- Adding a new theme requires defining `--logo-1..4` and any status palette overrides in [`tokens.css`](../src/styles/tokens.css).
+- Adding a new theme requires defining `--brand-logo` and any status palette overrides in [`tokens.css`](../src/styles/tokens.css).
 
 ## 9. Roadmap (Next)
 - Token metering and billing integration

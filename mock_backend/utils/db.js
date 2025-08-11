@@ -96,6 +96,12 @@ function ensureScopes(db) {
   if (!Array.isArray(db.knowledge)) {
     db.knowledge = [];
   }
+  if (!Array.isArray(db.knowledgeCollections)) {
+    db.knowledgeCollections = [];
+  }
+  if (!Array.isArray(db.knowledgeSources)) {
+    db.knowledgeSources = [];
+  }
   return db;
 }
 

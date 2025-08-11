@@ -25,6 +25,11 @@ router.get('/usage', (req, res) => {
   });
 });
 
+router.get('/billing', (req, res) => {
+  const db = ensureScopes(readDb());
+  res.json(db.billing || {});
+});
+
 router.post('/purchase', (req, res) => {
   const db = ensureScopes(readDb());
   const { tokens } = req.body || {};

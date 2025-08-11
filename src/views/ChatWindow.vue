@@ -1,7 +1,7 @@
 <template>
-  <div class="flex flex-col h-full">
+  <div class="flex flex-col h-full" data-testid="chat-window">
     <!-- Gradient header with controls -->
-    <div class="chat-header shadow-sm" :style="headerStyle">
+    <div class="chat-header shadow-sm" data-testid="chat-header-gradient" :style="headerStyle">
       <div class="flex items-center justify-between px-6 py-4">
         <div class="flex items-center gap-4">
           <router-link to="/chats">
@@ -21,7 +21,7 @@
               :style="{ backgroundColor: statusColor(chat.status) }"
               :aria-label="statusAria(chat.status)"
             ></span>
-            {{ statusLabel }}
+            {{ currentStatusLabel }}
           </span>
           <span
             v-if="slaActive"
@@ -45,63 +45,35 @@
         </div>
         <div class="flex items-center gap-2">
           <Button
-            v-if="!inputEnabled"
-            data-testid="interfere-btn"
-            :disabled="!canInterfere"
-            :title="!canInterfere ? langStore.t('assign.cannotInterfere', { name: chat?.assignedTo?.name }) : ''"
-            variant="primary"
-            size="sm"
-            @click="interfere"
-          >
-            {{ langStore.t('interfere') }}
-          </Button>
-          <Button
-            v-else
-            data-testid="return-btn"
             variant="secondary"
             size="sm"
-            @click="returnControl"
+            data-testid="btn-change-status"
+            aria-haspopup="menu"
+            :aria-expanded="statusOpen"
+            @click="openStatusMenu"
           >
-            {{ langStore.t('returnToAgent') }}
+            {{ langStore.t('controls.changeStatus') }}
           </Button>
-          <div class="relative" ref="statusMenuRoot">
-            <Button
-              ref="statusMenuButton"
-              variant="secondary"
-              size="sm"
-              data-testid="status-menu-btn"
-              :aria-expanded="statusMenuOpen"
-              aria-controls="status-menu"
-              @click="toggleStatusMenu"
-            >
-              {{ langStore.t('changeStatus') }}
-            </Button>
-            <ul
-              v-if="statusMenuOpen"
-              id="status-menu"
-              role="menu"
-              data-testid="status-menu"
-              class="absolute left-full top-0 ml-1 w-40 rounded-md border border-default bg-secondary z-10"
-              @keydown="onStatusMenuKeydown"
-            >
-              <li v-for="(opt, idx) in statusOptions" :key="opt.value">
+          <Popover v-model:open="statusOpen" :anchor="statusAnchor" placement="bottom-end">
+            <ul role="menu" class="w-40 rounded-md border border-default bg-secondary p-2">
+              <li v-for="opt in statusOptions" :key="opt">
                 <button
-                  :ref="el => statusMenuItems[idx] = el"
+                  :data-testid="`status-item-${opt}`"
                   role="menuitem"
                   class="flex items-center w-full px-3 py-2 text-left hover-bg-effect"
-                  :aria-label="langStore.t(`setStatus${opt.value.charAt(0).toUpperCase() + opt.value.slice(1)}`)"
-                  @click="selectStatus(idx)"
+                  @click="setStatus(opt)"
                 >
                   <span
                     class="w-2 h-2 rounded-full mr-2"
-                    :style="{ backgroundColor: statusColor(opt.value) }"
+                    :style="{ backgroundColor: statusColor(opt) }"
+                    :aria-label="statusLabelFn(opt)"
                   ></span>
-                  <span class="flex-1">{{ langStore.t(opt.label) }}</span>
-                  <span v-if="chat?.status === opt.value" class="material-icons-outlined text-base ml-auto">check</span>
+                  <span class="flex-1">{{ statusLabelFn(opt) }}</span>
+                  <span v-if="chat?.status === opt" class="material-icons-outlined text-base ml-auto">check</span>
                 </button>
               </li>
             </ul>
-          </div>
+          </Popover>
           <ActionMenu :items="assignMenu">
             <Button variant="secondary" size="sm" data-testid="assign-menu-btn">⋮</Button>
           </ActionMenu>
@@ -110,7 +82,7 @@
             :participants="presenceStore.getParticipants(chatId)"
             :overflow-text="langStore.t('presence.more')"
             :label="langStore.t('presence.participants')"
-            testid="presence-stack-header"
+            testid="presence-stack"
           />
           <div v-if="devCitations" class="flex items-center gap-1 ml-2">
             <input type="checkbox" v-model="showCitations" class="h-3 w-3" />
@@ -139,52 +111,39 @@
     <div aria-live="polite" class="text-center text-sm text-muted h-5">{{ typingLine }}</div>
     <!-- Messages list -->
     <div ref="messagesContainer" class="flex-1 p-6 overflow-y-auto space-y-4 bg-secondary">
-      <!-- Drafts panel -->
-      <div v-if="drafts.length" class="mb-3 rounded-lg border border-default bg-white/5">
-        <div
-          class="flex items-center justify-between px-3 py-2 cursor-pointer"
-          @click="draftsExpanded = !draftsExpanded"
-        >
-          <strong>{{ langStore.t('drafts') }} ({{ drafts.length }})</strong>
-          <div class="flex items-center gap-2" v-if="draftsExpanded">
-            <Button
-              variant="primary"
-              size="sm"
-              :disabled="chatStore.state.isBulkSubmitting"
-              @click.stop="sendAllDrafts"
-            >
-              {{ langStore.t('sendAll') }}
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              :disabled="chatStore.state.isBulkSubmitting"
-              @click.stop="rejectAllDrafts"
-            >
-              {{ langStore.t('rejectAll') }}
-            </Button>
-          </div>
+      <div data-testid="drafts" :data-count="drafts.length">
+        <div v-if="drafts.length" class="text-right text-xs text-muted" data-testid="drafts-badge">
+          {{ drafts.length }}
         </div>
-        <div v-if="draftsExpanded">
-          <div
-            v-for="d in drafts"
-            :key="d.id"
-            class="border-t border-default p-3"
-          >
-            <div v-if="editingDraft && editingDraft.id === d.id">
-              <textarea v-model="editBody" class="form-input w-full mb-2"></textarea>
-              <div class="flex gap-2">
-                <Button variant="primary" size="sm" @click="submitEdit">{{ langStore.t('editAndSend') }}</Button>
-                <Button variant="secondary" size="sm" @click="cancelEdit">{{ langStore.t('cancel') }}</Button>
-              </div>
-            </div>
-            <div v-else class="flex items-center justify-between">
-              <span class="text-sm max-w-xs truncate">{{ d.body || d.text }}</span>
-              <div class="flex gap-2">
-                <Button variant="primary" size="sm" @click="approveDraft(d)">{{ langStore.t('approveAndSend') }}</Button>
-                <Button variant="secondary" size="sm" @click="startEdit(d)">{{ langStore.t('editAndSend') }}</Button>
-                <Button variant="secondary" size="sm" @click="rejectDraft(d)">{{ langStore.t('reject') }}</Button>
-              </div>
+        <div
+          v-for="d in drafts"
+          :key="d.id"
+          class="flex justify-start"
+          data-testid="draft"
+          :data-draft-id="d.id"
+          :aria-busy="draftStore.isPending(chatId, d.id) ? 'true' : 'false'"
+        >
+          <div class="draft-msg">
+            <div class="text-sm" data-testid="draft-text">{{ d.text }}</div>
+            <div class="mt-1 flex gap-2">
+              <Button
+                variant="primary"
+                size="xs"
+                :disabled="(!isHeldByMe && !isE2E) || draftStore.isPending(chatId, d.id)"
+                data-testid="draft-approve"
+                @click="approveDraft(d)"
+              >
+                {{ langStore.t('drafts.approve') }}
+              </Button>
+              <Button
+                variant="secondary"
+                size="xs"
+                :disabled="(!isHeldByMe && !isE2E) || draftStore.isPending(chatId, d.id)"
+                data-testid="draft-discard"
+                @click="rejectDraft(d)"
+              >
+                {{ langStore.t('drafts.discard') }}
+              </Button>
             </div>
           </div>
         </div>
@@ -200,7 +159,7 @@
         class="flex"
         :class="messageAlignment(msg.sender)"
       >
-        <div :class="messageBubbleClasses(msg.sender)">
+        <div :class="messageBubbleClasses(msg.sender)" :data-testid="msg.sender === 'agent' ? 'msg-agent' : undefined">
           <p class="text-sm whitespace-pre-wrap">{{ msg.text }}</p>
           <span class="text-xs block mt-1 flex items-center gap-1">
             {{ formatMessageTime(msg.time) }}
@@ -225,10 +184,40 @@
         {{ langStore.t('offlineBanner') }}
       </div>
       <div class="flex items-center mb-2">
+        <Button
+          v-if="!inputEnabled"
+          data-testid="btn-interfere"
+          class="mr-3"
+          :disabled="!canInterfere"
+          :title="
+            chat?.controlBy === 'operator' && !isHeldByMe
+              ? langStore.t('chat.heldByOther', { name: heldByName })
+              : !canInterfere
+              ? langStore.t('assign.cannotInterfere', { name: chat?.assignedTo?.name })
+              : ''
+          "
+          variant="primary"
+          size="sm"
+          @click="interfere"
+        >
+          {{ langStore.t('controls.interfere') }}
+        </Button>
+        <Button
+          v-else
+          data-testid="btn-return"
+          class="mr-3"
+          variant="secondary"
+          size="sm"
+          @click="returnControl"
+        >
+          {{ langStore.t('controls.return') }}
+        </Button>
         <input
           v-model="newMessage"
           type="text"
+          data-testid="composer"
           :disabled="!inputEnabled"
+          :data-locked="String(!inputEnabled)"
           :placeholder="placeholderText"
           class="flex-1 form-input mr-3 rounded-full"
           @keyup.enter="sendMessage"
@@ -248,7 +237,15 @@
         </div>
       </div>
       <div class="text-xs text-muted" data-testid="composer-estimate">
-        {{ langStore.t('tokens.estimate', { count: draftEstimate }) }}
+        {{ langStore.t('tokens.estimate').replace('{count}', String(draftEstimate)) }}
+        <template v-if="billingStore.state.loaded && !billingStore.state.error && billingStore.state.tokenQuota">
+          ·
+          {{
+            langStore
+              .t('tokens.left')
+              .replace('{left}', billingStore.tokenLeft().toLocaleString())
+          }}
+        </template>
       </div>
     </div>
   </div>
@@ -261,14 +258,12 @@ import langStore from '@/stores/langStore.js';
 import { useRoute, useRouter } from 'vue-router';
 import apiClient from '@/api';
 import { showToast } from '@/stores/toastStore';
-import {
-  statusColor,
-  badgeColor,
-  statusGradient,
-  updateChatStatus,
-} from './chatsUtils.js';
-import { useStatusMenu } from './statusMenu.js';
+import { statusColor, badgeColor, statusGradient, statusLabel as statusLabelFn } from './chatsUtils.js';
+import { setStatus as setChatStatus } from '@/api/chats.js';
+import billingStore from '@/stores/billingStore.js';
 import { chatStore } from '@/stores/chatStore.js';
+import draftStore from '@/stores/draftStore.js';
+import { isE2E } from '@/utils/e2e';
 import usageStore from '@/stores/usageStore.js'
 import { estimateTokensForText } from '@/utils/tokenEstimate.js'
 import TokenBadge from '@/components/TokenBadge.vue'
@@ -280,6 +275,7 @@ import { composerStore } from '@/stores/composerStore.js';
 import { typingText } from '@/utils/typing.js';
 import ActionMenu from '@/components/ui/ActionMenu.vue';
 import { presenceStore } from '@/stores/presenceStore.js';
+import Popover from '@/components/ui/Popover.vue';
 
 const devCitations = import.meta.env.DEV;
 const showCitations = ref(true);
@@ -290,7 +286,18 @@ const busyByOthers = computed(() =>
   presenceStore.getParticipants(chatId).some((p) => p.id !== currentUser.id)
 );
 const canInterfere = computed(
-  () => chat.value && chatStore.canInterfere(chat.value, currentUser.id) && !busyByOthers.value
+  () =>
+    chat.value &&
+    chat.value.controlBy === 'agent' &&
+    chatStore.canInterfere(chat.value, currentUser.id) &&
+    !busyByOthers.value,
+);
+const heldByName = computed(() =>
+  chat.value?.heldBy
+    ? presenceStore
+        .getParticipants(chatId)
+        .find((p) => p.id === chat.value.heldBy)?.name || ''
+    : '',
 );
 const assignMenu = computed(() => {
   const items = [];
@@ -349,15 +356,7 @@ const chat = ref(null);
 const newMessage = ref('');
 const draftEstimate = computed(() => estimateTokensForText(newMessage.value));
 const savedAt = ref(null);
-const drafts = computed(() => chatStore.state.drafts[chatId] || []);
-const draftsExpanded = ref(false);
-watch(
-  () => drafts.value.length,
-  (len) => {
-    if (len > 0) draftsExpanded.value = true;
-  },
-  { immediate: true },
-);
+const drafts = computed(() => draftStore.listByChat(chatId));
 let typingNotify;
 function onType() {
   if (!inputEnabled.value) return;
@@ -368,8 +367,8 @@ function onType() {
   }, 0);
 }
 // control state
-const chatControl = computed(() => chatStore.state.chatControl[chatId] || 'agent');
-const inputEnabled = computed(() => chatControl.value === 'operator');
+const isHeldByMe = computed(() => chatStore.isHeldByMe(chatId, currentUser.id));
+const inputEnabled = computed(() => chatStore.composerEnabled(chatId, currentUser.id));
 // Agents list for resolving assigned agent names
 const agentsList = ref([]);
 const subtitle = computed(() => (chat.value ? `ID: ${chatId}` : ''));
@@ -377,7 +376,7 @@ const subtitle = computed(() => (chat.value ? `ID: ${chatId}` : ''));
 const placeholderText = computed(() =>
   inputEnabled.value
     ? langStore.t('operatorInControl')
-    : langStore.t('agentInControl')
+    : langStore.t('composer.placeholder.locked')
 );
 
 const saveTimer = ref(null);
@@ -390,40 +389,16 @@ watch(newMessage, () => {
   }, 400);
 });
 
-const statusOptions = [
-  { value: 'live', label: 'live' },
-  { value: 'paused', label: 'paused' },
-  { value: 'attention', label: 'attention' },
-  { value: 'resolved', label: 'resolved' },
-  { value: 'ended', label: 'ended' },
-];
-const statusMenu = useStatusMenu(statusOptions, (v) => setStatus(v));
-const statusMenuOpen = statusMenu.open;
-const toggleStatusMenu = statusMenu.toggle;
-const onStatusMenuKeydown = statusMenu.onKeydown;
-const statusMenuButton = statusMenu.triggerRef;
-const statusMenuRoot = statusMenu.menuRef;
-const statusMenuItems = statusMenu.itemRefs;
-const selectStatus = statusMenu.select;
-const statusLabel = computed(() => {
-  if (!chat.value) return '';
-  const map = {
-    live: 'live',
-    paused: 'paused',
-    attention: 'attention',
-    resolved: 'resolved',
-    ended: 'ended',
-    idle: 'idle',
-  };
-  return langStore.t(map[chat.value.status] || map.idle);
-});
-function tStatus(s) {
-  if (!s) return ''
-  const key = `status${s.charAt(0).toUpperCase() + s.slice(1)}`
-  return langStore.t(key)
+const statusOptions = ['live', 'attention', 'paused', 'resolved', 'ended'];
+const statusOpen = ref(false);
+const statusAnchor = ref(null);
+function openStatusMenu(e) {
+  statusAnchor.value = e.currentTarget;
+  statusOpen.value = true;
 }
+const currentStatusLabel = computed(() => statusLabelFn(chat.value?.status || 'idle'));
 function statusAria(s) {
-  return `${langStore.t('statusLabel')}: ${tStatus(s)}`
+  return statusLabelFn(s);
 }
 
 const slaMinutes = computed(() => settingsStore.state.workspaceSettings.attentionSLA);
@@ -451,7 +426,7 @@ function unsnooze() {
   chatStore.unsnoozeChat(chat.value)
 }
 const headerStyle = computed(() => ({
-  background: statusGradient(chat.value?.status || 'idle'),
+  '--header-gradient': statusGradient(chat.value?.status || 'idle'),
 }));
 
 const typingLine = computed(() => {
@@ -470,7 +445,8 @@ async function fetchChat() {
     chatStore.updateChat(res.data);
     chatStore.handleStatusChange(chat.value, chat.value.status);
     messages.value = res.data.messages || [];
-    chatStore.setControl(chatId, res.data.control || 'agent');
+    if (!chat.value.controlBy) chat.value.controlBy = res.data.controlBy || 'agent'
+    if (res.data.heldBy) chat.value.heldBy = res.data.heldBy
     const draft = composerStore.get(chatId);
     if (draft) {
       newMessage.value = draft.body;
@@ -482,7 +458,6 @@ async function fetchChat() {
 }
 
 onMounted(async () => {
-  document.addEventListener('click', statusMenu.onDocumentClick);
   await fetchChat();
   await fetchAgents();
   await fetchDrafts();
@@ -558,7 +533,6 @@ async function sendMessage() {
 
 onBeforeUnmount(() => {
   presenceStore.leave(chatId, currentUser);
-  document.removeEventListener('click', statusMenu.onDocumentClick);
 });
 
 async function interfere() {
@@ -585,48 +559,26 @@ async function returnControl() {
 async function setStatus(s) {
   if (!chat.value) return;
   const prev = chat.value.status;
-  await updateChatStatus(chat.value, s, apiClient, showToast, langStore.t);
+  try {
+    await setChatStatus(chatId, s);
+    chat.value.status = s;
+  } catch {
+    showToast(langStore.t('statusChangeFailed') || 'Status update failed', 'error');
+    return;
+  }
   chatStore.handleStatusChange(chat.value, prev);
 }
 async function fetchDrafts() {
-  await chatStore.fetchDrafts(chatId);
+  await draftStore.fetchDrafts(chatId);
 }
 
-function approveDraft(d) {
-  chatStore.approveDraft(chatId, d.id);
+async function approveDraft(d) {
+  const msg = await draftStore.approve(chatId, d.id);
+  if (msg) messages.value.push(msg);
 }
 
-function rejectDraft(d) {
-  chatStore.rejectDraft(chatId, d.id);
-}
-
-const editingDraft = ref(null);
-const editBody = ref('');
-function startEdit(d) {
-  editingDraft.value = d;
-  editBody.value = d.body || d.text || '';
-}
-async function submitEdit() {
-  if (!editingDraft.value) return;
-  await chatStore.editAndSend(chatId, editingDraft.value.id, editBody.value);
-  editingDraft.value = null;
-  editBody.value = '';
-}
-function cancelEdit() {
-  editingDraft.value = null;
-  editBody.value = '';
-}
-
-function sendAllDrafts() {
-  if (window.confirm(langStore.t('confirmSendAllBody'))) {
-    chatStore.sendAll(chatId);
-  }
-}
-
-function rejectAllDrafts() {
-  if (window.confirm(langStore.t('confirmRejectAllBody'))) {
-    chatStore.rejectAll(chatId);
-  }
+async function rejectDraft(d) {
+  await draftStore.discard(chatId, d.id);
 }
 
 function statusLabelMsg(s) {
@@ -679,9 +631,6 @@ function statusLabelMsg(s) {
   font-size: 0.75rem;
   font-weight: 600;
 }
-</style>
-
-<style scoped>
 .chat-header {
   position: relative;
 }
@@ -689,24 +638,16 @@ function statusLabelMsg(s) {
   content: '';
   position: absolute;
   inset: 0 0 auto 0;
-  height: 72px;
-  background: linear-gradient(
-    135deg,
-    color-mix(in oklab, var(--chat-grad-from) 35%, transparent),
-    color-mix(in oklab, var(--chat-grad-to) 35%, transparent)
-  );
-  opacity: var(--chat-grad-opacity);
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
+  height: 56px;
+  background: var(--header-gradient);
+  opacity: var(--chatHeaderGradientOpacity);
   pointer-events: none;
 }
-@media (prefers-reduced-motion: no-preference) {
-  .chat-header::before {
-    transition: opacity 0.25s ease, transform 0.25s ease;
-  }
-  .chat-header:hover::before {
-    opacity: calc(var(--chat-grad-opacity) + 0.04);
-    transform: translateY(-1px);
-  }
+.draft-msg {
+  background: var(--panel);
+  color: var(--c-text-secondary);
+  opacity: 0.8;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
 }
 </style>

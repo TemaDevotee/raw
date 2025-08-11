@@ -4,29 +4,16 @@ export function installE2EStubs() {
   if (!isE2E || typeof window === 'undefined' || !window.fetch) return
 
   const original = window.fetch.bind(window)
-  const json = (obj) =>
+  const json = (obj, status = 200) =>
     new Response(JSON.stringify(obj), {
-      status: 200,
+      status,
       headers: { 'Content-Type': 'application/json' },
     })
-
-  const presence = {
-    '1': [
-      { id: 'u1', name: 'Alice', role: 'operator', online: true },
-      { id: 'u2', name: 'Bob', role: 'operator', online: true },
-      { id: 'u3', name: 'Charlie', role: 'observer', online: true },
-      { id: 'u4', name: 'Dana', role: 'observer', online: false },
-    ],
-    '2': [
-      { id: 'u1', name: 'Alice', role: 'operator', online: true },
-    ],
-  }
-  window.__e2ePresenceData = presence
 
   window.fetch = async (input, init) => {
     const url = typeof input === 'string' ? input : input.url
 
-    if (url.includes('/chats')) {
+    if (/\/chats\/?(\?.*)?$/.test(url)) {
       return json([
         {
           id: 1,
@@ -49,16 +36,50 @@ export function installE2EStubs() {
       ])
     }
 
-    if (url.includes('/presence/list')) {
-      const list = Object.entries(window.__e2ePresenceData).map(([chatId, participants]) => ({
-        chatId,
-        participants,
-        updatedAt: new Date().toISOString(),
-      }))
+    const matchDrafts = url.match(/\/chats\/([^/]+)\/drafts(?:\?|$)/)
+    if (matchDrafts) {
+      const drafts = (window.__e2eDraftsData || {})[matchDrafts[1]] || []
+      return json(drafts)
+    }
+
+    const matchChat = url.match(/\/chats\/([^/?]+)(?:\?|$)/)
+    if (matchChat) {
+      const chats = window.__e2eChatsData || {}
+      const chat = chats[matchChat[1]] || { id: matchChat[1], messages: [], status: 'live' }
+      return json(chat)
+    }
+
+    if (url.includes('/agents')) {
+      const match = url.match(/\/agents\/([^/?]+)(?:\?|$)/)
+      const data = window.__e2eAgentsData || []
+      if (match) {
+        const agent = data.find((a) => String(a.id) === match[1])
+        return json(agent || {})
+      }
+      return json(data)
+    }
+
+    if (url.includes('/knowledge/collections')) {
+      const list = window.__e2eKnowledgeCollections || []
+      if (init?.method === 'POST') {
+        const body = init.body ? JSON.parse(init.body) : {}
+        const coll = {
+          id: Date.now().toString(),
+          name: body.name || '',
+          createdAt: new Date().toISOString(),
+         sourcesCount: 0,
+        }
+        list.push(coll)
+        window.__e2eKnowledgeCollections = list
+        return json(coll, 201)
+      }
       return json(list)
     }
 
-    if (url.match(/\/presence\/(join|leave)/) || url.match(/\/drafts/)) {
+    if (url.includes('/presence/list')) {
+      return json([])
+    }
+    if (url.match(/\/presence\/(join|leave)/)) {
       return json({ ok: true })
     }
 
@@ -72,6 +93,15 @@ export function installE2EStubs() {
         topupBalance: 0,
         remainingInPeriod: 50000,
         totalRemaining: 50000,
+      })
+    }
+
+    if (url.includes('/account/billing')) {
+      return json({
+        plan: 'Pro',
+        tokenQuota: 200000,
+        tokenUsed: 34850,
+        period: { start: '2025-08-01', end: '2025-09-01' },
       })
     }
 

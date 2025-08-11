@@ -20,13 +20,63 @@ const chatsRoutes = require('./routes/chats');
 const teamsRoutes = require('./routes/teams');
 const connectionsRoutes = require('./routes/connections');
 const usageRoutes = require('./routes/usage');
-const presenceRoutes = require('./routes/presence');
+const { router: draftsRoutes } = require('./routes/drafts');
+const { router: presenceRoutes, seedPresence } = require('./routes/presence');
+const knowledgeRoutes = require('./routes/knowledge');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.MOCK_PORT || 3100;
 
-app.use(cors());
 app.use(bodyParser.json());
+
+// Simple healthcheck so e2e harness can wait for the backend to start
+app.get('/health', (_req, res) => {
+  res.json({ ok: true });
+});
+
+const ADMIN_ORIGIN = process.env.ADMIN_ORIGIN || 'http://localhost:5175';
+const checkAdminAuth = (req, res, next) => {
+  const key = req.header('X-Admin-Key');
+  if (key !== process.env.ADMIN_KEY) {
+    return res.status(401).json({ error: 'unauthorized' });
+  }
+  next();
+};
+
+const rateLimitMap = new Map();
+const rateLimit = (req, res, next) => {
+  const ip = req.ip || 'global';
+  const now = Date.now();
+  const windowMs = 60_000;
+  const max = 20;
+  let entry = rateLimitMap.get(ip);
+  if (!entry || now - entry.ts > windowMs) {
+    entry = { count: 0, ts: now };
+  }
+  entry.count++;
+  rateLimitMap.set(ip, entry);
+  if (entry.count > max) return res.status(429).json({ error: 'rate_limit' });
+  next();
+};
+
+app.use(
+  '/admin',
+  cors({
+    origin: ADMIN_ORIGIN,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['X-Admin-Key', 'Content-Type']
+  }),
+  rateLimit,
+  checkAdminAuth,
+  adminRoutes
+);
+
+app.use(
+  cors({
+    origin: ['http://localhost:5173', 'http://localhost:5174']
+  })
+);
 
 // Mount modular routers.  The base path for each module corresponds
 // to the resource it manages.  See the files in mock_backend/routes
@@ -38,6 +88,8 @@ app.use('/api/teams', teamsRoutes);
 app.use('/api/connections', connectionsRoutes);
 app.use('/api/usage', usageRoutes);
 app.use('/api', presenceRoutes);
+app.use('/api', draftsRoutes);
+app.use('/api/knowledge', knowledgeRoutes);
 
 // Keep the agents and knowledge routes in this file for now.  They
 // operate on the top‑level collections in db.json.  If needed they
@@ -168,9 +220,11 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Mock API server is running on http://localhost:${PORT}`);
 });
+
+module.exports = server;
 
 // MEMBERSHIPS
 app.get('/api/memberships', (req, res) => {
@@ -238,6 +292,16 @@ app.get('/api/presence', (req, res) => {
   res.json(out);
 });
 
+if (process.env.NODE_ENV !== 'production') {
+  app.post('/__e2e__/presence', (req, res) => {
+    const data = req.body && req.body.data ? req.body.data : req.body;
+    seedPresence(data || []);
+    res.json({ ok: true });
+  });
+  const e2eDraftRoutes = require('./routes/e2e-drafts');
+  app.use('/__e2e__/drafts', e2eDraftRoutes);
+}
+
 
 // Chat-specific approve mode: when enabled, agent messages go to drafts until approved.
 // ---------------------------------------------------------------------------
@@ -254,7 +318,9 @@ app.post('/api/chats/:id/interfere', (req, res) => {
   if (!db.chatDetails) db.chatDetails = {};
   if (!db.chatDetails[chatId]) db.chatDetails[chatId] = { id: chatId, messages: [] };
   if (!db.chatControl) db.chatControl = {};
+  if (!db.chatHeldBy) db.chatHeldBy = {};
   db.chatControl[chatId] = 'operator';
+  db.chatHeldBy[chatId] = req.body?.operatorId || '1';
   // Log a system message when operator takes over
   db.chatDetails[chatId].messages.push({
     sender: 'system',
@@ -262,7 +328,7 @@ app.post('/api/chats/:id/interfere', (req, res) => {
     time: new Date().toLocaleTimeString(),
   });
   writeDb(db);
-  res.json({ control: 'operator' });
+  res.json({ controlBy: 'operator', heldBy: db.chatHeldBy[chatId] });
 });
 
 // Control: return control to agent (does NOT change chat status)
@@ -273,7 +339,9 @@ app.post('/api/chats/:id/return', (req, res) => {
   if (!db.chatDetails) db.chatDetails = {};
   if (!db.chatDetails[chatId]) db.chatDetails[chatId] = { id: chatId, messages: [] };
   if (!db.chatControl) db.chatControl = {};
+  if (!db.chatHeldBy) db.chatHeldBy = {};
   db.chatControl[chatId] = 'agent';
+  db.chatHeldBy[chatId] = null;
   // Log a system message when control is returned
   db.chatDetails[chatId].messages.push({
     sender: 'system',
@@ -281,7 +349,7 @@ app.post('/api/chats/:id/return', (req, res) => {
     time: new Date().toLocaleTimeString(),
   });
   writeDb(db);
-  res.json({ control: 'agent' });
+  res.json({ controlBy: 'agent', heldBy: null });
 });
 
 // ---------------------------------------------------------------------------
@@ -305,54 +373,16 @@ app.post('/api/chats/:id/agent_message', (req, res) => {
   const operatorInControl = db.chatControl && db.chatControl[chatId] === 'operator';
   const needsApprove = db.chatApproveRequired && db.chatApproveRequired[chatId];
   if (operatorInControl || needsApprove) {
-    if (!db.chatDrafts) db.chatDrafts = {};
-    if (!db.chatDrafts[chatId]) db.chatDrafts[chatId] = [];
-    const draft = { id: Date.now(), sender: 'agent', text };
-    db.chatDrafts[chatId].push(draft);
+    if (!db.draftsByChat) db.draftsByChat = {};
+    if (!db.draftsByChat[chatId]) db.draftsByChat[chatId] = [];
+    const draft = { id: Date.now(), chatId, author: 'agent', text, createdAt: new Date().toISOString(), state: 'queued' };
+    db.draftsByChat[chatId].push(draft);
     writeDb(db);
     return res.status(201).json({ queued: true, draft });
   }
   db.chatDetails[chatId].messages.push({ sender: 'agent', text, time: new Date().toLocaleTimeString() });
   writeDb(db);
   res.status(201).json({ queued: false });
-});
-
-// DRAFTS
-app.get('/api/chats/:id/drafts', (req, res) => {
-  const db = ensureScopes(readDb());
-  const id = String(req.params.id);
-  res.json(db.chatDrafts[id] || []);
-});
-app.post('/api/chats/:id/drafts', (req, res) => {
-  const db = ensureScopes(readDb());
-  const id = String(req.params.id);
-  const draft = { id: Date.now(), sender: req.body?.sender || 'agent', text: req.body?.text || '' };
-  if (!db.chatDrafts[id]) db.chatDrafts[id] = [];
-  db.chatDrafts[id].push(draft);
-  writeDb(db);
-  res.status(201).json(draft);
-});
-app.post('/api/chats/:id/drafts/:draftId/approve', (req, res) => {
-  const db = ensureScopes(readDb());
-  const chatId = String(req.params.id);
-  const draftId = parseInt(req.params.draftId, 10);
-  const list = db.chatDrafts[chatId] || [];
-  const idx = list.findIndex(d => d.id === draftId);
-  if (idx === -1) return res.status(404).json({ error: 'Not found' });
-  const draft = list.splice(idx, 1)[0];
-  db.chatDetails = db.chatDetails || {};
-  if (!db.chatDetails[chatId]) db.chatDetails[chatId] = { id: chatId, messages: [] };
-  db.chatDetails[chatId].messages.push({ sender: draft.sender, text: draft.text, time: new Date().toLocaleTimeString() });
-  writeDb(db);
-  res.json({ ok: true });
-});
-app.delete('/api/chats/:id/drafts/:draftId', (req, res) => {
-  const db = ensureScopes(readDb());
-  const chatId = String(req.params.id);
-  const draftId = parseInt(req.params.draftId, 10);
-  db.chatDrafts[chatId] = (db.chatDrafts[chatId] || []).filter(d => d.id !== draftId);
-  writeDb(db);
-  res.status(204).send();
 });
 
 app.patch('/api/agents/:id/approve_mode', (req, res) => {

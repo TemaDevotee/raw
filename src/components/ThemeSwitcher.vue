@@ -1,35 +1,72 @@
 <template>
-  <ActionMenu :items="menuItems">
+  <div class="inline-block">
     <button
+      id="theme-trigger"
+      data-testid="theme-trigger"
       class="h-10 w-10 p-2 rounded-full text-muted hover:bg-[var(--c-bg-hover)] hover:text-[var(--c-text-accent)] focus-visible:outline-none"
-      data-testid="theme-switcher"
+      aria-haspopup="menu"
+      :aria-expanded="open.toString()"
+      :aria-label="t('theme')"
+      @click="onClick"
     >
       <span class="material-icons-outlined">palette</span>
     </button>
-  </ActionMenu>
+    <Popover v-model:open="open" :anchor="anchor" placement="top-end">
+      <ul class="p-1" role="none">
+        <li v-for="th in themeStore.themes" :key="th.id">
+          <button
+            type="button"
+            role="menuitem"
+            class="flex items-center gap-2 w-full px-3 py-2 rounded text-left hover:bg-[var(--c-bg-hover)]"
+            :aria-checked="(themeStore.currentTheme === th.id).toString()"
+            :data-testid="`theme-item-${th.name}`"
+            @click="selectTheme(th.id)"
+          >
+            <span class="flex-1">{{ t(th.id) }}</span>
+            <span v-if="themeStore.currentTheme === th.id" class="material-icons-outlined text-sm">check</span>
+          </button>
+        </li>
+        <li class="mt-1 pt-1 border-t border-[var(--popover-border)]">
+          <button
+            type="button"
+            role="menuitem"
+            class="flex items-center gap-2 w-full px-3 py-2 rounded text-left hover:bg-[var(--c-bg-hover)]"
+            @click="toggleMode"
+          >
+            <span class="flex-1">{{ t(themeStore.isDarkMode ? 'lightMode' : 'darkMode') }}</span>
+            <span class="material-icons-outlined text-sm">{{ themeStore.isDarkMode ? 'light_mode' : 'dark_mode' }}</span>
+          </button>
+        </li>
+      </ul>
+    </Popover>
+  </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import ActionMenu from '@/components/ui/ActionMenu.vue'
+import { ref } from 'vue'
+import Popover from './ui/Popover.vue'
 import { themeStore } from '@/stores/ThemingStore'
 import langStore from '@/stores/langStore'
 
-const menuItems = computed(() => {
-  const themeItems = themeStore.themes.map(t => ({
-    id: t.id,
-    labelKey: t.name,
-    onSelect: () => themeStore.setTheme(t.id),
-    disabled: themeStore.currentTheme === t.id
-  }))
-  return [
-    ...themeItems,
-    {
-      id: 'toggle-dark',
-      dividerAbove: true,
-      labelKey: themeStore.isDarkMode ? langStore.t('lightMode') : langStore.t('darkMode'),
-      onSelect: () => themeStore.toggleDarkMode()
-    }
-  ]
-})
+const open = ref(false)
+const anchor = ref(null)
+
+function t(key) {
+  return langStore.t(key)
+}
+
+function onClick(e) {
+  anchor.value = e.currentTarget
+  open.value = true
+}
+
+function selectTheme(id) {
+  themeStore.setTheme(id)
+  open.value = false
+}
+
+function toggleMode() {
+  themeStore.toggleDarkMode()
+  open.value = false
+}
 </script>

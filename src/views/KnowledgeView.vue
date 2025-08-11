@@ -3,14 +3,26 @@
     <div class="w-1/3">
       <div class="flex justify-between items-center mb-2">
         <h2 class="font-semibold text-default">{{ t('knowledgeCollections') }}</h2>
-        <button class="btn-primary" @click="createCollection">{{ t('knowledgeAdd') }}</button>
+        <button
+          class="btn-primary"
+          type="button"
+          data-testid="knowledge-add-trigger"
+          @click="openDrawer = true"
+        >
+          {{ t('knowledge.add.trigger') }}
+        </button>
       </div>
-      <ul>
+      <ul
+        v-if="store.state.collections.length"
+        data-testid="knowledge-collections"
+      >
         <li
           v-for="c in store.state.collections"
           :key="c.id"
           @click="select(c)"
           :class="rowClass(c.id)"
+          data-testid="knowledge-collection-item"
+          :data-id="c.id"
         >
           <span>{{ c.name }}</span>
           <ActionMenu :items="collectionMenu(c)">
@@ -20,8 +32,14 @@
           </ActionMenu>
         </li>
       </ul>
+      <div v-else class="text-muted py-16 text-center">
+        {{ t('knowledge.noSources') }}
+      </div>
     </div>
     <div class="flex-1" v-if="selected">
+      <div class="mb-2 text-sm" data-testid="storage-usage">
+        {{ billing.state.storageUsedMB }} / {{ billing.state.storageQuotaMB }} MB
+      </div>
       <div class="flex justify-between items-center mb-2">
         <h2 class="font-semibold text-default">{{ t('knowledgeSources') }}</h2>
         <ActionMenu :items="addMenu">
@@ -88,7 +106,9 @@
         {{ t('knowledgeNoResults') }}
       </div>
     </div>
-    <div v-else class="flex-1 text-muted py-8 text-center">{{ t('knowledgeNoSources') }}</div>
+    <div v-else class="flex-1 text-muted py-8 text-center pointer-events-none">
+      {{ t('knowledge.noSources') }}
+    </div>
   </div>
   <div v-if="showUpload" class="fixed inset-0 bg-black/40 flex items-center justify-center">
     <div class="bg-white dark:bg-gray-800 p-6 rounded shadow-lg w-96">
@@ -124,16 +144,63 @@
     </div>
   </div>
   <SourcePreviewDrawer v-if="previewId" :collection-id="selected.id" :source-id="previewId" @close="previewId=null" />
+  <Drawer
+    v-model="openDrawer"
+    aria-labelledby="drawer-title"
+    data-testid="knowledge-add-drawer"
+  >
+    <div class="p-6 space-y-4">
+      <h2 id="drawer-title" data-testid="drawer-title" class="text-lg font-semibold">
+        {{ t('knowledge.add.title') }}
+      </h2>
+      <div>
+        <label for="coll-name" class="block text-sm mb-1">{{ t('knowledge.name') }}</label>
+        <input
+          id="coll-name"
+          ref="nameInput"
+          data-testid="collection-name-input"
+          v-model="form.name"
+          class="form-input w-full"
+          autofocus
+        />
+      </div>
+      <div>
+        <label for="coll-desc" class="block text-sm mb-1">{{ t('knowledge.description') }}</label>
+        <input id="coll-desc" v-model="form.description" class="form-input w-full" />
+      </div>
+      <div>
+        <label class="block text-sm mb-1">{{ t('knowledge.visibility') }}</label>
+        <select v-model="form.visibility" class="form-select w-full">
+          <option value="private">{{ t('knowledge.private') }}</option>
+          <option value="workspace">{{ t('knowledge.workspace') }}</option>
+        </select>
+      </div>
+      <div class="flex justify-end">
+        <button
+          class="btn-primary"
+          type="button"
+          data-testid="collection-create-submit"
+          @click="submit"
+          :disabled="!form.name.trim()"
+        >
+          {{ t('knowledge.add.submit') }}
+        </button>
+      </div>
+    </div>
+  </Drawer>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
 import { knowledgeStore as store } from '@/stores/knowledgeStore'
 import langStore from '@/stores/langStore'
 import ActionMenu from '@/components/ui/ActionMenu.vue'
 import SourceUpload from '@/components/SourceUpload.vue'
 import SourceFormQA from '@/components/SourceFormQA.vue'
 import SourcePreviewDrawer from '@/components/SourcePreviewDrawer.vue'
+import Drawer from '@/components/ui/Drawer.vue'
+import { showToast } from '@/stores/toastStore'
+import { billingStore as billing } from '@/stores/billingStore'
 
 const t = langStore.t
 const selectedId = ref(null)
@@ -147,9 +214,16 @@ const showPerms = ref(false)
 const permCollection = ref(null)
 const permVisibility = ref('workspace')
 const permEditors = ref('')
+const openDrawer = ref(false)
+const form = reactive({ name: '', description: '', visibility: 'private' })
+const nameInput = ref(null)
 
 onMounted(() => {
   store.fetchCollections()
+})
+
+watch(openDrawer, (v) => {
+  if (v) nextTick(() => nameInput.value?.focus())
 })
 
 const selected = computed(() => store.state.collections.find((c) => c.id === selectedId.value))
@@ -182,9 +256,14 @@ function toggleAll(val) {
   else store.clearSelection(selectedId.value)
 }
 
-function createCollection() {
-  const name = prompt(t('name'))
-  if (name) store.createCollection(name)
+async function submit() {
+  await store.createCollection({ ...form })
+  await nextTick()
+  openDrawer.value = false
+  showToast(t('created'))
+  form.name = ''
+  form.description = ''
+  form.visibility = 'private'
 }
 
 function collectionMenu(c) {

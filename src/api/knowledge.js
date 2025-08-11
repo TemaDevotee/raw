@@ -1,8 +1,8 @@
 import apiClient from './index'
 
-export function listCollections(workspaceId) {
+export function listCollections(tenantId) {
   return apiClient.get('/knowledge/collections', {
-    params: workspaceId ? { workspaceId } : undefined,
+    params: tenantId ? { tenantId } : undefined,
   })
 }
 
@@ -10,75 +10,26 @@ export function createCollection(payload) {
   return apiClient.post('/knowledge/collections', payload)
 }
 
-export function renameCollection(id, payload) {
-  return apiClient.patch(`/knowledge/collections/${id}`, payload)
-}
-
-export function deleteCollection(id) {
-  return apiClient.delete(`/knowledge/collections/${id}`)
-}
-
-export function updatePermissions(id, payload) {
-  return apiClient.patch(`/knowledge/collections/${id}/permissions`, payload)
-}
-
 export function listSources(collectionId) {
-  return apiClient.get(`/knowledge/collections/${collectionId}/sources`)
+  return apiClient.get('/knowledge/sources', { params: { collectionId } })
 }
 
-export function uploadFiles(collectionId, files, onUploadProgress) {
+export function uploadFiles(tenantId, collectionId, files, onUploadProgress) {
   const form = new FormData()
-  files.forEach((f) => form.append('file', f))
-  return apiClient.post(
-    `/knowledge/collections/${collectionId}/sources:file`,
-    form,
-    { onUploadProgress }
-  )
-}
-
-export function addUrl(collectionId, payload) {
-  return apiClient.post(`/knowledge/collections/${collectionId}/sources:url`, payload)
-}
-
-export function addQA(collectionId, payload) {
-  return apiClient.post(`/knowledge/collections/${collectionId}/sources:qa`, payload)
-}
-
-export function reindexSource(id) {
-  return apiClient.post(`/knowledge/sources/${id}:reindex`)
-}
-
-export function pauseSource(id) {
-  return apiClient.post(`/knowledge/sources/${id}:pause`)
-}
-
-export function resumeSource(id) {
-  return apiClient.post(`/knowledge/sources/${id}:resume`)
+  form.append('tenantId', tenantId)
+  form.append('collectionId', collectionId)
+  if (files && files[0]) form.append('file', files[0])
+  return apiClient.post('/knowledge/upload', form, { onUploadProgress })
 }
 
 export function deleteSource(id) {
   return apiClient.delete(`/knowledge/sources/${id}`)
 }
 
-export function status(collectionId) {
-  return apiClient.get('/knowledge/indexing/status', {
-    params: { collectionId },
-  })
-}
-
 export default {
   listCollections,
   createCollection,
-  renameCollection,
-  deleteCollection,
-  updatePermissions,
   listSources,
   uploadFiles,
-  addUrl,
-  addQA,
-  reindexSource,
-  pauseSource,
-  resumeSource,
   deleteSource,
-  status,
 }
