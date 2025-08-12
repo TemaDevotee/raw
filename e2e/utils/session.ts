@@ -66,7 +66,11 @@ export async function seedAppState(page: Page, data: SeedData = {}) {
 }
 
 export async function seedPresence(page: Page, entries: Array<{ chatId: string; participants: any[] }>) {
-  await page.request.post(`${API_BASE}/__e2e__/presence`, { data: entries })
+  for (const { chatId, participants } of entries) {
+    await page.request.post(`${API_BASE}/__e2e__/presence`, {
+      data: { chatId, participants },
+    })
+  }
 }
 
 export async function seedDrafts(page: Page, chatId: string, drafts: any[]) {
@@ -86,9 +90,12 @@ export async function seedDrafts(page: Page, chatId: string, drafts: any[]) {
 export async function waitForAppReady(page: Page) {
   await page.waitForLoadState('domcontentloaded')
   await page.waitForLoadState('networkidle')
-  await page.waitForFunction(() => (window as any).__E2E_READY__ === true, null, {
-    timeout: 15_000,
-  })
+  await page.waitForFunction(
+    // @ts-ignore
+    () => (window).__E2E_READY__ === true,
+    null,
+    { timeout: 15_000 },
+  )
   await page.waitForSelector('[data-test-ready="1"]', { timeout: 15_000 })
 }
 

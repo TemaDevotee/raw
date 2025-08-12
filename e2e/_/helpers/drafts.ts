@@ -6,39 +6,63 @@ export async function seedDraft(
   chatId: string,
   payload: Partial<{ id: string; text: string }> = {},
 ) {
-  await page.request.post(`${API_BASE}/__e2e__/drafts/seed`, {
+  const res = await page.request.post(`${API_BASE}/__e2e__/drafts/seed`, {
     data: { chatId, payload },
   })
+  const data = await res.json()
+  const draft = data.draft || { id: payload.id || 'seed', text: payload.text || '' }
   await page.addInitScript(
-    ({ chatId, payload }) => {
-      const list = (window as any).__e2eDraftsData || {};
-      list[chatId] = list[chatId] || [];
-      list[chatId].push({ id: payload.id || 'seed', text: payload.text || '' });
-      (window as any).__e2eDraftsData = list;
+    ({ chatId, draft }) => {
+      const list = (window as any).__e2eDraftsData || {}
+      list[chatId] = list[chatId] || []
+      list[chatId].push(draft)
+      ;(window as any).__e2eDraftsData = list
     },
-    { chatId, payload },
-  );
-}
-
-export async function waitForDraftOp(
-  page: Page,
-  chatId: string,
-  draftId: string,
-  op: 'approve' | 'discard',
-) {
-  await page.evaluate(
-    ({ chatId, draftId, op }) =>
-      new Promise<void>((resolve) => {
-        const handler = (e: any) => {
-          const d = e.detail || {}
-          if (d.chatId === chatId && d.draftId === draftId && d.op === op) {
-            window.removeEventListener('__draft_op_done__', handler)
-            resolve()
-          }
-        }
-        window.addEventListener('__draft_op_done__', handler)
-      }),
-    { chatId, draftId, op },
+    { chatId, draft },
   )
+  return draft
 }
 
+export async function clickDraftAction(
+  page: Page,
+  action: 'approve' | 'discard',
+  draftId: string,
+) {
+  const button =
+    action === 'approve' ? '[data-test="draft-approve"]' : '[data-test="draft-discard"]'
+  await page
+    .locator('[data-test="drafts"]')
+    .locator(`[data-draft-id="${draftId}"]`)
+    .locator(button)
+    .click()
+}
+
+export async function waitDraftMutation(
+  page: Page,
+  action: 'approve' | 'discard',
+  {
+    chatId,
+    draftId,
+  }: {
+    chatId: string
+    draftId: string
+  },
+) {
+  const before = await page.evaluate(() => (window as any).__draft_op_done__ || 0)
+  const base = `/api/chats/${chatId}/drafts/${draftId}`
+  const match = (r: any) => {
+    const u = r.url()
+    const m = r.request().method()
+    if (action === 'approve') {
+      return u.includes(`${base}/approve`) && m === 'POST' && r.ok()
+    }
+    return (
+      (u.includes(`${base}/discard`) && m === 'POST' && r.ok()) ||
+      (u.endsWith(base) && m === 'DELETE' && r.ok())
+    )
+  }
+  await Promise.all([
+    page.waitForResponse(match),
+    page.waitForFunction((prev) => (window as any).__draft_op_done__ > prev, before),
+  ])
+}

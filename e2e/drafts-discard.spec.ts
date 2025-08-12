@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import './__setup__'
 import { seedAppState, waitForAppReady } from './utils/session'
-import { waitForDraftOp } from './_/helpers/drafts'
+import { clickDraftAction, waitDraftMutation } from './_/helpers/drafts'
 import { gotoHash } from './support/nav'
 
 test('draft discard removes bubble', async ({ page }) => {
@@ -12,15 +12,11 @@ test('draft discard removes bubble', async ({ page }) => {
   })
   await gotoHash(page, `chats/${chatId}`)
   await waitForAppReady(page)
-  await expect(page.getByTestId('drafts')).toHaveAttribute('data-count', '1')
-  const bubble = page.getByTestId('draft').first()
-  await expect(bubble).toBeVisible()
-  const draftId = await bubble.getAttribute('data-draft-id')
+  await expect(page.locator('[data-test="drafts"]')).toHaveAttribute('data-count', '1')
   await Promise.all([
-    page.waitForResponse((r) => r.url().includes(`/api/chats/${chatId}/drafts/${draftId}/discard`) && r.ok()),
-    waitForDraftOp(page, chatId, draftId!, 'discard'),
-    bubble.getByTestId('draft-discard').click(),
+    waitDraftMutation(page, 'discard', { chatId, draftId: 'd1' }),
+    clickDraftAction(page, 'discard', 'd1'),
   ])
-  await expect(page.getByTestId('drafts')).toHaveAttribute('data-count', '0')
+  await expect(page.locator('[data-test="drafts"]')).toHaveAttribute('data-count', '0')
   await expect(page.getByText('temp msg')).toHaveCount(0)
 })

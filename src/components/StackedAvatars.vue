@@ -2,6 +2,7 @@
   <div
     v-if="top.length"
     class="flex items-center"
+    data-test="presence-stack"
     :data-testid="testid"
     :title="title"
     :aria-label="ariaLabel"
@@ -11,6 +12,7 @@
       :key="p.id"
       class="avatar"
       :style="avatarStyle(idx)"
+      data-test="presence-avatar"
     >
       <img v-if="p.avatarUrl" :src="p.avatarUrl" alt="" class="w-full h-full rounded-full" />
       <span v-else>{{ initials(p.name) }}</span>
@@ -19,7 +21,7 @@
       v-if="overflow > 0"
       class="avatar overflow"
       :style="avatarStyle(top.length)"
-      data-testid="presence-overflow"
+      data-test="presence-overflow"
     >
       {{ overflowText.replace('{n}', overflow).replace('{count}', overflow) }}
     </div>

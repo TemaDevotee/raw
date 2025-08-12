@@ -111,7 +111,7 @@
     <div aria-live="polite" class="text-center text-sm text-muted h-5">{{ typingLine }}</div>
     <!-- Messages list -->
     <div ref="messagesContainer" class="flex-1 p-6 overflow-y-auto space-y-4 bg-secondary">
-      <div data-testid="drafts" :data-count="drafts.length">
+      <div data-testid="drafts-container" data-test="drafts" :data-count="drafts.length">
         <div v-if="drafts.length" class="text-right text-xs text-muted" data-testid="drafts-badge">
           {{ drafts.length }}
         </div>
@@ -131,6 +131,9 @@
                 size="xs"
                 :disabled="(!isHeldByMe && !isE2E) || draftStore.isPending(chatId, d.id)"
                 data-testid="draft-approve"
+                data-test="draft-approve"
+                data-approve
+                :aria-busy="draftStore.isPending(chatId, d.id) ? 'true' : 'false'"
                 @click="approveDraft(d)"
               >
                 {{ langStore.t('drafts.approve') }}
@@ -140,6 +143,9 @@
                 size="xs"
                 :disabled="(!isHeldByMe && !isE2E) || draftStore.isPending(chatId, d.id)"
                 data-testid="draft-discard"
+                data-test="draft-discard"
+                data-discard
+                :aria-busy="draftStore.isPending(chatId, d.id) ? 'true' : 'false'"
                 @click="rejectDraft(d)"
               >
                 {{ langStore.t('drafts.discard') }}

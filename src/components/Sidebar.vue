@@ -7,7 +7,12 @@
     <!-- Top: brand link and collapse toggle -->
     <div class="flex items-center justify-between py-4 pl-6 pr-4">
       <router-link to="/" class="flex items-center space-x-3" data-testid="brand-link">
-        <span v-if="ui.isCollapsed" data-testid="sidebar-brand-collapsed">
+        <span
+          v-if="ui.isCollapsed"
+          data-testid="sidebar-brand-collapsed"
+          data-test="sidebar-collapsed"
+          :style="{ color: 'var(--sidebar-brand-color)' }"
+        >
           <BrandTricksterMark :size="24" />
         </span>
         <span v-else class="text-2xl font-bold whitespace-nowrap">Trickster</span>
