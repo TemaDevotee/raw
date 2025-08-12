@@ -18,6 +18,8 @@ router.post('/seed', (req, res) => {
     };
     db.draftsByChat[chatId] = db.draftsByChat[chatId] || [];
     db.draftsByChat[chatId].push(draft);
+    writeDb(db);
+    return res.json({ ok: true, draft: { id: draft.id, text: draft.text } });
   } else {
     db.draftsByChat[chatId] = (drafts || []).map((d, i) => ({
       id: d.id || `seed-${i}`,
@@ -27,9 +29,9 @@ router.post('/seed', (req, res) => {
       createdAt: d.createdAt || new Date().toISOString(),
       state: 'queued',
     }));
+    writeDb(db);
+    return res.json({ ok: true, drafts: db.draftsByChat[chatId].map((d) => ({ id: d.id, text: d.text })) });
   }
-  writeDb(db);
-  res.json({ ok: true, count: db.draftsByChat[chatId].length });
 });
 
 router.get('/', (req, res) => {

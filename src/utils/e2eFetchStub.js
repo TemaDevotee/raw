@@ -12,7 +12,9 @@ export function installE2EStubs() {
 
   window.fetch = async (input, init) => {
     const url = typeof input === 'string' ? input : input.url
-
+    const apiBase = window.__E2E_API_BASE__ || ''
+    const toApi = (path) => `${apiBase}${path}`
+    
     if (/\/chats\/?(\?.*)?$/.test(url)) {
       return json([
         {
@@ -40,6 +42,53 @@ export function installE2EStubs() {
     if (matchDrafts) {
       const drafts = (window.__e2eDraftsData || {})[matchDrafts[1]] || []
       return json(drafts)
+    }
+
+    const path = new URL(url, apiBase || window.location.origin).pathname
+
+    const approveMatch = path.match(/\/api\/chats\/([^/]+)\/drafts\/([^/]+)\/approve\/?$/)
+    if (approveMatch && init?.method === 'POST') {
+      const [, chatId, draftId] = approveMatch
+      const res = await original(toApi(`/api/chats/${chatId}/drafts/${draftId}/approve`), init)
+      if (res.ok) {
+        const store = window.__e2eDraftsData || {}
+        const arr = store[chatId] || []
+        const idx = arr.findIndex((d) => String(d.id) === String(draftId))
+        if (idx !== -1) arr.splice(idx, 1)
+        store[chatId] = arr
+        window.__e2eDraftsData = store
+      }
+      return res
+    }
+
+    const discardPostMatch = path.match(/\/api\/chats\/([^/]+)\/drafts\/([^/]+)\/discard\/?$/)
+    if (discardPostMatch && init?.method === 'POST') {
+      const [, chatId, draftId] = discardPostMatch
+      const res = await original(toApi(`/api/chats/${chatId}/drafts/${draftId}/discard`), init)
+      if (res.ok) {
+        const store = window.__e2eDraftsData || {}
+        const arr = store[chatId] || []
+        const idx = arr.findIndex((d) => String(d.id) === String(draftId))
+        if (idx !== -1) arr.splice(idx, 1)
+        store[chatId] = arr
+        window.__e2eDraftsData = store
+      }
+      return res
+    }
+
+    const discardDelMatch = path.match(/\/api\/chats\/([^/]+)\/drafts\/([^/]+)\/?$/)
+    if (discardDelMatch && init?.method === 'DELETE') {
+      const [, chatId, draftId] = discardDelMatch
+      const res = await original(toApi(`/api/chats/${chatId}/drafts/${draftId}`), init)
+      if (res.ok) {
+        const store = window.__e2eDraftsData || {}
+        const arr = store[chatId] || []
+        const idx = arr.findIndex((d) => String(d.id) === String(draftId))
+        if (idx !== -1) arr.splice(idx, 1)
+        store[chatId] = arr
+        window.__e2eDraftsData = store
+      }
+      return res
     }
 
     const matchChat = url.match(/\/chats\/([^/?]+)(?:\?|$)/)
@@ -77,7 +126,15 @@ export function installE2EStubs() {
     }
 
     if (url.includes('/presence/list')) {
-      return json([])
+      const body = init && typeof init.body === 'string' ? JSON.parse(init.body) : {}
+      const ids = body.chatIds || []
+      const map = window.__e2ePresenceData || {}
+      const list = ids.map((id) => ({
+        chatId: String(id),
+        participants: map[String(id)] || [],
+        updatedAt: new Date().toISOString(),
+      }))
+      return json(list)
     }
     if (url.match(/\/presence\/(join|leave)/)) {
       return json({ ok: true })

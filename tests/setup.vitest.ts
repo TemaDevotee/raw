@@ -96,3 +96,14 @@ Object.defineProperty(globalObj.navigator, 'clipboard', {
 
 // fetch stub
 if (!globalObj.fetch) globalObj.fetch = vi.fn(async () => ({ ok: true, json: async () => ({}) }))
+
+// Predictable API base for unit tests
+;(globalObj as any).__TEST_API_BASE__ = 'http://127.0.0.1:7777'
+
+// Minimal location polyfill
+if (!(globalObj as any).location) {
+  Object.defineProperty(globalObj, 'location', {
+    value: { origin: 'http://localhost', href: 'http://localhost/' },
+    writable: true,
+  })
+}

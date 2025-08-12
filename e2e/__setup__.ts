@@ -9,7 +9,11 @@ export const API_BASE =
 base.beforeEach(async ({ page }) => {
   wire404Debug(page)
   page.on('pageerror', (e) => console.log('[PAGEERROR]', e.message))
-  await page.addInitScript(() => {
-    ;(window as any).__E2E__ = true
-  })
+  await page.addInitScript(
+    ({ apiBase }) => {
+      ;(window as any).__E2E__ = true
+      ;(window as any).__E2E_API_BASE__ = apiBase
+    },
+    { apiBase: API_BASE },
+  )
 })

@@ -21,7 +21,11 @@ const teamsRoutes = require('./routes/teams');
 const connectionsRoutes = require('./routes/connections');
 const usageRoutes = require('./routes/usage');
 const { router: draftsRoutes } = require('./routes/drafts');
-const { router: presenceRoutes, seedPresence } = require('./routes/presence');
+const {
+  router: presenceRoutes,
+  setPresence,
+  snapshot,
+} = require('./routes/presence');
 const knowledgeRoutes = require('./routes/knowledge');
 const adminRoutes = require('./routes/admin');
 
@@ -74,7 +78,7 @@ app.use(
 
 app.use(
   cors({
-    origin: ['http://localhost:5173', 'http://localhost:5174']
+    origin: ['http://localhost:5173', 'http://localhost:5174', ADMIN_ORIGIN]
   })
 );
 
@@ -293,9 +297,15 @@ app.get('/api/presence', (req, res) => {
 });
 
 if (process.env.NODE_ENV !== 'production') {
+  app.get('/__e2e__/presence', (req, res) => {
+    const chatId = String(req.query.chatId || '');
+    if (!chatId) return res.status(400).json({ error: 'chatId required' });
+    return res.json(snapshot(chatId));
+  });
   app.post('/__e2e__/presence', (req, res) => {
-    const data = req.body && req.body.data ? req.body.data : req.body;
-    seedPresence(data || []);
+    const { chatId, participants = [] } = req.body || {};
+    if (!chatId) return res.status(400).json({ error: 'chatId required' });
+    setPresence(chatId, participants);
     res.json({ ok: true });
   });
   const e2eDraftRoutes = require('./routes/e2e-drafts');

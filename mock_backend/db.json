@@ -997,32 +997,7 @@
         "state": "queued"
       }
     ],
-    "6": [
-      {
-        "id": "d601",
-        "chatId": "6",
-        "author": "agent",
-        "text": "Awaiting invoice details.",
-        "createdAt": "2025-08-10T12:31:00Z",
-        "state": "queued"
-      },
-      {
-        "id": "d1",
-        "chatId": "6",
-        "author": "agent",
-        "text": "temp msg",
-        "createdAt": "2025-08-10T20:16:28.218Z",
-        "state": "queued"
-      },
-      {
-        "id": "d1",
-        "chatId": "6",
-        "author": "agent",
-        "text": "temp msg",
-        "createdAt": "2025-08-10T20:18:21.341Z",
-        "state": "queued"
-      }
-    ]
+    "6": []
   },
   "membershipsByWs": {},
   "chatDrafts": {},

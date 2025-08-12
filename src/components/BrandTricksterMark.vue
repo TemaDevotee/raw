@@ -7,10 +7,10 @@ defineProps({
 
 <template>
   <span
-    :style="{ color: 'var(--brand-logo)' }"
     class="inline-flex items-center"
     role="img"
     :aria-label="title"
+    data-test="brand-mark"
     data-testid="brand-mark"
   >
     <svg
@@ -18,6 +18,7 @@ defineProps({
       :height="Math.round(Number(size) * 0.47)"
       viewBox="0 0 270 127"
       fill="currentColor"
+      data-test="sidebar-brand-mark"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >

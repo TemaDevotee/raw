@@ -49,6 +49,7 @@
   --presence-shadow: var(--shadow-xs);
 
   --brand-logo: #4b5563;
+  --sidebar-brand-color: var(--c-text-brand);
 }
 
 body[data-theme="classic"] {

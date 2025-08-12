@@ -81,6 +81,14 @@ async function leave(chatId, me) {
   upsert(pres)
 }
 
+function __e2e__setPresence(chatId, people) {
+  state.byChatId[chatId] = {
+    chatId,
+    participants: sortParticipants(people),
+    updatedAt: new Date().toISOString(),
+  }
+}
+
 export const presenceStore = {
   state,
   hydrate,
@@ -93,4 +101,5 @@ export const presenceStore = {
   count,
   join,
   leave,
+  __e2e__setPresence,
 }

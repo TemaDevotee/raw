@@ -9,6 +9,7 @@ const plansById = Object.fromEntries(data.plans.map(p => [p.id, p]));
 const dbPath = path.join(__dirname, '../db.json');
 const readDb = () => JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
 const writeDb = (db) => fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
+const { snapshot } = require('./presence');
 
 function computeUsed(billing) {
   const { period, ledger = [] } = billing;
@@ -222,6 +223,81 @@ router.get('/users/:id/chats', (req, res) => {
   if (!u) return res.status(404).send();
   const ch = u.chats.map(c => ({ id: c.id, title: c.title, status: c.status, updatedAt: c.updatedAt }));
   res.json(ch);
+});
+
+// --- Chat console endpoints ---
+
+router.post('/chats/:chatId/messages', (req, res) => {
+  const db = readDb();
+  const chatId = String(req.params.chatId);
+  db.chatDetails = db.chatDetails || {};
+  if (!db.chatDetails[chatId]) {
+    db.chatDetails[chatId] = { id: chatId, messages: [] };
+  }
+  const now = req.body?.ts || Date.now();
+  const msg = {
+    id: `msg_${now}`,
+    chatId,
+    role: req.body?.role === 'agent' ? 'agent' : 'client',
+    sender: req.body?.role === 'agent' ? 'agent' : 'client',
+    text: req.body?.text || '',
+    ts: now,
+    time: new Date(now).toISOString(),
+    visibility: 'public',
+    agentId: req.body?.agentId,
+    attachments: req.body?.attachments || [],
+  };
+  db.chatDetails[chatId].messages.push(msg);
+  writeDb(db);
+  res.json(msg);
+});
+
+router.post('/chats/:chatId/drafts', (req, res) => {
+  const db = readDb();
+  const chatId = String(req.params.chatId);
+  db.draftsByChat = db.draftsByChat || {};
+  db.draftsByChat[chatId] = db.draftsByChat[chatId] || [];
+  const now = req.body?.ts || Date.now();
+  const draft = {
+    id: `d${now}`,
+    chatId,
+    author: 'agent',
+    agentId: req.body?.agentId,
+    text: req.body?.text || '',
+    createdAt: new Date(now).toISOString(),
+    state: 'queued',
+  };
+  db.draftsByChat[chatId].push(draft);
+  writeDb(db);
+  res.json(draft);
+});
+
+router.get('/chats/:chatId/transcript', (req, res) => {
+  const db = readDb();
+  const chatId = String(req.params.chatId);
+  const messages = db.chatDetails?.[chatId]?.messages || [];
+  const drafts = (db.draftsByChat?.[chatId] || []).filter(d => d.state !== 'discarded');
+  const normMsgs = messages.map(m => ({
+    id: m.id,
+    role: m.role || m.sender,
+    text: m.text,
+    ts: m.ts || Date.now(),
+    agentId: m.agentId,
+  }));
+  const normDrafts = drafts.map(d => ({
+    id: d.id,
+    role: 'agent',
+    text: d.text,
+    ts: Date.parse(d.createdAt) || Date.now(),
+    draft: true,
+    agentId: d.agentId,
+  }));
+  const transcript = [...normMsgs, ...normDrafts].sort((a, b) => a.ts - b.ts);
+  res.json(transcript);
+});
+
+router.get('/chats/:chatId/presence', (req, res) => {
+  res.json(snapshot(String(req.params.chatId)));
 });
 
 module.exports = router;

@@ -13,6 +13,7 @@
     "dev:e2e": "vite --host 127.0.0.1 --port 5173 --strictPort --mode e2e",
     "preview:e2e": "vite build --mode e2e && vite preview --host 127.0.0.1 --port 5173 --strictPort",
     "dev:admin": "vite --config apps/admin-sim/vite.config.ts",
+    "admin:dev": "vite --config apps/admin-sim/vite.config.ts",
     "build:admin": "vite build --config apps/admin-sim/vite.config.ts",
     "preview:admin": "vite preview --config apps/admin-sim/vite.config.ts --port 5176",
     "lint": "eslint . --ext .js,.vue --max-warnings=0",

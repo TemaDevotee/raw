@@ -19,35 +19,44 @@ function findDraft(db, chatId, draftId) {
   return { list, idx };
 }
 
-router.post('/chats/:chatId/drafts/:draftId/approve', (req, res) => {
+router.post(['/chats/:chatId/drafts/:draftId/approve', '/chats/:chatId/drafts/:draftId/approve/'], (req, res) => {
   const db = ensureScopes(readDb());
   const { list, idx } = findDraft(db, req.params.chatId, req.params.draftId);
-  if (idx === -1) return res.status(404).send();
-  const draft = list.splice(idx, 1)[0];
-  db.chatDetails = db.chatDetails || {};
-  if (!db.chatDetails[req.params.chatId]) {
-    db.chatDetails[req.params.chatId] = { id: req.params.chatId, messages: [] };
+  let message;
+  if (idx !== -1) {
+    const draft = list.splice(idx, 1)[0];
+    db.chatDetails = db.chatDetails || {};
+    if (!db.chatDetails[req.params.chatId]) {
+      db.chatDetails[req.params.chatId] = { id: req.params.chatId, messages: [] };
+    }
+    const now = Date.now();
+    message = {
+      id: `msg_${draft.id}`,
+      chatId: req.params.chatId,
+      role: 'agent',
+      sender: 'agent',
+      text: draft.text,
+      ts: now,
+      time: new Date(now).toISOString(),
+      visibility: 'public'
+    };
+    db.chatDetails[req.params.chatId].messages.push(message);
+    writeDb(db);
   }
-  const message = {
-    id: `msg_${draft.id}`,
-    chatId: req.params.chatId,
-    sender: 'agent',
-    text: draft.text,
-    time: new Date().toISOString(),
-    visibility: 'public'
-  };
-  db.chatDetails[req.params.chatId].messages.push(message);
-  writeDb(db);
-  res.json({ ok: true, message });
+  res.json(message ? { ok: true, message } : { ok: true });
 });
 
-router.post('/chats/:chatId/drafts/:draftId/discard', (req, res) => {
+const discardHandler = (req, res) => {
   const db = ensureScopes(readDb());
   const { list, idx } = findDraft(db, req.params.chatId, req.params.draftId);
-  if (idx === -1) return res.status(404).send();
-  list.splice(idx, 1);
-  writeDb(db);
-  res.json({ ok: true });
-});
+  if (idx !== -1) {
+    list.splice(idx, 1);
+    writeDb(db);
+  }
+  res.json({ removed: true });
+};
+
+router.post(['/chats/:chatId/drafts/:draftId/discard', '/chats/:chatId/drafts/:draftId/discard/'], discardHandler);
+router.delete(['/chats/:chatId/drafts/:draftId', '/chats/:chatId/drafts/:draftId/'], discardHandler);
 
 module.exports = { router };
