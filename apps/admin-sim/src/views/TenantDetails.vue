@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { useTenantsStore } from '../stores/tenants';
 import TokenBar from '../components/TokenBar.vue';
 import {
@@ -17,6 +18,8 @@ const route = useRoute();
 const tenant = ref(null);
 const ledger = ref([]);
 const id = route.params.id;
+const chatIdInput = ref('');
+const router = useRouter();
 
 async function refresh() {
   tenant.value = await store.fetchDetails(id);
@@ -94,7 +97,8 @@ async function resetPeriod() {
       <h2>Knowledge</h2>
       <p>Coming soon</p>
       <h2>Chats</h2>
-      <p>Coming soon</p>
+      <input v-model="chatIdInput" placeholder="Chat ID / ID чата" />
+      <button @click="router.push(`/chats/${chatIdInput}/console`)">Open Console / Открыть консоль</button>
     </section>
   </div>
   <div v-else>Loading…</div>

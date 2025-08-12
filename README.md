@@ -134,6 +134,32 @@ npm run dev:admin
 
 Endpoints require `X-Admin-Key` header and record every change in a billing ledger.
 
+### Admin Simulator – Chat Console
+
+Run the standalone console:
+
+    npm run admin:dev
+    # requires ADMIN_KEY and ADMIN_ORIGIN env vars
+
+Available endpoints:
+
+- `POST /admin/chats/:chatId/messages`
+- `POST /admin/chats/:chatId/drafts`
+- `GET  /admin/chats/:chatId/transcript`
+- `GET  /admin/chats/:chatId/presence`
+
+Example:
+
+    curl -H "X-Admin-Key: $ADMIN_KEY" -H "Content-Type: application/json" \
+      -d '{"role":"client","text":"Hi"}' \
+      $API/admin/chats/CHAT_1/messages
+
+    curl -H "X-Admin-Key: $ADMIN_KEY" -H "Content-Type: application/json" \
+      -d '{"agentId":"A1","text":"Draft"}' \
+      $API/admin/chats/CHAT_1/drafts
+
+    curl -H "X-Admin-Key: $ADMIN_KEY" $API/admin/chats/CHAT_1/transcript
+
 ## Knowledge (mock storage)
 
 The mock backend persists uploaded knowledge files on disk under `mock_backend/storage/`.

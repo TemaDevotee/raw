@@ -32,6 +32,7 @@ export type LedgerEntry = {
 
 const BASE = import.meta.env.VITE_ADMIN_BASE || '';
 const KEY = import.meta.env.VITE_ADMIN_KEY || '';
+const API_BASE = import.meta.env.VITE_API_BASE || '';
 
 function buildUrl(path: string, params: Record<string, any> = {}) {
   const url = new URL(path, BASE);
@@ -92,4 +93,49 @@ export function postReset(id: string, start?: string, end?: string) {
 
 export function getLedger(id: string, params?: { limit?: number; cursor?: number }) {
   return request(`/tenants/${id}/billing/ledger`, params) as Promise<{ items: LedgerEntry[]; nextCursor: number | null }>;
+}
+
+// --- Chat console helpers ---
+
+export type TranscriptItem = {
+  id: string;
+  role: 'client' | 'agent';
+  text: string;
+  ts: number;
+  draft?: boolean;
+  agentId?: string;
+};
+
+export function postAdminMessage(chatId: string, body: { role: 'client' | 'agent'; text: string; agentId?: string; ts?: number; attachments?: string[] }) {
+  return post(`/chats/${chatId}/messages`, body) as Promise<TranscriptItem>;
+}
+
+export function postAdminDraft(chatId: string, body: { agentId: string; text: string; ts?: number }) {
+  return post(`/chats/${chatId}/drafts`, body) as Promise<TranscriptItem>;
+}
+
+export function getTranscript(chatId: string) {
+  return request(`/chats/${chatId}/transcript`) as Promise<TranscriptItem[]>;
+}
+
+async function apiPost(path: string, body?: any) {
+  const res = await fetch(new URL(path, API_BASE), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!res.ok) throw new Error('failed');
+  return res.json();
+}
+
+export function approveDraft(chatId: string, draftId: string) {
+  return apiPost(`/chats/${chatId}/drafts/${draftId}/approve`);
+}
+
+export function discardDraft(chatId: string, draftId: string) {
+  return apiPost(`/chats/${chatId}/drafts/${draftId}/discard`);
+}
+
+export function getPresence(chatId: string) {
+  return apiPost('/presence/list', { chatIds: [chatId] }).then((arr) => arr[0]);
 }
