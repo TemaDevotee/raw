@@ -66,11 +66,15 @@ router.get('/:id/settings', requireRole(['owner','operator']), (req, res) => {
 })
 
 router.put('/:id/settings', requireRole(['owner','operator']), (req, res) => {
-  const { provider, systemPrompt, temperature, maxTokens } = req.body || {}
+  const { provider, model, systemPrompt, temperature, maxTokens } = req.body || {}
   if (provider && !['mock', 'openai'].includes(provider)) return res.status(422).json({ error: 'invalid' })
+  if (model && provider === 'openai') {
+    const allowed = ['gpt-4o-mini', 'gpt-4o', 'gpt-3.5-turbo']
+    if (!allowed.includes(model)) return res.status(422).json({ error: 'invalid' })
+  }
   if (temperature != null && (isNaN(temperature) || temperature < 0 || temperature > 2)) return res.status(422).json({ error: 'invalid' })
   if (maxTokens != null && (!Number.isInteger(maxTokens) || maxTokens <= 0)) return res.status(422).json({ error: 'invalid' })
-  const updated = saveSettings(req.params.id, { provider, systemPrompt, temperature, maxTokens })
+  const updated = saveSettings(req.params.id, { provider, model, systemPrompt, temperature, maxTokens })
   if (!updated) return res.status(404).json({ error: 'not_found' })
   res.json({ settings: updated })
 })

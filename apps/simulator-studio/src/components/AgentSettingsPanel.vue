@@ -4,7 +4,15 @@
     <div class="mb-2">
       <label class="block text-xs">Provider</label>
       <select v-model="entry.provider" :disabled="!canEdit" class="border p-1 text-sm">
-        <option value="mock">Mock</option>
+        <option v-for="p in entry.available" :key="p" :value="p">{{ p }}</option>
+      </select>
+    </div>
+    <div v-if="entry.provider === 'openai'" class="mb-2">
+      <label class="block text-xs">Model / Модель</label>
+      <select v-model="entry.model" :disabled="!canEdit" class="border p-1 text-sm">
+        <option value="gpt-4o-mini">gpt-4o-mini</option>
+        <option value="gpt-4o">gpt-4o</option>
+        <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
       </select>
     </div>
     <div class="mb-2">

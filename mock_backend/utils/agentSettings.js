@@ -2,6 +2,7 @@ const { readDb, writeDb } = require('./db')
 
 const defaults = {
   provider: 'mock',
+  model: process.env.OPENAI_MODEL_DEFAULT || 'gpt-4o-mini',
   systemPrompt: 'You are a helpful support agent.',
   temperature: 0.3,
   maxTokens: 256

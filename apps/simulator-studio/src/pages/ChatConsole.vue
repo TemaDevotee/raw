@@ -42,6 +42,13 @@
             Generate draft / Сгенерировать драфт
           </button>
           <button
+            v-if="agentState.state === 'typing'"
+            @click="abortAgent"
+            class="underline text-sm"
+          >
+            Abort / Прервать
+          </button>
+          <button
             v-if="agentState.state !== 'paused'"
             @click="pauseAgent"
             class="underline text-sm"
@@ -59,6 +66,12 @@
             Agent typing… / Агент печатает…
           </span>
           <span v-if="agentState.error || providerError" class="text-xs text-red-500">⚠</span>
+        </div>
+        <div v-if="usage" class="text-xs text-gray-500 mb-2">
+          Usage: {{ usage.totalTokens }} tokens{{ usage.estimated ? ' (estimated)' : '' }} / Токены: {{ usage.totalTokens }}{{ usage.estimated ? ' (примерно)' : '' }}
+        </div>
+        <div v-if="providerError" class="text-xs text-red-600 mb-2">
+          {{ providerErrorMsg }}
         </div>
         <div>
           <template v-for="item in store.timeline" :key="item.id">
@@ -146,6 +159,20 @@ const generateTitle = computed(() => {
   if (providerError.value) return 'Provider error / Ошибка провайдера'
   return ''
 })
+const usage = computed(() => agentState.value.usage)
+const providerErrorMsg = computed(() => {
+  const map: Record<string, string> = {
+    invalid_api_key: 'Invalid API key / Неверный API-ключ',
+    rate_limited: 'Rate limited by provider / Лимиты провайдера исчерпаны',
+    context_length_exceeded: 'Context window exceeded / Превышено окно контекста',
+    server_unavailable: 'Provider is temporarily unavailable / Провайдер временно недоступен',
+    network_error: 'Network error while contacting provider / Сетевая ошибка при обращении к провайдеру',
+    mock_failure: 'Mock provider simulated failure / Симулированная ошибка провайдера',
+    unknown: 'Unexpected provider error / Неизвестная ошибка провайдера'
+  }
+  if (!providerError.value) return ''
+  return map[providerError.value.code] || providerError.value.message
+})
 
 async function load() {
   try {
@@ -191,6 +218,10 @@ async function pauseAgent() {
 
 async function resumeAgent() {
   try { await agents.resume(chatId) } catch (e: any) { error.value = e.message }
+}
+
+async function abortAgent() {
+  try { await agents.abort(chatId) } catch (e: any) { error.value = e.message }
 }
 
 async function generateDraftManual() {
@@ -248,6 +279,6 @@ watch(() => agentState.value.error, e => {
   if (e) error.value = e.message
 })
 watch(() => providerError.value, e => {
-  if (e) error.value = e.message
+  if (e) error.value = providerErrorMsg.value
 })
 </script>

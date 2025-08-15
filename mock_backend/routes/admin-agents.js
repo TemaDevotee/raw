@@ -1,6 +1,6 @@
 const express = require('express')
 const { requireRole } = require('../utils/adminAuth')
-const { pauseChat, resumeChat, generate } = require('../utils/agentRunner')
+const { pauseChat, resumeChat, generate, abortChat } = require('../utils/agentRunner')
 
 const router = express.Router()
 
@@ -24,6 +24,11 @@ router.post('/:id/generate', (req, res) => {
     if (result.code === 'busy') return res.status(409).json({ error: 'busy' })
   }
   res.json({ queued: true })
+})
+
+router.post('/:id/abort', (req, res) => {
+  if (!abortChat(req.params.id)) return res.status(404).json({ error: 'not_running' })
+  res.json({ aborted: true })
 })
 
 module.exports = router

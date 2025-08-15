@@ -24,6 +24,7 @@ Use this section to draft release notes for the next version. Copy relevant entr
 - Pluggable Mock/OpenAI providers with per-chat settings and token usage ledger
 - Mock provider streams draft chunks and surfaces `provider_error` events
 - Draft bubbles with approve/discard and private visibility
+- OpenAI streaming provider with usage events, error codes and abort support
 
 ## Agents & Knowledge
 

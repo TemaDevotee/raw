@@ -47,6 +47,8 @@ async function run(chatId) {
   const provider = getProvider(settings.provider)
   const controller = new AbortController()
   running.set(chatId, controller)
+  const timeoutMs = Number(process.env.PROVIDER_TIMEOUT_MS || '60000')
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
   chat.agentState = 'typing'
   writeDb(db)
   emit(tenant.id, { type: 'agent:state', chatId, state: 'typing' })
@@ -59,6 +61,7 @@ async function run(chatId) {
       systemPrompt: settings.systemPrompt,
       temperature: settings.temperature,
       maxTokens: settings.maxTokens,
+      model: settings.model,
       onToken(delta) {
         text += delta
         emit(tenant.id, { type: 'draft:chunk', chatId, chunk: { id: draftId, text: delta } })
@@ -85,13 +88,42 @@ async function run(chatId) {
     writeDb(db)
     emit(tenant.id, { type: 'draft:created', chatId, draft })
     emit(tenant.id, { type: 'agent:state', chatId, state: 'idle' })
-    emit(tenant.id, { type: 'billing:usage', chatId, usage: result.usage })
+    emit(tenant.id, { type: 'usage', chatId, usage: {
+      inputTokens: result.usage.prompt,
+      outputTokens: result.usage.completion,
+      totalTokens: usageTotal,
+      estimated: result.usage.estimated || false
+    } })
   } catch (e) {
     chat.agentState = 'idle'
     writeDb(db)
     emit(tenant.id, { type: 'agent:state', chatId, state: 'idle' })
-    emit(tenant.id, { type: 'provider_error', chatId, code: e.code || 'error', message: e.message })
+    if (e.code === 'aborted') {
+      if (e.usage) {
+        const usageTotal = e.usage.prompt + e.usage.completion
+        billing.tokenUsed = (billing.tokenUsed || 0) + usageTotal
+        const entry = {
+          id: Date.now().toString(),
+          time: new Date().toISOString(),
+          type: 'agent_usage',
+          delta: usageTotal,
+          balance: (billing.tokenQuota || 0) - (billing.tokenUsed || 0),
+          meta: { chatId, provider: provider.name, usage: e.usage, aborted: true }
+        }
+        billing.ledger = [entry, ...(billing.ledger || [])]
+        writeDb(db)
+        emit(tenant.id, { type: 'usage', chatId, usage: {
+          inputTokens: e.usage.prompt,
+          outputTokens: e.usage.completion,
+          totalTokens: usageTotal,
+          estimated: e.usage.estimated || false
+        } })
+      }
+    } else {
+      emit(tenant.id, { type: 'provider_error', chatId, code: e.code || 'error', message: e.message })
+    }
   } finally {
+    clearTimeout(timer)
     running.delete(chatId)
   }
   return true
@@ -136,4 +168,12 @@ function resumeChat(chatId) {
   return true
 }
 
-module.exports = { generate, pauseChat, resumeChat, buildContext }
+function abortChat(chatId) {
+  const controller = running.get(chatId)
+  const found = findChat(chatId)
+  if (!controller || !found) return false
+  controller.abort()
+  return true
+}
+
+module.exports = { generate, pauseChat, resumeChat, buildContext, abortChat }

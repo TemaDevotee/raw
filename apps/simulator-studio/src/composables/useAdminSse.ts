@@ -75,6 +75,10 @@ export function useAdminSse(tenantId: string, chatId?: string) {
       const d = JSON.parse(ev.data)
       agentSettings.setProviderError(d.chatId, { code: d.code, message: d.message })
     })
+    es.addEventListener('usage', (ev) => {
+      const d = JSON.parse(ev.data)
+      agent.setUsage(d.chatId, d.usage)
+    })
   }
   connect()
   function close() {

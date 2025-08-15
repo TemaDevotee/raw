@@ -3,6 +3,7 @@ import * as admin from '../api/admin'
 
 export interface AgentSettings {
   provider: 'mock' | 'openai'
+  model?: string
   systemPrompt: string
   temperature: number
   maxTokens: number

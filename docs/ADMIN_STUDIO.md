@@ -32,9 +32,12 @@ The Chat Console lists chats for a tenant and lets you converse as the client or
 The console exposes an **Agent** panel with:
 
 - **Generate draft / Сгенерировать драфт** — ask the mock LLM to propose a reply.
+- **Abort / Прервать** — stop the current generation.
 - **Pause / Пауза** and **Resume / Возобновить** — control automatic draft generation.
 - Typing indicator while the agent is composing.
-- **Agent Settings / Настройки агента** — choose provider (Mock or OpenAI), edit system prompt, temperature and max tokens. Save changes per chat.
+- **Agent Settings / Настройки агента** — choose provider (Mock or OpenAI), model, edit system prompt, temperature and max tokens. Save changes per chat.
+
+After each run a usage line shows `{inputTokens, outputTokens, totalTokens}`; estimated counts are marked accordingly.
 
 If token quota runs out the console shows a warning and disables **Generate draft** until more tokens are credited in Billing. Provider failures emit `provider_error` events; the banner disappears after a new attempt.
 

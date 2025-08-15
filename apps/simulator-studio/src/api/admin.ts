@@ -126,6 +126,10 @@ export function generateAgent(chatId: string) {
   return post(`/admin/agents/${chatId}/generate`)
 }
 
+export function abortAgent(chatId: string) {
+  return post(`/admin/agents/${chatId}/abort`)
+}
+
 export function getAgentSettings(chatId: string) {
   return get(`/admin/chats/${chatId}/settings`)
 }

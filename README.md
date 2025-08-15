@@ -33,10 +33,21 @@ This repository contains the complete front‑end and mock API server for the **
 3. **Start the front‑end dev server** in another terminal:
 
    ```bash
-   cd project/get.3xtr.im-main
-   npm run dev
-   # Vite will serve the app at http://localhost:5173
-   ```
+  cd project/get.3xtr.im-main
+  npm run dev
+  # Vite will serve the app at http://localhost:5173
+  ```
+
+### Agent provider environment
+
+Set the following variables to enable the OpenAI provider and control timeouts:
+
+```
+OPENAI_API_KEY=...
+OPENAI_BASE_URL=https://api.openai.com
+OPENAI_MODEL_DEFAULT=gpt-4o-mini
+PROVIDER_TIMEOUT_MS=60000
+```
 
 4. **Login** by visiting `/login.html` (served via Vite) and use the following credentials:
 
