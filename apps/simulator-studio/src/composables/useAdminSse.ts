@@ -1,6 +1,7 @@
 import { useRealtimeStore } from '../stores/realtime'
 import { useChatConsoleStore } from '../stores/chatConsole'
 import { useAgentStore } from '../stores/agent'
+import { useAgentSettingsStore } from '../stores/agentSettings'
 import { useAuthStore } from '../stores/auth'
 
 const BASE = import.meta.env.VITE_ADMIN_API_BASE
@@ -10,6 +11,7 @@ export function useAdminSse(tenantId: string, chatId?: string) {
   const rt = useRealtimeStore()
   const chats = useChatConsoleStore()
   const agent = useAgentStore()
+  const agentSettings = useAgentSettingsStore()
   const auth = useAuthStore()
   let es: EventSource | null = null
   let retry = 1000
@@ -41,6 +43,10 @@ export function useAdminSse(tenantId: string, chatId?: string) {
       const d = JSON.parse(ev.data)
       chats.upsertDraft(d.chatId, d.draft)
     })
+    es.addEventListener('draft:chunk', (ev) => {
+      const d = JSON.parse(ev.data)
+      chats.appendChunk(d.chatId, d.chunk)
+    })
     es.addEventListener('draft:removed', (ev) => {
       const d = JSON.parse(ev.data)
       chats.removeDraft(d.chatId, d.draftId)
@@ -64,6 +70,10 @@ export function useAdminSse(tenantId: string, chatId?: string) {
     es.addEventListener('agent:error', (ev) => {
       const d = JSON.parse(ev.data)
       agent.setError(d.chatId, { code: d.code, message: d.message })
+    })
+    es.addEventListener('provider_error', (ev) => {
+      const d = JSON.parse(ev.data)
+      agentSettings.setProviderError(d.chatId, { code: d.code, message: d.message })
     })
   }
   connect()

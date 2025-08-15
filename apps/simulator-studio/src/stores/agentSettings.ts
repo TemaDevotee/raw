@@ -12,6 +12,7 @@ interface Entry extends AgentSettings {
   loading: boolean
   saving: boolean
   available: string[]
+  providerError: { code: string; message: string } | null
 }
 
 export const useAgentSettingsStore = defineStore('agentSettings', {
@@ -19,7 +20,7 @@ export const useAgentSettingsStore = defineStore('agentSettings', {
   actions: {
     async load(chatId: string) {
       const res = await admin.getAgentSettings(chatId)
-      this.byChat[chatId] = { ...res.settings, loading: false, saving: false, available: res.availableProviders }
+      this.byChat[chatId] = { ...res.settings, loading: false, saving: false, available: res.availableProviders, providerError: null }
     },
     async save(chatId: string, patch: Partial<AgentSettings>) {
       const entry = this.byChat[chatId]
@@ -27,10 +28,18 @@ export const useAgentSettingsStore = defineStore('agentSettings', {
       entry.saving = true
       try {
         const res = await admin.saveAgentSettings(chatId, patch)
-        this.byChat[chatId] = { ...entry, ...res.settings, saving: false }
+        this.byChat[chatId] = { ...entry, ...res.settings, saving: false, providerError: null }
       } finally {
         entry.saving = false
       }
+    },
+    setProviderError(chatId: string, err: { code: string; message: string } | null) {
+      const entry = this.byChat[chatId]
+      if (entry) entry.providerError = err
+    },
+    clearError(chatId: string) {
+      const entry = this.byChat[chatId]
+      if (entry) entry.providerError = null
     }
   }
 })

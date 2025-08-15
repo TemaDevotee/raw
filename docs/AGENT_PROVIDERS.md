@@ -17,5 +17,5 @@ Both providers return usage counters (`prompt` and `completion` tokens).  The ru
 ## Troubleshooting
 
 - `quota_exceeded` – tenant has no remaining tokens; top up in the Billing tab.
-- `provider_error` – the upstream provider failed; retry or check credentials.
+- `provider_error` – the upstream provider failed; retry or check credentials. The Mock provider can simulate this by including `[[FAIL]]` in the system prompt.
 - `cancelled` – generation was aborted via pause.

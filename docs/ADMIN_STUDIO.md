@@ -36,13 +36,17 @@ The console exposes an **Agent** panel with:
 - Typing indicator while the agent is composing.
 - **Agent Settings / Настройки агента** — choose provider (Mock or OpenAI), edit system prompt, temperature and max tokens. Save changes per chat.
 
-If token quota runs out the console shows a warning and disables **Generate draft** until more tokens are credited in Billing.
+If token quota runs out the console shows a warning and disables **Generate draft** until more tokens are credited in Billing. Provider failures emit `provider_error` events; the banner disappears after a new attempt.
 
 ## Realtime (SSE)
 
 Studio listens for chat events via a Server‑Sent Events stream when `ADMIN_SSE=1` (default). The backend requires both `X-Admin-Key` and a tenant token; in dev the studio passes them as query params. Heartbeats (`ADMIN_SSE_HEARTBEAT_MS`, default 20000 ms) keep the connection alive and `ADMIN_SSE_CONN_LIMIT` caps simultaneous streams per token. If SSE is disabled or unsupported the Studio falls back to polling every few seconds and the header indicator turns yellow or red.
 
-Error events from the agent runner are delivered as `agent:error` with a code such as `quota_exceeded`, `provider_error` or `cancelled` and are surfaced as toasts.
+The stream emits:
+
+- `agent:state` – `typing` or `idle` while the provider works
+- `draft:chunk` – incremental text of the draft being generated
+- `provider_error` – upstream failure; the message is shown as a toast
 
 ## RBAC
 

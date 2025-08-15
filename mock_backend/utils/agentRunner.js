@@ -50,8 +50,8 @@ async function run(chatId) {
   chat.agentState = 'typing'
   writeDb(db)
   emit(tenant.id, { type: 'agent:state', chatId, state: 'typing' })
-  emit(tenant.id, { type: 'agent:typing', chatId, step: 'start' })
   let text = ''
+  const draftId = nanoid()
   try {
     const ctx = buildContext(chat, settings.systemPrompt, settings.maxTokens * 2)
     const result = await provider.generate({
@@ -61,10 +61,12 @@ async function run(chatId) {
       maxTokens: settings.maxTokens,
       onToken(delta) {
         text += delta
+        emit(tenant.id, { type: 'draft:chunk', chatId, chunk: { id: draftId, text: delta } })
       },
       abort: controller.signal
     })
-    const draft = { id: nanoid(), text: result.text, createdAt: new Date().toISOString() }
+    emit(tenant.id, { type: 'draft:chunk', chatId, chunk: { id: draftId, text: '', done: true } })
+    const draft = { id: draftId, text: result.text, createdAt: new Date().toISOString() }
     chat.drafts = chat.drafts || []
     chat.drafts.push(draft)
     chat.updatedAt = draft.createdAt
@@ -82,16 +84,13 @@ async function run(chatId) {
     billing.ledger = [entry, ...(billing.ledger || [])]
     writeDb(db)
     emit(tenant.id, { type: 'draft:created', chatId, draft })
-    emit(tenant.id, { type: 'agent:typing', chatId, step: 'stop' })
     emit(tenant.id, { type: 'agent:state', chatId, state: 'idle' })
     emit(tenant.id, { type: 'billing:usage', chatId, usage: result.usage })
   } catch (e) {
-    chat.agentState = chat.agentState === 'paused' ? 'paused' : 'error'
+    chat.agentState = 'idle'
     writeDb(db)
-    emit(tenant.id, { type: 'agent:typing', chatId, step: 'stop' })
-    emit(tenant.id, { type: 'agent:state', chatId, state: chat.agentState })
-    const code = controller.signal.aborted ? 'cancelled' : 'provider_error'
-    emit(tenant.id, { type: 'agent:error', chatId, code, message: e.message })
+    emit(tenant.id, { type: 'agent:state', chatId, state: 'idle' })
+    emit(tenant.id, { type: 'provider_error', chatId, code: e.code || 'error', message: e.message })
   } finally {
     running.delete(chatId)
   }

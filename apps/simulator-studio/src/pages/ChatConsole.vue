@@ -58,7 +58,7 @@
           <span v-if="agentState.typing" class="text-xs text-gray-500">
             Agent typing… / Агент печатает…
           </span>
-          <span v-if="agentState.error" class="text-xs text-red-500">⚠</span>
+          <span v-if="agentState.error || providerError" class="text-xs text-red-500">⚠</span>
         </div>
         <div>
           <template v-for="item in store.timeline" :key="item.id">
@@ -94,33 +94,8 @@
           @send="draft"
         />
 
-        <div v-if="settings" class="mt-4 border-t pt-2">
-          <h3 class="text-sm mb-2">Agent Settings / Настройки агента</h3>
-          <div class="mb-2">
-            <label class="block text-xs">Provider</label>
-            <select v-model="settings.provider" class="border p-1 text-sm">
-              <option value="mock">Mock</option>
-              <option value="openai" :disabled="!settings.available.includes('openai')">OpenAI</option>
-            </select>
-          </div>
-          <div class="mb-2">
-            <label class="block text-xs">System prompt</label>
-            <textarea v-model="settings.systemPrompt" class="border p-1 w-full text-sm"></textarea>
-          </div>
-          <div class="mb-2">
-            <label class="block text-xs">Temperature</label>
-            <input type="range" min="0" max="2" step="0.1" v-model.number="settings.temperature" />
-            <span class="text-xs ml-2">{{ settings.temperature.toFixed(1) }}</span>
-          </div>
-          <div class="mb-2">
-            <label class="block text-xs">Max tokens</label>
-            <input type="number" v-model.number="settings.maxTokens" class="border p-1 w-24 text-sm" />
-          </div>
-          <button @click="saveSettings" :disabled="settings.saving" class="underline text-sm" :class="{ 'opacity-50 cursor-not-allowed': settings.saving }">
-            Save / Сохранить
-          </button>
+          <AgentSettingsPanel :chat-id="chatId" />
         </div>
-      </div>
     </div>
     <p v-if="store.isPolling" class="text-xs text-gray-500 mt-2">
       Polling… / Получение…
@@ -142,6 +117,7 @@ import ChatBubble from '../components/ChatBubble.vue'
 import DraftBubble from '../components/DraftBubble.vue'
 import Composer from '../components/Composer.vue'
 import Tag from '../components/Tag.vue'
+import AgentSettingsPanel from '../components/AgentSettingsPanel.vue'
 import { impersonateTenant } from '../api/admin'
 import { useAuthStore } from '../stores/auth'
 import { useAdminSse } from '../composables/useAdminSse'
@@ -162,10 +138,12 @@ const rt = useRealtimeStore()
 let sse: any
 const agentState = computed(() => agents.byChat[chatId] || { state: 'idle', typing: false, error: null })
 const settings = computed(() => settingsStore.byChat[chatId])
-const generateDisabled = computed(() => agentState.value.state === 'typing' || agentState.value.error?.code === 'quota_exceeded')
+const providerError = computed(() => settings.value?.providerError)
+const generateDisabled = computed(() => agentState.value.state === 'typing' || agentState.value.error?.code === 'quota_exceeded' || providerError.value)
 const generateTitle = computed(() => {
   if (agentState.value.state === 'typing') return 'Generating… / Генерация…'
   if (agentState.value.error?.code === 'quota_exceeded') return 'Quota exceeded / Квота исчерпана'
+  if (providerError.value) return 'Provider error / Ошибка провайдера'
   return ''
 })
 
@@ -216,18 +194,10 @@ async function resumeAgent() {
 }
 
 async function generateDraftManual() {
-  try { await agents.generate(chatId) } catch (e: any) { error.value = e.message }
-}
-
-async function saveSettings() {
-  if (!settings.value) return
   try {
-    await settingsStore.save(chatId, {
-      provider: settings.value.provider,
-      systemPrompt: settings.value.systemPrompt,
-      temperature: settings.value.temperature,
-      maxTokens: settings.value.maxTokens
-    })
+    settingsStore.clearError(chatId)
+    error.value = ''
+    await agents.generate(chatId)
   } catch (e: any) {
     error.value = e.message
   }
@@ -275,6 +245,9 @@ watch(() => rt.status, s => {
 })
 
 watch(() => agentState.value.error, e => {
+  if (e) error.value = e.message
+})
+watch(() => providerError.value, e => {
   if (e) error.value = e.message
 })
 </script>

@@ -16,7 +16,7 @@ export const useChatConsoleStore = defineStore('chatConsole', {
   getters: {
     timeline(state) {
       const msgs = state.transcript.map(m => ({ ...m, draft: false }))
-      const ds = state.drafts.map(d => ({ ...d, draft: true, ts: Date.parse(d.createdAt) }))
+      const ds = state.drafts.map(d => ({ ...d, draft: true, ts: d.createdAt ? Date.parse(d.createdAt) : d.ts }))
       return [...msgs, ...ds].sort((a, b) => a.ts - b.ts)
     }
   },
@@ -49,6 +49,15 @@ export const useChatConsoleStore = defineStore('chatConsole', {
       const idx = this.drafts.findIndex(d => d.id === draft.id)
       if (idx === -1) this.drafts.push(draft)
       else this.drafts[idx] = draft
+    },
+    appendChunk(chatId: string, chunk: any) {
+      if (this.chat?.id !== chatId) return
+      let d = this.drafts.find(x => x.id === chunk.id)
+      if (!d) {
+        d = { id: chunk.id, text: '', ts: Date.now(), draft: true }
+        this.drafts.push(d)
+      }
+      d.text += chunk.text
     },
     removeDraft(chatId: string, id: string) {
       if (this.chat?.id !== chatId) return
