@@ -31,6 +31,28 @@
         />
       </div>
       <div class="w-1/2 pl-2">
+        <div class="mb-2 flex items-center space-x-2">
+          <button @click="generateDraftManual" class="underline text-sm">
+            Generate draft / Сгенерировать драфт
+          </button>
+          <button
+            v-if="agentState.state !== 'paused'"
+            @click="pauseAgent"
+            class="underline text-sm"
+          >
+            Pause / Пауза
+          </button>
+          <button
+            v-else
+            @click="resumeAgent"
+            class="underline text-sm"
+          >
+            Resume / Возобновить
+          </button>
+          <span v-if="agentState.typing" class="text-xs text-gray-500">
+            Agent typing… / Агент печатает…
+          </span>
+        </div>
         <div>
           <template v-for="item in store.timeline" :key="item.id">
             <ChatBubble
@@ -90,16 +112,19 @@ import { impersonateTenant } from '../api/admin'
 import { useAuthStore } from '../stores/auth'
 import { useAdminSse } from '../composables/useAdminSse'
 import { useRealtimeStore } from '../stores/realtime'
+import { useAgentStore } from '../stores/agent'
 
 const route = useRoute()
 const store = useChatConsoleStore()
 const auth = useAuthStore()
+const agents = useAgentStore()
 const chatId = route.params.chatId as string
 const tenantId = route.params.tenantId as string
 const error = ref('')
 const canSend = computed(() => auth.can(['owner','operator']))
 const rt = useRealtimeStore()
 let sse: any
+const agentState = computed(() => agents.byChat[chatId] || { state: 'idle', typing: false })
 
 async function load() {
   try {
@@ -136,6 +161,18 @@ async function draft(text: string) {
   } catch (e: any) {
     error.value = e.message
   }
+}
+
+async function pauseAgent() {
+  try { await agents.pause(chatId) } catch (e: any) { error.value = e.message }
+}
+
+async function resumeAgent() {
+  try { await agents.resume(chatId) } catch (e: any) { error.value = e.message }
+}
+
+async function generateDraftManual() {
+  try { await agents.generate(chatId) } catch (e: any) { error.value = e.message }
 }
 
 async function approve(id: string) {

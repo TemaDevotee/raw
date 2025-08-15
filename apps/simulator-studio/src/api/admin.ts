@@ -113,3 +113,15 @@ export function changePlan(payload: { tenantId: string; plan: string; reason?: s
 export function updateQuotas(payload: { tenantId: string; tokenQuota?: number; storageQuotaMB?: number; reason?: string }) {
   return post('/admin/billing/quota/update', payload)
 }
+
+export function pauseAgent(chatId: string) {
+  return post(`/admin/agents/${chatId}/pause`)
+}
+
+export function resumeAgent(chatId: string) {
+  return post(`/admin/agents/${chatId}/resume`)
+}
+
+export function generateAgent(chatId: string) {
+  return post(`/admin/agents/${chatId}/generate`)
+}

@@ -32,6 +32,7 @@ const adminBillingRoutes = require('./routes/admin-billing');
 const { router: adminDevRoutes, tokens: devTokens } = require('./routes/admin-dev');
 const adminChatsRoutes = require('./routes/admin-chats');
 const adminEventsRoutes = require('./routes/admin-events');
+const adminAgentsRoutes = require('./routes/admin-agents');
 const { router: authRoutes, authMiddleware } = require('./routes/auth');
 
 const app = express();
@@ -105,6 +106,14 @@ app.use(
   cors({ origin: ADMIN_ORIGIN, methods: ['GET', 'OPTIONS'], allowedHeaders: ['X-Admin-Key','Authorization'] }),
   requireAdmin,
   adminEventsRoutes
+);
+
+app.use(
+  '/admin/agents',
+  cors({ origin: ADMIN_ORIGIN, methods: ['POST', 'OPTIONS'], allowedHeaders: ['X-Admin-Key','Content-Type','Authorization'] }),
+  rateLimit,
+  requireAdmin,
+  adminAgentsRoutes
 );
 
 app.use(

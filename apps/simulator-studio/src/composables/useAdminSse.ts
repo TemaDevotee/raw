@@ -1,5 +1,6 @@
 import { useRealtimeStore } from '../stores/realtime'
 import { useChatConsoleStore } from '../stores/chatConsole'
+import { useAgentStore } from '../stores/agent'
 import { useAuthStore } from '../stores/auth'
 
 const BASE = import.meta.env.VITE_ADMIN_API_BASE
@@ -8,6 +9,7 @@ const ADMIN_KEY = import.meta.env.VITE_ADMIN_KEY
 export function useAdminSse(tenantId: string, chatId?: string) {
   const rt = useRealtimeStore()
   const chats = useChatConsoleStore()
+  const agent = useAgentStore()
   const auth = useAuthStore()
   let es: EventSource | null = null
   let retry = 1000
@@ -50,6 +52,14 @@ export function useAdminSse(tenantId: string, chatId?: string) {
     es.addEventListener('chat:status', (ev) => {
       const d = JSON.parse(ev.data)
       chats.setStatus(d.chatId, d.status)
+    })
+    es.addEventListener('agent:state', (ev) => {
+      const d = JSON.parse(ev.data)
+      agent.setState(d.chatId, d.state)
+    })
+    es.addEventListener('agent:typing', (ev) => {
+      const d = JSON.parse(ev.data)
+      agent.setTyping(d.chatId, d.step === 'start')
     })
   }
   connect()

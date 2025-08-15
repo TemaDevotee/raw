@@ -17,6 +17,7 @@ function findChat(db, chatId) {
 
 const { requireRole } = require('../utils/adminAuth')
 const { emit } = require('../utils/eventBus')
+const { scheduleDraft } = require('../utils/agentRunner')
 const router = express.Router()
 
 router.use(requireRole(['owner','operator','viewer']))
@@ -61,7 +62,7 @@ router.post('/', requireRole(['owner','operator']), (req, res) => {
   const t = (db.tenants || []).find(tt => tt.id === tenantId)
   if (!t) return res.status(404).json({ error: 'not_found' })
   const id = nanoid()
-  const chat = { id, subject: title || '', status: 'live', messages: [], drafts: [], updatedAt: new Date().toISOString() }
+  const chat = { id, subject: title || '', status: 'live', messages: [], drafts: [], updatedAt: new Date().toISOString(), agentState: 'idle', operatorTaken: false }
   for (const m of initial) {
     chat.messages.push({ id: nanoid(), role: m.role, text: m.text, ts: Date.now() })
   }
@@ -82,6 +83,7 @@ router.post('/:id/messages', requireRole(['owner','operator']), (req, res) => {
   found.chat.updatedAt = new Date().toISOString()
   writeDb(db)
   emit(found.tenant.id, { type: 'message:new', chatId: found.chat.id, message: msg })
+  if (from === 'user' || from === 'client') scheduleDraft(found.chat.id, text)
   res.status(201).json(msg)
 })
 

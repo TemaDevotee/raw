@@ -42,6 +42,7 @@ Use this section to draft release notes for the next version. Copy relevant entr
 - Dev impersonation tokens with one-click Open App
 - Live chat console with polling and draft approve/discard
 - Realtime SSE stream for chats, drafts and presence in Simulator Studio
+- Background agent runner generating draft replies with pause/resume controls
 
 ## Billing
 

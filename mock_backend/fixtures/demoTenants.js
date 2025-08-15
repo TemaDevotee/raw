@@ -65,6 +65,8 @@ module.exports = {
           id: 'c1',
           subject: 'Welcome',
           status: 'live',
+          agentState: 'idle',
+          operatorTaken: false,
           messages: [
             { id: 'm1', role: 'client', text: 'Hi', ts: Date.now() - 10000 },
             { id: 'm2', role: 'agent', text: 'Hello from Acme agent', ts: Date.now() - 5000 }
@@ -141,6 +143,8 @@ module.exports = {
           id: 'c1',
           subject: 'Order question',
           status: 'paused',
+          agentState: 'idle',
+          operatorTaken: false,
           messages: [
             { id: 'm1', role: 'client', text: 'Where is my order?', ts: Date.now() - 20000 },
             { id: 'm2', role: 'agent', text: 'Checking on that for you', ts: Date.now() - 15000 }
@@ -152,6 +156,8 @@ module.exports = {
           id: 'c2',
           subject: 'Pricing',
           status: 'live',
+          agentState: 'idle',
+          operatorTaken: false,
           messages: [
             { id: 'm1', role: 'client', text: 'Pricing?', ts: Date.now() - 12000 }
           ],
@@ -222,6 +228,8 @@ module.exports = {
           id: 'c1',
           subject: 'Bug report',
           status: 'resolved',
+          agentState: 'idle',
+          operatorTaken: false,
           messages: [
             { id: 'm1', role: 'client', text: 'There is a bug', ts: Date.now() - 30000 },
             { id: 'm2', role: 'agent', text: 'We fixed it', ts: Date.now() - 25000 }

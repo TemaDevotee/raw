@@ -27,6 +27,14 @@ curl -X POST -H "X-Admin-Key: $ADMIN_KEY" \
 
 The Chat Console lists chats for a tenant and lets you converse as the client or agent. Draft messages appear in gray until approved or discarded. Use the **Open in App** button to view the same chat in the main UI.
 
+### Agent runner
+
+The console exposes an **Agent** panel with:
+
+- **Generate draft / Сгенерировать драфт** — ask the mock LLM to propose a reply.
+- **Pause / Пауза** and **Resume / Возобновить** — control automatic draft generation.
+- Typing indicator while the agent is composing.
+
 ## Realtime (SSE)
 
 Studio listens for chat events via a Server‑Sent Events stream when `ADMIN_SSE=1` (default). The backend requires both `X-Admin-Key` and a tenant token; in dev the studio passes them as query params. Heartbeats (`ADMIN_SSE_HEARTBEAT_MS`, default 20000 ms) keep the connection alive and `ADMIN_SSE_CONN_LIMIT` caps simultaneous streams per token. If SSE is disabled or unsupported the Studio falls back to polling every few seconds and the header indicator turns yellow or red.
