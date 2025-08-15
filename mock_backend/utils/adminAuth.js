@@ -31,4 +31,13 @@ function withIdempotency(handler) {
   }
 }
 
-module.exports = { requireAdmin, withIdempotency }
+function requireRole(roles) {
+  return (req, res, next) => {
+    if (process.env.DEV_LOGIN !== '1') return next()
+    const u = req.user
+    if (!u || !roles.includes(u.role)) return res.status(403).json({ error: 'forbidden' })
+    next()
+  }
+}
+
+module.exports = { requireAdmin, withIdempotency, requireRole }

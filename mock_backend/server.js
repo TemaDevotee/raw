@@ -31,6 +31,7 @@ const adminRoutes = require('./routes/admin');
 const adminBillingRoutes = require('./routes/admin-billing');
 const { router: adminDevRoutes, tokens: devTokens } = require('./routes/admin-dev');
 const adminChatsRoutes = require('./routes/admin-chats');
+const { router: authRoutes, authMiddleware } = require('./routes/auth');
 
 const app = express();
 const PORT = process.env.MOCK_PORT || 3100;
@@ -61,9 +62,17 @@ const rateLimit = (req, res, next) => {
   next();
 };
 
+app.use(authMiddleware);
+
+app.use(
+  '/auth',
+  cors({ origin: ADMIN_ORIGIN, methods: ['GET', 'POST', 'OPTIONS'], allowedHeaders: ['Content-Type','Authorization'] }),
+  authRoutes
+);
+
 app.use(
   '/admin/billing',
-  cors({ origin: ADMIN_ORIGIN, methods: ['GET', 'POST', 'OPTIONS'], allowedHeaders: ['X-Admin-Key','Content-Type','Idempotency-Key'] }),
+  cors({ origin: ADMIN_ORIGIN, methods: ['GET', 'POST', 'OPTIONS'], allowedHeaders: ['X-Admin-Key','Content-Type','Idempotency-Key','Authorization'] }),
   rateLimit,
   requireAdmin,
   adminBillingRoutes
@@ -74,7 +83,7 @@ app.use(
   cors({
     origin: ADMIN_ORIGIN,
     methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['X-Admin-Key', 'Content-Type']
+    allowedHeaders: ['X-Admin-Key', 'Content-Type', 'Authorization']
   }),
   rateLimit,
   requireAdmin,
@@ -84,7 +93,7 @@ app.use(
 
 app.use(
   '/admin/chats',
-  cors({ origin: ADMIN_ORIGIN, methods: ['GET', 'POST', 'OPTIONS'], allowedHeaders: ['X-Admin-Key','Content-Type','Idempotency-Key'] }),
+  cors({ origin: ADMIN_ORIGIN, methods: ['GET', 'POST', 'OPTIONS'], allowedHeaders: ['X-Admin-Key','Content-Type','Idempotency-Key','Authorization'] }),
   rateLimit,
   requireAdmin,
   adminChatsRoutes

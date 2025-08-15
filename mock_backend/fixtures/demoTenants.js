@@ -18,6 +18,38 @@ module.exports = {
       agents: [
         { id: 'a1', name: 'Acme Support', workspaceId: 'w1', status: 'online', systemPrompt: 'Help users politely.' }
       ],
+      users: [
+        {
+          id: 'acme-owner',
+          email: 'owner@acme.demo',
+          role: 'owner',
+          tenantId: 'acme',
+          displayName: 'Acme Owner',
+          password: 'demo123!',
+          devPassword: true,
+          createdAt: '2025-01-01T00:00:00Z'
+        },
+        {
+          id: 'acme-operator',
+          email: 'op@acme.demo',
+          role: 'operator',
+          tenantId: 'acme',
+          displayName: 'Acme Operator',
+          password: 'demo123!',
+          devPassword: true,
+          createdAt: '2025-01-01T00:00:00Z'
+        },
+        {
+          id: 'acme-viewer',
+          email: 'view@acme.demo',
+          role: 'viewer',
+          tenantId: 'acme',
+          displayName: 'Acme Viewer',
+          password: 'demo123!',
+          devPassword: true,
+          createdAt: '2025-01-01T00:00:00Z'
+        }
+      ],
       knowledge: [
         {
           id: 'k1',
@@ -60,6 +92,38 @@ module.exports = {
       agents: [
         { id: 'a1', name: 'Globex Helper', workspaceId: 'w1', status: 'online', systemPrompt: 'Assist Globex customers.' },
         { id: 'a2', name: 'Globex Sales', workspaceId: 'w1', status: 'online', systemPrompt: 'Sell products.' }
+      ],
+      users: [
+        {
+          id: 'globex-owner',
+          email: 'owner@globex.demo',
+          role: 'owner',
+          tenantId: 'globex',
+          displayName: 'Globex Owner',
+          password: 'demo123!',
+          devPassword: true,
+          createdAt: '2025-01-01T00:00:00Z'
+        },
+        {
+          id: 'globex-operator',
+          email: 'op@globex.demo',
+          role: 'operator',
+          tenantId: 'globex',
+          displayName: 'Globex Operator',
+          password: 'demo123!',
+          devPassword: true,
+          createdAt: '2025-01-01T00:00:00Z'
+        },
+        {
+          id: 'globex-viewer',
+          email: 'view@globex.demo',
+          role: 'viewer',
+          tenantId: 'globex',
+          displayName: 'Globex Viewer',
+          password: 'demo123!',
+          devPassword: true,
+          createdAt: '2025-01-01T00:00:00Z'
+        }
       ],
       knowledge: [
         {
@@ -111,6 +175,38 @@ module.exports = {
       workspaces: [ { id: 'w1', name: 'Default', createdAt: '2025-01-01' } ],
       agents: [
         { id: 'a1', name: 'Initech Bot', workspaceId: 'w1', status: 'online', systemPrompt: 'Answer kindly.' }
+      ],
+      users: [
+        {
+          id: 'initech-owner',
+          email: 'owner@initech.demo',
+          role: 'owner',
+          tenantId: 'initech',
+          displayName: 'Initech Owner',
+          password: 'demo123!',
+          devPassword: true,
+          createdAt: '2025-01-01T00:00:00Z'
+        },
+        {
+          id: 'initech-operator',
+          email: 'op@initech.demo',
+          role: 'operator',
+          tenantId: 'initech',
+          displayName: 'Initech Operator',
+          password: 'demo123!',
+          devPassword: true,
+          createdAt: '2025-01-01T00:00:00Z'
+        },
+        {
+          id: 'initech-viewer',
+          email: 'view@initech.demo',
+          role: 'viewer',
+          tenantId: 'initech',
+          displayName: 'Initech Viewer',
+          password: 'demo123!',
+          devPassword: true,
+          createdAt: '2025-01-01T00:00:00Z'
+        }
       ],
       knowledge: [
         {

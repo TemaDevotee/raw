@@ -1,6 +1,11 @@
 <template>
   <div>
-    <UploadDropzone class="mb-2" :progress="progress" @upload="f => $emit('upload', f)" />
+    <UploadDropzone
+      v-if="canWrite"
+      class="mb-2"
+      :progress="progress"
+      @upload="f => $emit('upload', f)"
+    />
     <Table v-if="files.length">
       <template #head>
         <th class="text-left">Name / Имя</th>
@@ -16,7 +21,7 @@
         <td>{{ formatDate(f.createdAt) }}</td>
         <td>
           <button class="underline mr-2" @click="$emit('download', f.id)">Download / Скачать</button>
-          <button class="underline" @click="$emit('delete', f.id)">Delete / Удалить</button>
+          <button v-if="canWrite" class="underline" @click="$emit('delete', f.id)">Delete / Удалить</button>
         </td>
       </tr>
     </Table>
@@ -27,8 +32,12 @@
 <script setup lang="ts">
 import Table from './Table.vue'
 import UploadDropzone from './UploadDropzone.vue'
+import { useAuthStore } from '../stores/auth'
+import { computed } from 'vue'
 const props = defineProps<{ files: any[]; progress: number }>()
 const emit = defineEmits(['upload', 'download', 'delete'])
+const auth = useAuthStore()
+const canWrite = computed(() => auth.can(['owner','operator']))
 function formatDate(d?: string) {
   return d ? new Date(d).toLocaleString() : ''
 }

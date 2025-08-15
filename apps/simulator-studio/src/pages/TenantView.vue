@@ -87,7 +87,7 @@
     </div>
 
     <div v-else-if="detail.activeTab === 'chats'">
-      <div class="mb-2">
+      <div class="mb-2" v-if="auth.can(['owner','operator'])">
         <button class="underline" @click="showNewChat = true">
           New Chat / Новый чат
         </button>
@@ -137,7 +137,7 @@
     <div v-else-if="detail.activeTab === 'billing'">
       <Card v-if="billing.summary" class="mb-4">
         <p class="mb-2">Plan / План: {{ billing.summary.plan }}</p>
-        <div class="mb-2">
+        <div class="mb-2" v-if="auth.can(['owner'])">
           <select v-model="selectedPlan" class="border px-2 py-1">
             <option v-for="(info, id) in billing.plans" :key="id" :value="id">
               {{ id }} ({{ info.tokenQuota }} tok · {{ info.storageQuotaMB }} MB)
@@ -145,7 +145,7 @@
           </select>
           <button class="underline ml-2" @click="applyPlan">Change plan / Сменить план</button>
         </div>
-        <div class="mb-2">
+        <div class="mb-2" v-if="auth.can(['owner'])">
           <label class="mr-2">
             Tokens / Токены
             <input type="number" v-model.number="quotaForm.tokenQuota" class="border w-24 ml-1" />
@@ -161,7 +161,7 @@
         <p class="text-xs mt-1">
           {{ billing.summary.tokenUsed }} / {{ billing.summary.tokenQuota }}
         </p>
-        <div class="mt-2 space-x-2">
+        <div class="mt-2 space-x-2" v-if="auth.can(['owner'])">
           <button class="underline" @click="credit">Credit / Начислить</button>
           <button class="underline" @click="debit">Debit / Списать</button>
           <button class="underline" @click="resetPeriod">Reset Period / Сбросить период</button>
@@ -222,12 +222,14 @@ import KnowledgeCollections from '../components/KnowledgeCollections.vue'
 import KnowledgeFilesTable from '../components/KnowledgeFilesTable.vue'
 import { useBillingStore } from '../stores/billing'
 import { impersonateTenant } from '../api/admin'
+import { useAuthStore } from '../stores/auth'
 
 const route = useRoute()
 const router = useRouter()
 const detail = useTenantDetailStore()
 const knowledge = useKnowledgeStore()
 const billing = useBillingStore()
+const auth = useAuthStore()
 const selectedPlan = ref('')
 const quotaForm = reactive({ tokenQuota: 0, storageQuotaMB: 0 })
 

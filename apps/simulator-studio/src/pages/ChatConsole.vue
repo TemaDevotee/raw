@@ -5,9 +5,12 @@
         {{ store.chat.subject || '(no subject)' }} • {{ store.chat.workspaceId }} •
         {{ store.chat.status }}
       </h2>
-      <button @click="openInApp" class="underline text-sm">
-        Open in App / Открыть во фронте
-      </button>
+      <div class="flex items-center space-x-2">
+        <Tag>{{ auth.role }}</Tag>
+        <button @click="openInApp" class="underline text-sm">
+          Open in App / Открыть во фронте
+        </button>
+      </div>
     </header>
     <div class="flex">
       <div class="w-1/2 pr-2 border-r">
@@ -22,6 +25,7 @@
           </ChatBubble>
         </div>
         <Composer
+          v-if="canSend"
           placeholder="Write as client / Написать как клиент"
           @send="sendUser"
         />
@@ -47,12 +51,14 @@
           </template>
         </div>
         <Composer
+          v-if="canSend"
           placeholder="Reply as agent / Ответить как агент"
           :label="'Send'"
           :label-ru="'Отправить'"
           @send="sendAgent"
         />
         <Composer
+          v-if="canSend"
           placeholder="Agent draft / Черновик агента"
           :label="'Save draft'"
           :label-ru="'Сохранить драфт'"
@@ -73,19 +79,23 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useChatConsoleStore } from '../stores/chatConsole'
 import ChatBubble from '../components/ChatBubble.vue'
 import DraftBubble from '../components/DraftBubble.vue'
 import Composer from '../components/Composer.vue'
+import Tag from '../components/Tag.vue'
 import { impersonateTenant } from '../api/admin'
+import { useAuthStore } from '../stores/auth'
 
 const route = useRoute()
 const store = useChatConsoleStore()
+const auth = useAuthStore()
 const chatId = route.params.chatId as string
 const tenantId = route.params.tenantId as string
 const error = ref('')
+const canSend = computed(() => auth.can(['owner','operator']))
 
 async function load() {
   try {

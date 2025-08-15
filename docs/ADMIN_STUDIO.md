@@ -26,3 +26,23 @@ curl -X POST -H "X-Admin-Key: $ADMIN_KEY" \
 ## Chat Console
 
 The Chat Console lists chats for a tenant and lets you converse as the client or agent. Draft messages appear in gray until approved or discarded. Use the **Open in App** button to view the same chat in the main UI.
+
+## RBAC
+
+Enable login with `DEV_LOGIN=1` (backend) and `VITE_DEV_LOGIN=1` (studio). Demo accounts:
+
+- owner@{tenant}.demo
+- op@{tenant}.demo
+- view@{tenant}.demo
+
+Password: `demo123!`
+
+| Action / Действие              | owner | operator | viewer |
+| ----------------------------- | ----- | -------- | ------ |
+| View data / Просмотр          | ✅     | ✅        | ✅      |
+| Send messages / Отправка сообщений | ✅ | ✅ | ⛔ |
+| Approve/discard drafts / Модерация | ✅ | ✅ | ⛔ |
+| Upload/delete files / Файлы   | ✅     | ✅        | ⛔      |
+| Change plan or quotas / Смена плана и квот | ✅ | ⛔ | ⛔ |
+| Credit/debit tokens / Начисления | ✅ | ⛔ | ⛔ |
+| Reset period / Сброс периода | ✅ | ⛔ | ⛔ |

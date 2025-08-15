@@ -12,13 +12,18 @@
       </li>
     </ul>
     <p v-if="!collections.length" class="text-sm">No collections / Нет коллекций</p>
-    <button class="underline mt-2" @click="$emit('new')">New Collection / Новая коллекция</button>
+    <button v-if="canWrite" class="underline mt-2" @click="$emit('new')">
+      New Collection / Новая коллекция
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import ProgressBar from './ProgressBar.vue'
+import { useAuthStore } from '../stores/auth'
 const props = defineProps<{ collections: any[]; current: string | null; usedMB: number; quotaMB: number }>()
 const percent = computed(() => (props.quotaMB ? Math.min(100, (props.usedMB / props.quotaMB) * 100) : 0))
+const auth = useAuthStore()
+const canWrite = computed(() => auth.can(['owner','operator']))
 </script>

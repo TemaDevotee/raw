@@ -1,9 +1,11 @@
 const express = require('express')
 const { readDb, writeDb, ensureScopes } = require('../utils/db')
-const { withIdempotency } = require('../utils/adminAuth')
+const { withIdempotency, requireRole } = require('../utils/adminAuth')
 const { PLANS } = require('../fixtures/plans')
 
 const router = express.Router()
+
+router.use(requireRole(['owner','operator','viewer']))
 
 function findTenant(db, id) {
   return (db.tenants || []).find(t => t.id === id)
@@ -39,7 +41,7 @@ router.get('/ledger', (req, res) => {
   res.json({ items, nextCursor })
 })
 
-router.post('/tokens/credit', withIdempotency((req, res) => {
+router.post('/tokens/credit', requireRole(['owner']), withIdempotency((req, res) => {
   const { tenantId, amount, reason } = req.body || {}
   if (!tenantId || !Number.isInteger(amount) || amount <= 0) return res.status(422).json({ error: 'invalid' })
   const db = ensureScopes(readDb())
@@ -61,7 +63,7 @@ router.post('/tokens/credit', withIdempotency((req, res) => {
   res.status(201).json({ billing: b })
 }))
 
-router.post('/tokens/debit', withIdempotency((req, res) => {
+router.post('/tokens/debit', requireRole(['owner']), withIdempotency((req, res) => {
   const { tenantId, amount, reason } = req.body || {}
   if (!tenantId || !Number.isInteger(amount) || amount <= 0) return res.status(422).json({ error: 'invalid' })
   const db = ensureScopes(readDb())
@@ -86,7 +88,7 @@ router.post('/tokens/debit', withIdempotency((req, res) => {
   res.status(201).json({ billing: b })
 }))
 
-router.post('/period/reset', withIdempotency((req, res) => {
+router.post('/period/reset', requireRole(['owner']), withIdempotency((req, res) => {
   const { tenantId, reason } = req.body || {}
   if (!tenantId) return res.status(422).json({ error: 'invalid' })
   const db = ensureScopes(readDb())
@@ -109,7 +111,7 @@ router.post('/period/reset', withIdempotency((req, res) => {
   res.status(201).json({ billing: b })
 }))
 
-router.post('/plan/change', withIdempotency((req, res) => {
+router.post('/plan/change', requireRole(['owner']), withIdempotency((req, res) => {
   const { tenantId, plan, reason } = req.body || {}
   if (!tenantId || !PLANS[plan]) return res.status(422).json({ error: 'invalid' })
   const db = ensureScopes(readDb())
@@ -135,7 +137,7 @@ router.post('/plan/change', withIdempotency((req, res) => {
   res.status(201).json({ billing: b })
 }))
 
-router.post('/quota/update', withIdempotency((req, res) => {
+router.post('/quota/update', requireRole(['owner']), withIdempotency((req, res) => {
   const { tenantId, tokenQuota, storageQuotaMB, reason } = req.body || {}
   if (!tenantId) return res.status(422).json({ error: 'invalid' })
   if (tokenQuota != null && (!Number.isInteger(tokenQuota) || tokenQuota < 0)) return res.status(422).json({ error: 'invalid' })

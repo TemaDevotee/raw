@@ -15,7 +15,10 @@ function findChat(db, chatId) {
   return null
 }
 
+const { requireRole } = require('../utils/adminAuth')
 const router = express.Router()
+
+router.use(requireRole(['owner','operator','viewer']))
 
 router.get('/', (req, res) => {
   const { tenantId } = req.query
@@ -51,7 +54,7 @@ router.get('/:id/drafts', (req, res) => {
   res.json(ds)
 })
 
-router.post('/', (req, res) => {
+router.post('/', requireRole(['owner','operator']), (req, res) => {
   const { tenantId, title, initial = [] } = req.body || {}
   const db = readDb()
   const t = (db.tenants || []).find(tt => tt.id === tenantId)
@@ -67,7 +70,7 @@ router.post('/', (req, res) => {
   res.status(201).json({ chatId: id })
 })
 
-router.post('/:id/messages', (req, res) => {
+router.post('/:id/messages', requireRole(['owner','operator']), (req, res) => {
   const { from, text } = req.body || {}
   const db = readDb()
   const found = findChat(db, req.params.id)
@@ -80,7 +83,7 @@ router.post('/:id/messages', (req, res) => {
   res.status(201).json(msg)
 })
 
-router.post('/:id/drafts', (req, res) => {
+router.post('/:id/drafts', requireRole(['owner','operator']), (req, res) => {
   const { text } = req.body || {}
   const db = readDb()
   const found = findChat(db, req.params.id)
@@ -93,7 +96,7 @@ router.post('/:id/drafts', (req, res) => {
   res.status(201).json(draft)
 })
 
-router.post('/:id/drafts/:draftId/approve', (req, res) => {
+router.post('/:id/drafts/:draftId/approve', requireRole(['owner','operator']), (req, res) => {
   const db = readDb()
   const found = findChat(db, req.params.id)
   if (!found) return res.status(404).json({ error: 'not_found' })
@@ -107,7 +110,7 @@ router.post('/:id/drafts/:draftId/approve', (req, res) => {
   res.json({ message: msg })
 })
 
-router.post('/:id/drafts/:draftId/discard', (req, res) => {
+router.post('/:id/drafts/:draftId/discard', requireRole(['owner','operator']), (req, res) => {
   const db = readDb()
   const found = findChat(db, req.params.id)
   if (!found) return res.status(404).json({ error: 'not_found' })

@@ -2,7 +2,10 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 
+const { requireRole } = require('../utils/adminAuth');
 const router = express.Router();
+
+router.use(requireRole(['owner','operator','viewer']));
 const dataPath = path.join(__dirname, '../fixtures/admin.json');
 const data = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
 const plansById = Object.fromEntries(data.plans.map(p => [p.id, p]));
@@ -73,7 +76,7 @@ router.get('/tenants/:id', (req, res) => {
   res.json({ id: t.id, name: t.name, billing: t.billing, ...counts });
 });
 
-router.post('/tenants/:id/billing/plan', (req, res) => {
+router.post('/tenants/:id/billing/plan', requireRole(['owner']), (req, res) => {
   const { plan } = req.body || {};
   if (!['Free', 'Pro', 'Team'].includes(plan)) return res.status(422).json({ error: 'invalid_plan' });
   const updated = updateTenant(req.params.id, t => {
@@ -87,7 +90,7 @@ router.post('/tenants/:id/billing/plan', (req, res) => {
   res.json({ billing: updated.billing });
 });
 
-router.post('/tenants/:id/billing/quota', (req, res) => {
+router.post('/tenants/:id/billing/quota', requireRole(['owner']), (req, res) => {
   const { quota } = req.body || {};
   if (!Number.isInteger(quota) || quota < 0 || quota > 1_000_000_000) return res.status(422).json({ error: 'invalid_quota' });
   const updated = updateTenant(req.params.id, t => {
@@ -113,10 +116,10 @@ function handleCreditDebit(req, res, type) {
   res.json({ billing: updated.billing });
 }
 
-router.post('/tenants/:id/billing/credit', (req, res) => handleCreditDebit(req, res, 'credit'));
-router.post('/tenants/:id/billing/debit', (req, res) => handleCreditDebit(req, res, 'debit'));
+router.post('/tenants/:id/billing/credit', requireRole(['owner']), (req, res) => handleCreditDebit(req, res, 'credit'));
+router.post('/tenants/:id/billing/debit', requireRole(['owner']), (req, res) => handleCreditDebit(req, res, 'debit'));
 
-router.post('/tenants/:id/billing/reset-period', (req, res) => {
+router.post('/tenants/:id/billing/reset-period', requireRole(['owner']), (req, res) => {
   const { start, end } = req.body || {};
   const updated = updateTenant(req.params.id, t => {
     const s = start || new Date().toISOString();
@@ -388,7 +391,7 @@ router.get('/knowledge', (req, res) => {
   res.json({ collections, storageUsedMB: used / (1024 * 1024), storageQuotaMB: quota });
 });
 
-router.post('/knowledge/collections', (req, res) => {
+router.post('/knowledge/collections', requireRole(['owner','operator']), (req, res) => {
   const { tenantId, name } = req.body || {};
   if (!tenantId || !name) return res.status(422).json({ error: 'invalid' });
   const db = readDb();
@@ -399,7 +402,7 @@ router.post('/knowledge/collections', (req, res) => {
   res.status(201).json(coll);
 });
 
-router.delete('/knowledge/collections/:id', (req, res) => {
+router.delete('/knowledge/collections/:id', requireRole(['owner','operator']), (req, res) => {
   const id = req.params.id;
   const db = readDb();
   const coll = (db.knowledgeCollections || []).find(c => c.id === id);
@@ -435,7 +438,7 @@ router.get('/knowledge/collections/:id/files', (req, res) => {
   res.json(files);
 });
 
-router.post('/knowledge/collections/:id/files', (req, res) => {
+router.post('/knowledge/collections/:id/files', requireRole(['owner','operator']), (req, res) => {
   const collectionId = req.params.id;
   const ct = req.headers['content-type'] || '';
   const m = ct.match(/boundary=(.+)$/);
@@ -527,7 +530,7 @@ router.get('/knowledge/files/:id', (req, res) => {
   fs.createReadStream(path.join(STORAGE_DIR, f.path)).pipe(res);
 });
 
-router.delete('/knowledge/files/:id', (req, res) => {
+router.delete('/knowledge/files/:id', requireRole(['owner','operator']), (req, res) => {
   const id = req.params.id;
   const db = readDb();
   const f = (db.knowledgeSources || []).find(s => s.id === id);

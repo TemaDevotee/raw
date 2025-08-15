@@ -131,6 +131,10 @@ cp apps/simulator-studio/.env.example apps/simulator-studio/.env
 # studio: adjust VITE_ADMIN_API_BASE and VITE_ADMIN_KEY to match
 npm run dev          # main front + mock backend
 npm run admin:dev    # studio at http://localhost:5199
+
+# optional: enable dev login with roles
+export DEV_LOGIN=1        # backend
+echo 'VITE_DEV_LOGIN=1' >> apps/simulator-studio/.env
 ```
 
 If requests from the studio return **401/403**, ensure the mock backend
@@ -144,10 +148,10 @@ From the Tenants table you can open a tenant and browse tabs for:
 * **Agents** — agent name, model/provider and status.
 * **Knowledge** — collections and files with upload / download / delete and storage usage.
 * **Chats** — chat list with "Open Console" and "New Chat".
-* **Billing** — plan, token and storage usage.
+* **Billing** — plan, token and storage usage. Owner role can change plan or quotas, operators/viewers see read-only data.
 * **Integrations** — connected providers.
 
-The Chat Console lets you talk to yourself: left side as client, right side as agent/operator. Grey bubbles are agent drafts; approve publishes, discard removes. Other sections remain read-only (только просмотр).
+The Chat Console lets you talk to yourself: left side as client, right side as agent/operator. Grey bubbles are agent drafts; approve publishes, discard removes. Role affects abilities: viewers see read-only, operators and owners can send and moderate.
 
 Open it via **Tenants → Chats → Open Console** or start a new chat with **New Chat**. The same chat can be viewed in the main app at `http://localhost:5173/#/chats/<chatId>?skipAuth=1`.
 

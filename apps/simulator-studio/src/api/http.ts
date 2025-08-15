@@ -8,20 +8,24 @@ export async function get(path: string, params?: Record<string, any>) {
       url.searchParams.set(k, String(v))
     }
   }
-  const res = await fetch(url.toString(), {
-    headers: { 'X-Admin-Key': adminKey }
-  })
+  const token = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('studio.token') : ''
+  const headers: Record<string, string> = { 'X-Admin-Key': adminKey }
+  if (token) headers.Authorization = 'Bearer ' + token
+  const res = await fetch(url.toString(), { headers })
   if (!res.ok) throw new Error(res.statusText)
   return res.json()
 }
 
 export async function post(path: string, body?: any) {
+  const token = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('studio.token') : ''
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'X-Admin-Key': adminKey
+  }
+  if (token) headers.Authorization = 'Bearer ' + token
   const res = await fetch(base + path, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Admin-Key': adminKey
-    },
+    headers,
     body: body ? JSON.stringify(body) : undefined
   })
   if (!res.ok) throw new Error(res.statusText)
@@ -29,9 +33,12 @@ export async function post(path: string, body?: any) {
 }
 
 export async function del(path: string) {
+  const token = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('studio.token') : ''
+  const headers: Record<string, string> = { 'X-Admin-Key': adminKey }
+  if (token) headers.Authorization = 'Bearer ' + token
   const res = await fetch(base + path, {
     method: 'DELETE',
-    headers: { 'X-Admin-Key': adminKey }
+    headers
   })
   if (!res.ok) throw new Error(res.statusText)
   return res.status === 204 ? null : res.json()
@@ -42,6 +49,8 @@ export function upload(path: string, file: File, onProgress?: (n: number) => voi
     const xhr = new XMLHttpRequest()
     xhr.open('POST', base + path)
     xhr.setRequestHeader('X-Admin-Key', adminKey)
+    const token = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('studio.token') : ''
+    if (token) xhr.setRequestHeader('Authorization', 'Bearer ' + token)
     if (onProgress) {
       xhr.upload.onprogress = e => {
         if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100))
@@ -63,7 +72,10 @@ export function upload(path: string, file: File, onProgress?: (n: number) => voi
 }
 
 export async function download(path: string) {
-  const res = await fetch(base + path, { headers: { 'X-Admin-Key': adminKey } })
+  const token = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('studio.token') : ''
+  const headers: Record<string, string> = { 'X-Admin-Key': adminKey }
+  if (token) headers.Authorization = 'Bearer ' + token
+  const res = await fetch(base + path, { headers })
   if (!res.ok) throw new Error(res.statusText)
   return res.blob()
 }
