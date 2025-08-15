@@ -10,6 +10,8 @@ const state = reactive({
   storageUsedMB: 0,
   period: null,
   error: null,
+  tokenLocked: false,
+  storageLocked: false,
 });
 
 function tokenLeft() {
@@ -39,6 +41,8 @@ async function hydrate() {
     state.period = b.period;
     state.loaded = true;
     state.error = null;
+    state.tokenLocked = state.tokenUsed >= state.tokenQuota;
+    state.storageLocked = state.storageUsedMB >= state.storageQuotaMB;
   } catch (e) {
     state.error = e;
     state.loaded = true;

@@ -60,15 +60,18 @@ async function request(method, path, { params, data, headers } = {}) {
     if (!res.ok) {
       const text = await res.text();
       let message;
+      let json;
       try {
-        const json = JSON.parse(text);
+        json = JSON.parse(text);
         message = json.error || res.statusText;
       } catch {
         message = res.statusText;
       }
-      // Show toast on error (throttling is handled by showToast internally)
       showToast(message || 'Ошибка сервера', 'error');
-      throw new Error(message);
+      const err = new Error(message);
+      err.status = res.status;
+      err.data = json;
+      throw err;
     }
     // Attempt to parse JSON if possible
     const contentType = res.headers.get('content-type') || '';

@@ -18,7 +18,13 @@ Use this section to draft release notes for the next version. Copy relevant entr
 ## Chat window
 
 - Gradient status header, functional Interfere/Return controls and Change status menu
+
+## Agent providers
+
+- Pluggable Mock/OpenAI providers with per-chat settings and token usage ledger
+- Mock provider streams draft chunks and surfaces `provider_error` events
 - Draft bubbles with approve/discard and private visibility
+- OpenAI streaming provider with usage events, error codes and abort support
 
 ## Agents & Knowledge
 
@@ -31,8 +37,19 @@ Use this section to draft release notes for the next version. Copy relevant entr
 
 ## Simulator
 
-- Bootstrap read-only Admin Simulator app on port 5175 under `apps/admin-sim`
+- Bootstrap read-only Simulator Studio app on port 5174 under `apps/simulator-studio`
 - Seed admin fixtures and expose read-only `/admin` endpoints for plans and users
+- Interactive Chat Console with dual-sided messaging and agent draft approve/discard
+- Tenant Knowledge Manager with collections/files CRUD, uploads with quota enforcement
+- Billing Manager for token credit/debit with ledger history
+- Plan Manager to change plans and quotas with enforced token/storage limits
+- Tenant-scoped RBAC with login for owner/operator/viewer roles
+- Seed demo tenants and reseed endpoint
+- Dev impersonation tokens with one-click Open App
+- Live chat console with polling and draft approve/discard
+- Realtime SSE stream for chats, drafts and presence in Simulator Studio
+- Background agent runner generating draft replies with pause/resume controls
+- Mock DB persistence scripts (`mock:save`, `mock:reset`, `mock:export`)
 
 ## Billing
 

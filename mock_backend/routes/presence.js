@@ -1,6 +1,8 @@
 const express = require('express')
 const router = express.Router()
 const db = require('../db.json')
+const { emit } = require('../utils/eventBus')
+const { readDb } = require('../utils/db')
 
 const presenceMap = new Map(
   Object.entries(db.presence || {}).map(([id, participants]) => [String(id), {
@@ -70,6 +72,12 @@ router.post('/presence/join', (req, res) => {
   }
   pres.participants = sort(pres.participants)
   pres.updatedAt = new Date().toISOString()
+  const dbNow = readDb()
+  let tenantId
+  for (const t of dbNow.tenants || []) {
+    if ((t.chats || []).find(c => c.id === String(chatId))) { tenantId = t.id; break }
+  }
+  if (tenantId) emit(tenantId, { type: 'presence:update', chatId: String(chatId), participants: pres.participants })
   res.json(pres)
 })
 
@@ -78,6 +86,12 @@ router.post('/presence/leave', (req, res) => {
   const pres = getPresence(String(chatId))
   pres.participants = pres.participants.filter((p) => p.id !== operatorId)
   pres.updatedAt = new Date().toISOString()
+  const dbNow = readDb()
+  let tenantId
+  for (const t of dbNow.tenants || []) {
+    if ((t.chats || []).find(c => c.id === String(chatId))) { tenantId = t.id; break }
+  }
+  if (tenantId) emit(tenantId, { type: 'presence:update', chatId: String(chatId), participants: pres.participants })
   res.json(pres)
 })
 

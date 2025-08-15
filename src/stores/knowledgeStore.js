@@ -1,6 +1,9 @@
 import { reactive } from 'vue'
 import api from '@/api/knowledge'
 import { authStore } from '@/stores/authStore'
+import { showToast } from '@/stores/toastStore'
+import billingStore from '@/stores/billingStore.js'
+import langStore from '@/stores/langStore.js'
 
 const state = reactive({
   collections: [],
@@ -180,6 +183,10 @@ async function uploadFiles(collectionId, files) {
     startPolling(collectionId)
   } catch (e) {
     console.error('Upload failed', e)
+    if (e.status === 413 || e.status === 403) {
+      billingStore.state.storageLocked = true
+      showToast(langStore.t('storageQuotaExceeded'), 'error')
+    }
     entries.forEach((e) => {
       e.status = 'error'
       e.error = 'upload'

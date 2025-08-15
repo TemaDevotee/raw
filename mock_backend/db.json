@@ -1,1013 +1,359 @@
 {
   "tenants": [
     {
-      "id": "t1",
-      "name": "Acme Inc.",
+      "id": "acme",
+      "name": "Acme Corp",
       "billing": {
-        "plan": "Free",
-        "tokenQuota": 20000,
-        "tokenUsed": 4500,
-        "storageQuotaMB": 100,
+        "plan": "FREE",
+        "tokenQuota": 5000,
+        "tokenUsed": 1200,
+        "storageQuotaMB": 50,
+        "storageUsedMB": 12,
         "period": {
-          "start": "2025-08-01",
-          "end": "2025-08-31"
+          "start": "2025-01-01",
+          "end": "2025-01-31"
         },
-        "ledger": [
-          {
-            "id": "seed-t1",
-            "ts": "2025-08-01T00:00:00.000Z",
-            "type": "debit",
-            "amount": 4500,
-            "by": "seed"
-          }
-        ]
+        "ledger": []
       },
-      "workspaces": [],
-      "agents": [],
-      "knowledge": [],
-      "chats": []
+      "workspaces": [
+        {
+          "id": "w1",
+          "name": "Default",
+          "createdAt": "2025-01-01"
+        }
+      ],
+      "agents": [
+        {
+          "id": "a1",
+          "name": "Acme Support",
+          "workspaceId": "w1",
+          "status": "online",
+          "systemPrompt": "Help users politely."
+        }
+      ],
+      "users": [
+        {
+          "id": "acme-owner",
+          "email": "owner@acme.demo",
+          "role": "owner",
+          "tenantId": "acme",
+          "displayName": "Acme Owner",
+          "password": "demo123!",
+          "devPassword": true,
+          "createdAt": "2025-01-01T00:00:00Z"
+        },
+        {
+          "id": "acme-operator",
+          "email": "op@acme.demo",
+          "role": "operator",
+          "tenantId": "acme",
+          "displayName": "Acme Operator",
+          "password": "demo123!",
+          "devPassword": true,
+          "createdAt": "2025-01-01T00:00:00Z"
+        },
+        {
+          "id": "acme-viewer",
+          "email": "view@acme.demo",
+          "role": "viewer",
+          "tenantId": "acme",
+          "displayName": "Acme Viewer",
+          "password": "demo123!",
+          "devPassword": true,
+          "createdAt": "2025-01-01T00:00:00Z"
+        }
+      ],
+      "knowledge": [
+        {
+          "id": "k1",
+          "name": "General",
+          "files": [
+            {
+              "id": "f1",
+              "name": "intro.txt",
+              "sizeBytes": 1200,
+              "contentType": "text/plain",
+              "createdAt": "2025-01-02T00:00:00Z"
+            },
+            {
+              "id": "f2",
+              "name": "logo.png",
+              "sizeBytes": 2048,
+              "contentType": "image/png",
+              "createdAt": "2025-01-02T00:00:00Z"
+            }
+          ]
+        }
+      ],
+      "chats": [
+        {
+          "id": "c1",
+          "subject": "Welcome",
+          "status": "live",
+          "messages": [
+            {
+              "id": "m1",
+              "role": "client",
+              "text": "Hi",
+              "ts": 1755274621534
+            },
+            {
+              "id": "m2",
+              "role": "agent",
+              "text": "Hello from Acme agent",
+              "ts": 1755274626534
+            }
+          ],
+          "drafts": [
+            {
+              "id": "d1",
+              "text": "Pending reply",
+              "createdAt": "2025-08-15T16:17:11.534Z"
+            }
+          ],
+          "updatedAt": "2025-08-15T16:17:11.534Z"
+        }
+      ]
     },
     {
-      "id": "t2",
-      "name": "Contoso Retail",
+      "id": "globex",
+      "name": "Globex Corp",
       "billing": {
-        "plan": "Pro",
+        "plan": "PRO",
+        "tokenQuota": 50000,
+        "tokenUsed": 4000,
+        "storageQuotaMB": 500,
+        "storageUsedMB": 80,
+        "period": {
+          "start": "2025-01-01",
+          "end": "2025-01-31"
+        },
+        "ledger": []
+      },
+      "workspaces": [
+        {
+          "id": "w1",
+          "name": "Default",
+          "createdAt": "2025-01-01"
+        }
+      ],
+      "agents": [
+        {
+          "id": "a1",
+          "name": "Globex Helper",
+          "workspaceId": "w1",
+          "status": "online",
+          "systemPrompt": "Assist Globex customers."
+        },
+        {
+          "id": "a2",
+          "name": "Globex Sales",
+          "workspaceId": "w1",
+          "status": "online",
+          "systemPrompt": "Sell products."
+        }
+      ],
+      "users": [
+        {
+          "id": "globex-owner",
+          "email": "owner@globex.demo",
+          "role": "owner",
+          "tenantId": "globex",
+          "displayName": "Globex Owner",
+          "password": "demo123!",
+          "devPassword": true,
+          "createdAt": "2025-01-01T00:00:00Z"
+        },
+        {
+          "id": "globex-operator",
+          "email": "op@globex.demo",
+          "role": "operator",
+          "tenantId": "globex",
+          "displayName": "Globex Operator",
+          "password": "demo123!",
+          "devPassword": true,
+          "createdAt": "2025-01-01T00:00:00Z"
+        },
+        {
+          "id": "globex-viewer",
+          "email": "view@globex.demo",
+          "role": "viewer",
+          "tenantId": "globex",
+          "displayName": "Globex Viewer",
+          "password": "demo123!",
+          "devPassword": true,
+          "createdAt": "2025-01-01T00:00:00Z"
+        }
+      ],
+      "knowledge": [
+        {
+          "id": "k1",
+          "name": "Manuals",
+          "files": [
+            {
+              "id": "f1",
+              "name": "guide.pdf",
+              "sizeBytes": 4096,
+              "contentType": "application/pdf",
+              "createdAt": "2025-01-02T00:00:00Z"
+            },
+            {
+              "id": "f2",
+              "name": "faq.txt",
+              "sizeBytes": 1024,
+              "contentType": "text/plain",
+              "createdAt": "2025-01-02T00:00:00Z"
+            },
+            {
+              "id": "f3",
+              "name": "image.jpg",
+              "sizeBytes": 3072,
+              "contentType": "image/jpeg",
+              "createdAt": "2025-01-02T00:00:00Z"
+            }
+          ]
+        }
+      ],
+      "chats": [
+        {
+          "id": "c1",
+          "subject": "Order question",
+          "status": "paused",
+          "messages": [
+            {
+              "id": "m1",
+              "role": "client",
+              "text": "Where is my order?",
+              "ts": 1755274611535
+            },
+            {
+              "id": "m2",
+              "role": "agent",
+              "text": "Checking on that for you",
+              "ts": 1755274616535
+            }
+          ],
+          "drafts": [],
+          "updatedAt": "2025-08-15T16:17:11.535Z"
+        },
+        {
+          "id": "c2",
+          "subject": "Pricing",
+          "status": "live",
+          "messages": [
+            {
+              "id": "m1",
+              "role": "client",
+              "text": "Pricing?",
+              "ts": 1755274619535
+            }
+          ],
+          "drafts": [],
+          "updatedAt": "2025-08-15T16:17:11.535Z"
+        }
+      ]
+    },
+    {
+      "id": "initech",
+      "name": "Initech",
+      "billing": {
+        "plan": "TEAM",
         "tokenQuota": 200000,
-        "tokenUsed": 34850,
-        "storageQuotaMB": 5000,
+        "tokenUsed": 55000,
+        "storageQuotaMB": 2000,
+        "storageUsedMB": 500,
         "period": {
-          "start": "2025-08-01",
-          "end": "2025-08-31"
+          "start": "2025-01-01",
+          "end": "2025-01-31"
         },
-        "ledger": [
-          {
-            "id": "seed-t2",
-            "ts": "2025-08-01T00:00:00.000Z",
-            "type": "debit",
-            "amount": 34850,
-            "by": "seed"
-          }
-        ]
+        "ledger": []
       },
-      "workspaces": [],
-      "agents": [],
-      "knowledge": [],
-      "chats": []
-    },
-    {
-      "id": "t3",
-      "name": "Globex Studio",
-      "billing": {
-        "plan": "Team",
-        "tokenQuota": 1000000,
-        "tokenUsed": 780230,
-        "storageQuotaMB": 50000,
-        "period": {
-          "start": "2025-08-01",
-          "end": "2025-08-31"
-        },
-        "ledger": [
-          {
-            "id": "seed-t3",
-            "ts": "2025-08-01T00:00:00.000Z",
-            "type": "debit",
-            "amount": 780230,
-            "by": "seed"
-          }
-        ]
-      },
-      "workspaces": [],
-      "agents": [],
-      "knowledge": [],
-      "chats": []
-    }
-  ],
-  "account": {
-    "id": "acc_1",
-    "name": "Tema",
-    "email": "tema@wsl.ru",
-    "plan": "Pro",
-    "periodStart": "2025-08-01T00:00:00.000Z",
-    "periodEnd": "2025-09-01T00:00:00.000Z",
-    "includedMonthlyTokens": 50000,
-    "usedThisPeriod": 13240,
-    "topupBalance": 18000,
-    "team": [
-      {
-        "id": 1,
-        "name": "Tema",
-        "email": "tema@wsl.ru",
-        "role": "Owner"
-      },
-      {
-        "id": 2,
-        "name": "Alex",
-        "email": "alex@example.com",
-        "role": "Operator"
-      },
-      {
-        "id": 3,
-        "name": "Sam",
-        "email": "sam@example.com",
-        "role": "Read-only"
-      }
-    ]
-  },
-  "billing": {
-    "plan": "Pro",
-    "tokenQuota": 200000,
-    "tokenUsed": 34850,
-    "storageQuotaMB": 5000,
-    "storageUsedMB": 0.00003147125244140625,
-    "period": {
-      "start": "2025-08-01",
-      "end": "2025-09-01"
-    }
-  },
-  "usage": [
-    {
-      "id": "u_1",
-      "ts": "2025-08-09T09:00:00.000Z",
-      "chatId": "c_101",
-      "agentId": "a_1",
-      "messageId": "m_77",
-      "direction": "agent",
-      "inputTokens": 320,
-      "outputTokens": 210,
-      "totalTokens": 530
-    }
-  ],
-  "presence": {
-    "1": [
-      {
-        "id": "u1",
-        "name": "Alice",
-        "role": "operator",
-        "online": true
-      },
-      {
-        "id": "u2",
-        "name": "Bob",
-        "role": "operator",
-        "online": true
-      },
-      {
-        "id": "u3",
-        "name": "Charlie",
-        "role": "observer",
-        "online": true
-      },
-      {
-        "id": "u4",
-        "name": "Dana",
-        "role": "observer",
-        "online": true
-      }
-    ]
-  },
-  "agents": [
-    {
-      "id": 1,
-      "name": "GuzziBot",
-      "model": "GPT-4o",
-      "personality": "Formal",
-      "knowledgeIds": [
-        10
-      ],
-      "isPublished": true,
-      "channels": [
-        "web"
-      ],
-      "avatarUrl": "https://placekitten.com/32/32",
-      "color": "#3366FF"
-    },
-    {
-      "id": 2,
-      "name": "ClientSupport",
-      "model": "Claude 3 Opus",
-      "personality": "Friendly",
-      "knowledgeIds": [
-        20
-      ],
-      "isPublished": true,
-      "channels": [
-        "web"
-      ],
-      "color": "#FF6600"
-    }
-  ],
-  "chats": [
-    {
-      "id": 1,
-      "clientName": "Alice Johnson",
-      "lastMessage": "User is reporting an error after multiple attempts.",
-      "time": "2m ago",
-      "status": "attention",
-      "channels": [
-        "web"
-      ],
-      "agentId": 1
-    },
-    {
-      "id": 2,
-      "clientName": "Frank Miller",
-      "lastMessage": "I'M STUCK!! HELLO?!?",
-      "time": "5m ago",
-      "status": "attention",
-      "channels": [
-        "telegram"
-      ],
-      "agentId": 2
-    },
-    {
-      "id": 3,
-      "clientName": "Grace Hopper",
-      "lastMessage": "This is unacceptable, I want a refund now.",
-      "time": "10m ago",
-      "status": "attention",
-      "channels": [
-        "whatsapp"
-      ],
-      "agentId": 1
-    },
-    {
-      "id": 4,
-      "clientName": "Oliver Twist",
-      "lastMessage": "My account is blocked and I can't access my funds!",
-      "time": "12m ago",
-      "status": "attention",
-      "channels": [
-        "web"
-      ],
-      "agentId": 2
-    },
-    {
-      "id": 5,
-      "clientName": "David Lee",
-      "lastMessage": "Agent: We ship worldwide. Where are you located?",
-      "time": "Just now",
-      "status": "live",
-      "channels": [
-        "web"
-      ],
-      "agentId": 1
-    },
-    {
-      "id": 6,
-      "clientName": "Diana Prince",
-      "lastMessage": "I have another question about my invoice.",
-      "time": "1m ago",
-      "status": "live",
-      "channels": [
-        "telegram"
-      ],
-      "agentId": 2
-    },
-    {
-      "id": 7,
-      "clientName": "Penelope Cruz",
-      "lastMessage": "Okay, I'm sending the screenshot now.",
-      "time": "3m ago",
-      "status": "live",
-      "channels": [
-        "whatsapp"
-      ],
-      "agentId": 1
-    },
-    {
-      "id": 8,
-      "clientName": "Quentin Crisp",
-      "lastMessage": "So, the new feature... how does it work exactly?",
-      "time": "7m ago",
-      "status": "live",
-      "channels": [
-        "web"
-      ],
-      "agentId": 2
-    },
-    {
-      "id": 9,
-      "clientName": "Steve Rogers",
-      "lastMessage": "The dev team is looking into this bug report.",
-      "time": "25m ago",
-      "status": "paused",
-      "channels": [
-        "web"
-      ],
-      "agentId": 1
-    },
-    {
-      "id": 10,
-      "clientName": "Tony Stark",
-      "lastMessage": "Our product team is reviewing your feature request.",
-      "time": "45m ago",
-      "status": "paused",
-      "channels": [
-        "telegram"
-      ],
-      "agentId": 2
-    },
-    {
-      "id": 11,
-      "clientName": "Natasha Romanoff",
-      "lastMessage": "We are still waiting for an update from the billing department.",
-      "time": "1h ago",
-      "status": "paused",
-      "channels": [
-        "web"
-      ],
-      "agentId": 1
-    },
-    {
-      "id": 12,
-      "clientName": "Bruce Banner",
-      "lastMessage": "I've escalated this to our senior engineers.",
-      "time": "3h ago",
-      "status": "paused",
-      "channels": [
-        "whatsapp"
-      ],
-      "agentId": 2
-    },
-    {
-      "id": 13,
-      "clientName": "Charlie Brown",
-      "lastMessage": "Just checking in to see if you had a chance to try the steps.",
-      "time": "5h ago",
-      "status": "idle",
-      "channels": [
-        "web"
-      ],
-      "agentId": 1
-    },
-    {
-      "id": 14,
-      "clientName": "Ivy Green",
-      "lastMessage": "Let me know when you've sent over the required documents.",
-      "time": "8h ago",
-      "status": "idle",
-      "channels": [
-        "telegram"
-      ],
-      "agentId": 2
-    },
-    {
-      "id": 15,
-      "clientName": "Jack White",
-      "lastMessage": "Is there anything else I can help you with today?",
-      "time": "1d ago",
-      "status": "idle",
-      "channels": [
-        "web"
-      ],
-      "agentId": 1
-    },
-    {
-      "id": 16,
-      "clientName": "Walter White",
-      "lastMessage": "Did that solution work for you?",
-      "time": "1d ago",
-      "status": "idle",
-      "channels": [
-        "whatsapp"
-      ],
-      "agentId": 2
-    },
-    {
-      "id": 17,
-      "clientName": "Sophia Rodriguez",
-      "lastMessage": "Happy I could help! Have a great day.",
-      "time": "2d ago",
-      "status": "resolved",
-      "channels": [
-        "web"
-      ],
-      "agentId": 1
-    },
-    {
-      "id": 18,
-      "clientName": "Karen Page",
-      "lastMessage": "Your order has been successfully delivered. Enjoy!",
-      "time": "2d ago",
-      "status": "resolved",
-      "channels": [
-        "telegram"
-      ],
-      "agentId": 2
-    },
-    {
-      "id": 19,
-      "clientName": "Leo Fitz",
-      "lastMessage": "Perfect, that fixed it. Thanks so much!",
-      "time": "3d ago",
-      "status": "resolved",
-      "channels": [
-        "web"
-      ],
-      "agentId": 1
-    },
-    {
-      "id": 20,
-      "clientName": "Bruce Wayne",
-      "lastMessage": "The payment has gone through. Closing this ticket now.",
-      "time": "4d ago",
-      "status": "resolved",
-      "channels": [
-        "whatsapp"
-      ],
-      "agentId": 2
-    }
-  ],
-  "chatDetails": {
-    "1": {
-      "id": 1,
-      "clientName": "Alice Johnson",
-      "channels": [
-        "web"
-      ],
-      "messages": [
+      "workspaces": [
         {
-          "sender": "bot",
-          "text": "Hello! How can I assist you today?",
-          "time": "10:00 AM"
+          "id": "w1",
+          "name": "Default",
+          "createdAt": "2025-01-01"
+        }
+      ],
+      "agents": [
+        {
+          "id": "a1",
+          "name": "Initech Bot",
+          "workspaceId": "w1",
+          "status": "online",
+          "systemPrompt": "Answer kindly."
+        }
+      ],
+      "users": [
+        {
+          "id": "initech-owner",
+          "email": "owner@initech.demo",
+          "role": "owner",
+          "tenantId": "initech",
+          "displayName": "Initech Owner",
+          "password": "demo123!",
+          "devPassword": true,
+          "createdAt": "2025-01-01T00:00:00Z"
         },
         {
-          "sender": "client",
-          "text": "I'm having an issue with my account. I can't login.",
-          "time": "10:01 AM"
+          "id": "initech-operator",
+          "email": "op@initech.demo",
+          "role": "operator",
+          "tenantId": "initech",
+          "displayName": "Initech Operator",
+          "password": "demo123!",
+          "devPassword": true,
+          "createdAt": "2025-01-01T00:00:00Z"
         },
         {
-          "sender": "system",
-          "text": "Negative sentiment detected. Operator notified."
+          "id": "initech-viewer",
+          "email": "view@initech.demo",
+          "role": "viewer",
+          "tenantId": "initech",
+          "displayName": "Initech Viewer",
+          "password": "demo123!",
+          "devPassword": true,
+          "createdAt": "2025-01-01T00:00:00Z"
+        }
+      ],
+      "knowledge": [
+        {
+          "id": "k1",
+          "name": "Specs",
+          "files": [
+            {
+              "id": "f1",
+              "name": "spec.md",
+              "sizeBytes": 2048,
+              "contentType": "text/markdown",
+              "createdAt": "2025-01-02T00:00:00Z"
+            }
+          ]
+        }
+      ],
+      "chats": [
+        {
+          "id": "c1",
+          "subject": "Bug report",
+          "status": "resolved",
+          "messages": [
+            {
+              "id": "m1",
+              "role": "client",
+              "text": "There is a bug",
+              "ts": 1755274601535
+            },
+            {
+              "id": "m2",
+              "role": "agent",
+              "text": "We fixed it",
+              "ts": 1755274606535
+            }
+          ],
+          "drafts": [],
+          "updatedAt": "2025-08-15T16:17:11.535Z"
         }
       ]
-    },
-    "2": {
-      "id": 2,
-      "clientName": "Frank Miller",
-      "channels": [
-        "telegram"
-      ],
-      "messages": [
-        {
-          "sender": "bot",
-          "text": "Hi! What can I do for you?",
-          "time": "9:45 AM"
-        },
-        {
-          "sender": "client",
-          "text": "I'M STUCK!! HELLO?!?",
-          "time": "9:46 AM"
-        }
-      ]
-    },
-    "3": {
-      "id": 3,
-      "clientName": "Grace Hopper",
-      "channels": [
-        "whatsapp"
-      ],
-      "messages": [
-        {
-          "sender": "bot",
-          "text": "Welcome to support. How can I help?",
-          "time": "11:05 AM"
-        },
-        {
-          "sender": "client",
-          "text": "My order arrived damaged. This is unacceptable, I want a refund now.",
-          "time": "11:06 AM"
-        }
-      ]
-    },
-    "4": {
-      "id": 4,
-      "clientName": "Oliver Twist",
-      "channels": [
-        "web"
-      ],
-      "messages": [
-        {
-          "sender": "client",
-          "text": "My account is blocked and I can't access my funds!",
-          "time": "1:15 PM"
-        }
-      ]
-    },
-    "5": {
-      "id": 5,
-      "clientName": "David Lee",
-      "channels": [
-        "web"
-      ],
-      "messages": [
-        {
-          "sender": "client",
-          "text": "Do you ship to Australia?",
-          "time": "3:30 PM"
-        },
-        {
-          "sender": "bot",
-          "text": "Agent: We ship worldwide. Where are you located?",
-          "time": "3:31 PM"
-        }
-      ]
-    },
-    "6": {
-      "id": 6,
-      "clientName": "Diana Prince",
-      "channels": [
-        "telegram"
-      ],
-      "messages": [
-        {
-          "sender": "bot",
-          "text": "Is there anything else I can assist you with?",
-          "time": "4:00 PM"
-        },
-        {
-          "sender": "client",
-          "text": "Yes, I have another question about my invoice.",
-          "time": "4:01 PM"
-        }
-      ]
-    },
-    "7": {
-      "id": 7,
-      "clientName": "Penelope Cruz",
-      "channels": [
-        "whatsapp"
-      ],
-      "messages": [
-        {
-          "sender": "operator",
-          "text": "Could you please provide a screenshot of the error message?",
-          "time": "4:15 PM"
-        },
-        {
-          "sender": "client",
-          "text": "Okay, I'm sending the screenshot now.",
-          "time": "4:16 PM"
-        }
-      ]
-    },
-    "8": {
-      "id": 8,
-      "clientName": "Quentin Crisp",
-      "channels": [
-        "web"
-      ],
-      "messages": [
-        {
-          "sender": "client",
-          "text": "So, the new feature... how does it work exactly?",
-          "time": "4:30 PM"
-        }
-      ]
-    },
-    "9": {
-      "id": 9,
-      "clientName": "Steve Rogers",
-      "channels": [
-        "web"
-      ],
-      "messages": [
-        {
-          "sender": "client",
-          "text": "I think I found a bug in your payment form.",
-          "time": "5:00 PM"
-        },
-        {
-          "sender": "operator",
-          "text": "Thank you for the report. The dev team is looking into this bug report.",
-          "time": "5:05 PM"
-        }
-      ]
-    },
-    "10": {
-      "id": 10,
-      "clientName": "Tony Stark",
-      "channels": [
-        "telegram"
-      ],
-      "messages": [
-        {
-          "sender": "client",
-          "text": "It would be great if you could add an integration with Figma.",
-          "time": "5:20 PM"
-        },
-        {
-          "sender": "operator",
-          "text": "That's an excellent idea. Our product team is reviewing your feature request.",
-          "time": "5:22 PM"
-        }
-      ]
-    },
-    "11": {
-      "id": 11,
-      "clientName": "Natasha Romanoff",
-      "channels": [
-        "web"
-      ],
-      "messages": [
-        {
-          "sender": "client",
-          "text": "I was charged twice for my last subscription renewal.",
-          "time": "5:40 PM"
-        },
-        {
-          "sender": "operator",
-          "text": "I'm very sorry to hear that. We are still waiting for an update from the billing department.",
-          "time": "5:45 PM"
-        }
-      ]
-    },
-    "12": {
-      "id": 12,
-      "clientName": "Bruce Banner",
-      "channels": [
-        "whatsapp"
-      ],
-      "messages": [
-        {
-          "sender": "client",
-          "text": "The entire site is down for me!",
-          "time": "6:00 PM"
-        },
-        {
-          "sender": "operator",
-          "text": "This is a high-priority issue. I've escalated this to our senior engineers.",
-          "time": "6:01 PM"
-        }
-      ]
-    },
-    "13": {
-      "id": 13,
-      "clientName": "Charlie Brown",
-      "channels": [
-        "web"
-      ],
-      "messages": [
-        {
-          "sender": "operator",
-          "text": "I've sent the password reset link to your email.",
-          "time": "Yesterday"
-        },
-        {
-          "sender": "system",
-          "text": "24 hours passed. Sending follow-up."
-        },
-        {
-          "sender": "bot",
-          "text": "Just checking in to see if you had a chance to try the steps.",
-          "time": "8:10 AM"
-        }
-      ]
-    },
-    "14": {
-      "id": 14,
-      "clientName": "Ivy Green",
-      "channels": [
-        "telegram"
-      ],
-      "messages": [
-        {
-          "sender": "operator",
-          "text": "To process your request, I'll need a copy of your ID.",
-          "time": "Yesterday"
-        },
-        {
-          "sender": "bot",
-          "text": "Let me know when you've sent over the required documents.",
-          "time": "9:00 AM"
-        }
-      ]
-    },
-    "15": {
-      "id": 15,
-      "clientName": "Jack White",
-      "channels": [
-        "web"
-      ],
-      "messages": [
-        {
-          "sender": "bot",
-          "text": "Your issue has been resolved.",
-          "time": "1d ago"
-        },
-        {
-          "sender": "bot",
-          "text": "Is there anything else I can help you with today?",
-          "time": "1d ago"
-        }
-      ]
-    },
-    "16": {
-      "id": 16,
-      "clientName": "Walter White",
-      "channels": [
-        "whatsapp"
-      ],
-      "messages": [
-        {
-          "sender": "operator",
-          "text": "Try clearing your browser cache. That should fix it.",
-          "time": "1d ago"
-        },
-        {
-          "sender": "bot",
-          "text": "Did that solution work for you?",
-          "time": "10:30 AM"
-        }
-      ]
-    },
-    "17": {
-      "id": 17,
-      "clientName": "Sophia Rodriguez",
-      "channels": [
-        "web"
-      ],
-      "messages": [
-        {
-          "sender": "client",
-          "text": "Thank you, it's working now!",
-          "time": "2d ago"
-        },
-        {
-          "sender": "operator",
-          "text": "Happy I could help! Have a great day.",
-          "time": "2d ago"
-        }
-      ]
-    },
-    "18": {
-      "id": 18,
-      "clientName": "Karen Page",
-      "channels": [
-        "telegram"
-      ],
-      "messages": [
-        {
-          "sender": "bot",
-          "text": "Tracking shows your package was delivered at 2:15 PM.",
-          "time": "2d ago"
-        },
-        {
-          "sender": "client",
-          "text": "Got it, thank you!",
-          "time": "2d ago"
-        },
-        {
-          "sender": "bot",
-          "text": "Your order has been successfully delivered. Enjoy!",
-          "time": "2d ago"
-        }
-      ]
-    },
-    "19": {
-      "id": 19,
-      "clientName": "Leo Fitz",
-      "channels": [
-        "web"
-      ],
-      "messages": [
-        {
-          "sender": "operator",
-          "text": "Okay, I've manually refreshed your account data.",
-          "time": "3d ago"
-        },
-        {
-          "sender": "client",
-          "text": "Perfect, that fixed it. Thanks so much!",
-          "time": "3d ago"
-        }
-      ]
-    },
-    "20": {
-      "id": 20,
-      "clientName": "Bruce Wayne",
-      "channels": [
-        "whatsapp"
-      ],
-      "messages": [
-        {
-          "sender": "operator",
-          "text": "We've resolved the issue with the payment gateway.",
-          "time": "4d ago"
-        },
-        {
-          "sender": "client",
-          "text": "Confirmed, payment is successful.",
-          "time": "4d ago"
-        },
-        {
-          "sender": "operator",
-          "text": "The payment has gone through. Closing this ticket now.",
-          "time": "4d ago"
-        }
-      ]
-    }
-  },
-  "knowledgeGroups": [
-    {
-      "id": 10,
-      "name": "Product Manuals",
-      "description": "User guides and technical specifications for all products.",
-      "files": [
-        {
-          "id": 101,
-          "type": "pdf",
-          "name": "Pricing_FAQ.pdf",
-          "details": "2.1 MB"
-        },
-        {
-          "id": 102,
-          "type": "url",
-          "name": "https://docs.trickster.dev",
-          "details": "Website sync"
-        }
-      ]
-    },
-    {
-      "id": 20,
-      "name": "Internal Policies",
-      "description": "Company policies and procedures for internal use.",
-      "files": [
-        {
-          "id": 201,
-          "type": "text",
-          "name": "Return Policy",
-          "details": "1.5 KB"
-        }
-      ]
-    },
-    {
-      "id": 30,
-      "name": "Sales Scripts",
-      "description": "Scripts and talking points for the sales team.",
-      "files": []
-    }
-  ],
-  "llm_models": [
-    {
-      "id": "gpt-4o",
-      "name": "GPT-4o",
-      "description": "The latest and most advanced model.",
-      "tags": [
-        "Top Choice"
-      ]
-    },
-    {
-      "id": "claude-3-opus",
-      "name": "Claude 3 Opus",
-      "description": "Top-tier performance for long context.",
-      "tags": []
-    }
-  ],
-  "workspaces": [
-    {
-      "id": "ws-1754439046776",
-      "name": "Default Workspace",
-      "createdAt": 1754439046776,
-      "isDefault": true
-    },
-    {
-      "id": "ws-1754439046776",
-      "name": "Workspace 2",
-      "createdAt": 1754439046776
-    },
-    {
-      "id": "ws-1754439046817",
-      "name": "Workspace 2",
-      "createdAt": 1754439046817
-    },
-    {
-      "id": "ws-1754439269417",
-      "name": "Workspace 2",
-      "createdAt": 1754439269417
-    },
-    {
-      "id": "ws-1754439269451",
-      "name": "Workspace 2",
-      "createdAt": 1754439269451
-    }
-  ],
-  "chatsByWs": {
-    "ws-1754439046776": [],
-    "ws-1754439046817": [],
-    "ws-1754439269417": [],
-    "ws-1754439269451": []
-  },
-  "teamsByWs": {
-    "ws-1754439046776": [],
-    "ws-1754439046817": [],
-    "ws-1754439269417": [],
-    "ws-1754439269451": []
-  },
-  "connectionsByWs": {
-    "ws-1754439046776": [],
-    "ws-1754439046817": [],
-    "ws-1754439269417": [],
-    "ws-1754439269451": []
-  },
-  "bots": [],
-  "knowledge": [],
-  "knowledgeCollections": [
-    {
-      "id": "1754840599733",
-      "tenantId": "t1",
-      "name": "Docs",
-      "createdAt": "2025-08-10T15:43:19.733Z",
-      "sourcesCount": 1
-    },
-    {
-      "id": "1754842043302",
-      "tenantId": "t1",
-      "name": "Docs",
-      "createdAt": "2025-08-10T16:07:23.302Z",
-      "sourcesCount": 1
-    },
-    {
-      "id": "1754856929900",
-      "tenantId": "t1",
-      "name": "Docs",
-      "createdAt": "2025-08-10T20:15:29.900Z",
-      "sourcesCount": 1
-    }
-  ],
-  "knowledgeSources": [
-    {
-      "id": "1754840599755",
-      "tenantId": "t1",
-      "collectionId": "1754840599733",
-      "name": "hello.txt",
-      "mime": "text/plain",
-      "size": 11,
-      "path": "t1/1754840599733/1754840599755/file.bin",
-      "createdAt": "2025-08-10T15:43:19.756Z",
-      "status": "uploaded"
-    },
-    {
-      "id": "1754842043324",
-      "tenantId": "t1",
-      "collectionId": "1754842043302",
-      "name": "hello.txt",
-      "mime": "text/plain",
-      "size": 11,
-      "path": "t1/1754842043302/1754842043324/file.bin",
-      "createdAt": "2025-08-10T16:07:23.324Z",
-      "status": "uploaded"
-    },
-    {
-      "id": "1754856929935",
-      "tenantId": "t1",
-      "collectionId": "1754856929900",
-      "name": "hello.txt",
-      "mime": "text/plain",
-      "size": 11,
-      "path": "t1/1754856929900/1754856929935/file.bin",
-      "createdAt": "2025-08-10T20:15:29.936Z",
-      "status": "uploaded"
-    }
-  ],
-  "draftsByChat": {
-    "5": [
-      {
-        "id": "d501",
-        "chatId": "5",
-        "author": "agent",
-        "text": "Need clarification on shipping.",
-        "createdAt": "2025-08-10T12:30:00Z",
-        "state": "queued"
-      },
-      {
-        "id": "d1",
-        "chatId": "5",
-        "author": "agent",
-        "text": "hello from agent",
-        "createdAt": "2025-08-10T20:16:20.481Z",
-        "state": "queued"
-      },
-      {
-        "id": "d1",
-        "chatId": "5",
-        "author": "agent",
-        "text": "hello from agent",
-        "createdAt": "2025-08-10T20:18:21.961Z",
-        "state": "queued"
-      }
-    ],
-    "6": []
-  },
-  "membershipsByWs": {},
-  "chatDrafts": {},
-  "users": [
-    {
-      "id": 1,
-      "username": "app",
-      "email": "app@example.com",
-      "name": "App User",
-      "password": "123qweQWE!@#"
     }
   ]
 }

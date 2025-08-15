@@ -1,6 +1,19 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
   <head>
+    <script>
+      (function () {
+        if (location.pathname.endsWith('/login.html')) {
+          const params = new URLSearchParams(location.search);
+          if (params.get('skipAuth') === '1') {
+            location.replace('/#/?' + params.toString());
+          } else {
+            const qs = params.toString();
+            location.replace('/#/login' + (qs ? '?' + qs : ''));
+          }
+        }
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/trickster.svg" />
     <meta charset="UTF-8" />
     <meta

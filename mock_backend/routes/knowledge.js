@@ -3,6 +3,7 @@ const fs = require('fs')
 const path = require('path')
 const router = express.Router()
 const { readDb, writeDb, ensureScopes } = require('../utils/db')
+const { PLANS } = require('../fixtures/plans')
 
 const STORAGE_DIR = path.join(__dirname, '..', 'storage')
 fs.mkdirSync(STORAGE_DIR, { recursive: true })
@@ -48,8 +49,11 @@ router.delete('/collections/:id', (req, res) => {
       fs.rmSync(path.join(STORAGE_DIR, s.path), { force: true, recursive: true })
     } catch {}
   })
-  if (db.billing && removed[0]) {
-    db.billing.storageUsedMB = getUsedStorage(db, removed[0].tenantId) / (1024 * 1024)
+  if (removed[0]) {
+    const tenant = db.tenants.find(t => t.id === removed[0].tenantId)
+    if (tenant) {
+      tenant.billing.storageUsedMB = getUsedStorage(db, removed[0].tenantId) / (1024 * 1024)
+    }
   }
   writeDb(db)
   res.status(204).send()
@@ -75,8 +79,11 @@ router.delete('/sources/:id', (req, res) => {
   try {
     fs.rmSync(path.join(STORAGE_DIR, src.path), { force: true, recursive: true })
   } catch {}
-  if (db.billing && src.tenantId) {
-    db.billing.storageUsedMB = getUsedStorage(db, src.tenantId) / (1024 * 1024)
+  if (src.tenantId) {
+    const tenant = db.tenants.find(t => t.id === src.tenantId)
+    if (tenant) {
+      tenant.billing.storageUsedMB = getUsedStorage(db, src.tenantId) / (1024 * 1024)
+    }
   }
   writeDb(db)
   res.status(204).send()
@@ -158,10 +165,37 @@ router.post('/upload', (req, res) => {
     const db = ensureScopes(readDb())
     const tenant = db.tenants.find((t) => t.id === tenantId)
     if (!tenant) return res.status(404).json({ error: 'tenant_not_found' })
+    const plan = PLANS[tenant.billing.plan] || PLANS.FREE
+    const sizeMB = filePart.buffer.length / (1024 * 1024)
+    if (sizeMB > plan.fileMaxMB) {
+      tenant.billing.ledger = tenant.billing.ledger || []
+      tenant.billing.ledger.unshift({
+        id: Date.now().toString(),
+        time: new Date().toISOString(),
+        type: 'storage-denied',
+        delta: 0,
+        balance: (tenant.billing.storageQuotaMB || 0) - (tenant.billing.storageUsedMB || 0),
+        reason: 'file_too_large',
+        meta: { sizeMB }
+      })
+      writeDb(db)
+      return res.status(413).json({ error: 'file_too_large', limitMB: plan.fileMaxMB })
+    }
     const used = getUsedStorage(db, tenantId)
-    const quota = (tenant.billing.storageQuotaMB || 0) * 1024 * 1024
-    if (used + filePart.buffer.length > quota) {
-      return res.status(413).json({ error: 'quota_exceeded' })
+    const quota = (tenant.billing.storageQuotaMB || 0)
+    if (used / (1024 * 1024) + sizeMB > quota) {
+      tenant.billing.ledger = tenant.billing.ledger || []
+      tenant.billing.ledger.unshift({
+        id: Date.now().toString(),
+        time: new Date().toISOString(),
+        type: 'storage-denied',
+        delta: 0,
+        balance: (tenant.billing.storageQuotaMB || 0) - (tenant.billing.storageUsedMB || 0),
+        reason: 'quota',
+        meta: { sizeMB }
+      })
+      writeDb(db)
+      return res.status(403).json({ error: 'storage_quota_exceeded', limitMB: quota, usedMB: tenant.billing.storageUsedMB || 0 })
     }
     const sourceId = Date.now().toString()
     const rel = path.join(tenantId, collectionId, sourceId)
@@ -182,7 +216,7 @@ router.post('/upload', (req, res) => {
     db.knowledgeSources.push(src)
     const coll = db.knowledgeCollections.find((c) => c.id === collectionId)
     if (coll) coll.sourcesCount = (coll.sourcesCount || 0) + 1
-    if (db.billing) db.billing.storageUsedMB = getUsedStorage(db, tenantId) / (1024 * 1024)
+    tenant.billing.storageUsedMB = getUsedStorage(db, tenantId) / (1024 * 1024)
     writeDb(db)
     res.status(201).json(src)
   })

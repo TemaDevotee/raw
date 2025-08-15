@@ -28,6 +28,12 @@ const {
 } = require('./routes/presence');
 const knowledgeRoutes = require('./routes/knowledge');
 const adminRoutes = require('./routes/admin');
+const adminBillingRoutes = require('./routes/admin-billing');
+const { router: adminDevRoutes, tokens: devTokens } = require('./routes/admin-dev');
+const adminChatsRoutes = require('./routes/admin-chats');
+const adminEventsRoutes = require('./routes/admin-events');
+const adminAgentsRoutes = require('./routes/admin-agents');
+const { router: authRoutes, authMiddleware } = require('./routes/auth');
 
 const app = express();
 const PORT = process.env.MOCK_PORT || 3100;
@@ -40,13 +46,7 @@ app.get('/health', (_req, res) => {
 });
 
 const ADMIN_ORIGIN = process.env.ADMIN_ORIGIN || 'http://localhost:5175';
-const checkAdminAuth = (req, res, next) => {
-  const key = req.header('X-Admin-Key');
-  if (key !== process.env.ADMIN_KEY) {
-    return res.status(401).json({ error: 'unauthorized' });
-  }
-  next();
-};
+const { requireAdmin } = require('./utils/adminAuth');
 
 const rateLimitMap = new Map();
 const rateLimit = (req, res, next) => {
@@ -64,16 +64,56 @@ const rateLimit = (req, res, next) => {
   next();
 };
 
+app.use(authMiddleware);
+
+app.use(
+  '/auth',
+  cors({ origin: ADMIN_ORIGIN, methods: ['GET', 'POST', 'OPTIONS'], allowedHeaders: ['Content-Type','Authorization'] }),
+  authRoutes
+);
+
+app.use(
+  '/admin/billing',
+  cors({ origin: ADMIN_ORIGIN, methods: ['GET', 'POST', 'OPTIONS'], allowedHeaders: ['X-Admin-Key','Content-Type','Idempotency-Key','Authorization'] }),
+  rateLimit,
+  requireAdmin,
+  adminBillingRoutes
+);
+
 app.use(
   '/admin',
   cors({
     origin: ADMIN_ORIGIN,
     methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['X-Admin-Key', 'Content-Type']
+    allowedHeaders: ['X-Admin-Key', 'Content-Type', 'Authorization']
   }),
   rateLimit,
-  checkAdminAuth,
-  adminRoutes
+  requireAdmin,
+  adminRoutes,
+  adminDevRoutes
+);
+
+app.use(
+  '/admin/chats',
+  cors({ origin: ADMIN_ORIGIN, methods: ['GET', 'POST', 'OPTIONS'], allowedHeaders: ['X-Admin-Key','Content-Type','Idempotency-Key','Authorization'] }),
+  rateLimit,
+  requireAdmin,
+  adminChatsRoutes
+);
+
+app.use(
+  '/admin/events',
+  cors({ origin: ADMIN_ORIGIN, methods: ['GET', 'OPTIONS'], allowedHeaders: ['X-Admin-Key','Authorization'] }),
+  requireAdmin,
+  adminEventsRoutes
+);
+
+app.use(
+  '/admin/agents',
+  cors({ origin: ADMIN_ORIGIN, methods: ['GET','POST','PUT','OPTIONS'], allowedHeaders: ['X-Admin-Key','Content-Type','Authorization'] }),
+  rateLimit,
+  requireAdmin,
+  adminAgentsRoutes
 );
 
 app.use(
@@ -94,6 +134,14 @@ app.use('/api/usage', usageRoutes);
 app.use('/api', presenceRoutes);
 app.use('/api', draftsRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
+
+app.get('/api/dev/impersonate/verify', (req, res) => {
+  if (process.env.DEV_IMPERSONATE !== '1') return res.status(404).end()
+  const token = req.query.token
+  const t = devTokens.get(token)
+  if (!t || t.exp < Date.now()) return res.status(404).json({ error: 'invalid' })
+  res.json({ tenantId: t.tenantId })
+})
 
 // Keep the agents and knowledge routes in this file for now.  They
 // operate on the top‑level collections in db.json.  If needed they
@@ -306,6 +354,13 @@ if (process.env.NODE_ENV !== 'production') {
     const { chatId, participants = [] } = req.body || {};
     if (!chatId) return res.status(400).json({ error: 'chatId required' });
     setPresence(chatId, participants);
+    res.json({ ok: true });
+  });
+  const { emit } = require('./utils/eventBus');
+  app.post('/__e2e__/emit', (req, res) => {
+    const { tenantId, chatId, text = '' } = req.body || {};
+    if (!tenantId || !chatId) return res.status(400).json({ error: 'invalid' });
+    emit(tenantId, { type: 'message:new', chatId, message: { id: 'm'+Date.now(), role: 'agent', text, ts: Date.now() } });
     res.json({ ok: true });
   });
   const e2eDraftRoutes = require('./routes/e2e-drafts');
