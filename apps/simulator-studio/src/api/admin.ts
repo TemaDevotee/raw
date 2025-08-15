@@ -44,6 +44,10 @@ export function deleteFile(fileId: string) {
   return del(`/admin/knowledge/files/${fileId}`)
 }
 
+export function impersonateTenant(tenantId: string) {
+  return post('/admin/auth/impersonate', { tenantId })
+}
+
 export function getChats(tenantId: string, params?: Record<string, any>) {
   return get('/admin/chats', { tenantId, ...params })
 }

@@ -120,7 +120,10 @@ The `docs/` folder (not provided here) should contain screenshots and GIFs demon
 
 ## Simulator Studio
 
-A dedicated read-only admin interface lives in [apps/simulator-studio](apps/simulator-studio) and runs on port **5199**.
+A dedicated admin interface lives in [apps/simulator-studio](apps/simulator-studio) and runs on port **5199**.
+The mock backend seeds three demo tenants: `acme` (FREE), `globex` (PRO) and `initech` (TEAM).
+Use the **Open App** button on a tenant to launch the main app as that tenant via a short-lived impersonation token.
+See [docs/ADMIN_STUDIO.md](docs/ADMIN_STUDIO.md) for details.
 
 ```bash
 cp apps/simulator-studio/.env.example apps/simulator-studio/.env

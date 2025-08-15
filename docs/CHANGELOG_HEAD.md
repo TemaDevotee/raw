@@ -37,6 +37,9 @@ Use this section to draft release notes for the next version. Copy relevant entr
 - Tenant Knowledge Manager with collections/files CRUD, uploads with quota enforcement
 - Billing Manager for token credit/debit with ledger history
 - Plan Manager to change plans and quotas with enforced token/storage limits
+- Seed demo tenants and reseed endpoint
+- Dev impersonation tokens with one-click Open App
+- Live chat console with polling and draft approve/discard
 
 ## Billing
 

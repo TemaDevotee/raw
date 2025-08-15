@@ -3,6 +3,13 @@
     <h1 class="text-xl mb-2 flex items-center">
       {{ detail.tenant?.name }}
       <Tag v-if="detail.tenant" class="ml-2">{{ detail.tenant.plan }}</Tag>
+      <button
+        v-if="detail.tenant"
+        @click="openApp"
+        class="ml-4 underline text-sm"
+      >
+        Open App / Открыть приложение
+      </button>
     </h1>
     <div v-if="detail.billing" class="mb-4">
       <ProgressBar :percent="tokenPercent" />
@@ -214,6 +221,7 @@ import ProgressBar from '../components/ProgressBar.vue'
 import KnowledgeCollections from '../components/KnowledgeCollections.vue'
 import KnowledgeFilesTable from '../components/KnowledgeFilesTable.vue'
 import { useBillingStore } from '../stores/billing'
+import { impersonateTenant } from '../api/admin'
 
 const route = useRoute()
 const router = useRouter()
@@ -261,6 +269,12 @@ const storagePercent = computed(() => {
   )
 })
 
+async function openApp() {
+  if (!detail.tenant) return
+  const { token } = await impersonateTenant(detail.tenant.id)
+  const base = import.meta.env.VITE_APP_BASE_URL || window.location.origin
+  window.open(`${base}/login.html?skipAuth=1#/?impersonate=${token}`, '_blank')
+}
 function formatDate(d?: string) {
   return d ? new Date(d).toLocaleString() : ''
 }

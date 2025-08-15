@@ -5,12 +5,9 @@
         {{ store.chat.subject || '(no subject)' }} • {{ store.chat.workspaceId }} •
         {{ store.chat.status }}
       </h2>
-      <a
-        :href="`http://localhost:5173/#/chats/${chatId}?skipAuth=1`"
-        class="underline text-sm"
-      >
+      <button @click="openInApp" class="underline text-sm">
         Open in App / Открыть во фронте
-      </a>
+      </button>
     </header>
     <div class="flex">
       <div class="w-1/2 pr-2 border-r">
@@ -82,6 +79,7 @@ import { useChatConsoleStore } from '../stores/chatConsole'
 import ChatBubble from '../components/ChatBubble.vue'
 import DraftBubble from '../components/DraftBubble.vue'
 import Composer from '../components/Composer.vue'
+import { impersonateTenant } from '../api/admin'
 
 const route = useRoute()
 const store = useChatConsoleStore()
@@ -139,6 +137,16 @@ async function discard(id: string) {
   try {
     await store.discardDraft(chatId, id)
     await store.loadDrafts(chatId)
+  } catch (e: any) {
+    error.value = e.message
+  }
+}
+
+async function openInApp() {
+  try {
+    const { token } = await impersonateTenant(tenantId)
+    const base = import.meta.env.VITE_APP_BASE_URL || window.location.origin
+    window.open(`${base}/login.html?skipAuth=1#/?impersonate=${token}&chatId=${chatId}`, '_blank')
   } catch (e: any) {
     error.value = e.message
   }

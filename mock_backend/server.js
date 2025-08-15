@@ -29,6 +29,8 @@ const {
 const knowledgeRoutes = require('./routes/knowledge');
 const adminRoutes = require('./routes/admin');
 const adminBillingRoutes = require('./routes/admin-billing');
+const { router: adminDevRoutes, tokens: devTokens } = require('./routes/admin-dev');
+const adminChatsRoutes = require('./routes/admin-chats');
 
 const app = express();
 const PORT = process.env.MOCK_PORT || 3100;
@@ -76,7 +78,16 @@ app.use(
   }),
   rateLimit,
   requireAdmin,
-  adminRoutes
+  adminRoutes,
+  adminDevRoutes
+);
+
+app.use(
+  '/admin/chats',
+  cors({ origin: ADMIN_ORIGIN, methods: ['GET', 'POST', 'OPTIONS'], allowedHeaders: ['X-Admin-Key','Content-Type','Idempotency-Key'] }),
+  rateLimit,
+  requireAdmin,
+  adminChatsRoutes
 );
 
 app.use(
@@ -97,6 +108,14 @@ app.use('/api/usage', usageRoutes);
 app.use('/api', presenceRoutes);
 app.use('/api', draftsRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
+
+app.get('/api/dev/impersonate/verify', (req, res) => {
+  if (process.env.DEV_IMPERSONATE !== '1') return res.status(404).end()
+  const token = req.query.token
+  const t = devTokens.get(token)
+  if (!t || t.exp < Date.now()) return res.status(404).json({ error: 'invalid' })
+  res.json({ tenantId: t.tenantId })
+})
 
 // Keep the agents and knowledge routes in this file for now.  They
 // operate on the top‑level collections in db.json.  If needed they
