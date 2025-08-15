@@ -18,6 +18,10 @@ Use this section to draft release notes for the next version. Copy relevant entr
 ## Chat window
 
 - Gradient status header, functional Interfere/Return controls and Change status menu
+
+## Agent providers
+
+- Pluggable Mock/OpenAI providers with per-chat settings and token usage ledger
 - Draft bubbles with approve/discard and private visibility
 
 ## Agents & Knowledge

@@ -1,4 +1,4 @@
-import { get, post, del, upload, download } from './http'
+import { get, post, del, upload, download, put } from './http'
 
 export function getTenants(params?: Record<string, any>) {
   return get('/admin/tenants', params)
@@ -124,4 +124,12 @@ export function resumeAgent(chatId: string) {
 
 export function generateAgent(chatId: string) {
   return post(`/admin/agents/${chatId}/generate`)
+}
+
+export function getAgentSettings(chatId: string) {
+  return get(`/admin/agents/${chatId}/settings`)
+}
+
+export function saveAgentSettings(chatId: string, body: any) {
+  return put(`/admin/agents/${chatId}/settings`, body)
 }

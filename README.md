@@ -7,6 +7,7 @@ This repository contains the complete front‑end and mock API server for the **
 - [AGENTS.md](AGENTS.md) – ground rules for contributors
 - [ARCHITECTURE.md](docs/ARCHITECTURE.md) – project structure and key flows
 - [FEATURE_MATRIX.md](docs/FEATURE_MATRIX.md) – map of features to files
+- [AGENT_PROVIDERS.md](docs/AGENT_PROVIDERS.md) – configuring agent providers and quotas
 
 ## Getting started
 

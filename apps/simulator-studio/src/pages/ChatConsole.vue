@@ -32,7 +32,7 @@
       </div>
       <div class="w-1/2 pl-2">
         <div class="mb-2 flex items-center space-x-2">
-          <button @click="generateDraftManual" class="underline text-sm">
+          <button @click="generateDraftManual" :disabled="generateDisabled" class="underline text-sm" :class="{ 'opacity-50 cursor-not-allowed': generateDisabled }">
             Generate draft / Сгенерировать драфт
           </button>
           <button
@@ -52,6 +52,7 @@
           <span v-if="agentState.typing" class="text-xs text-gray-500">
             Agent typing… / Агент печатает…
           </span>
+          <span v-if="agentState.error" class="text-xs text-red-500">⚠</span>
         </div>
         <div>
           <template v-for="item in store.timeline" :key="item.id">
@@ -86,6 +87,33 @@
           :label-ru="'Сохранить драфт'"
           @send="draft"
         />
+
+        <div v-if="settings" class="mt-4 border-t pt-2">
+          <h3 class="text-sm mb-2">Agent Settings / Настройки агента</h3>
+          <div class="mb-2">
+            <label class="block text-xs">Provider</label>
+            <select v-model="settings.provider" class="border p-1 text-sm">
+              <option value="mock">Mock</option>
+              <option value="openai" :disabled="!settings.available.includes('openai')">OpenAI</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="block text-xs">System prompt</label>
+            <textarea v-model="settings.systemPrompt" class="border p-1 w-full text-sm"></textarea>
+          </div>
+          <div class="mb-2">
+            <label class="block text-xs">Temperature</label>
+            <input type="range" min="0" max="2" step="0.1" v-model.number="settings.temperature" />
+            <span class="text-xs ml-2">{{ settings.temperature.toFixed(1) }}</span>
+          </div>
+          <div class="mb-2">
+            <label class="block text-xs">Max tokens</label>
+            <input type="number" v-model.number="settings.maxTokens" class="border p-1 w-24 text-sm" />
+          </div>
+          <button @click="saveSettings" :disabled="settings.saving" class="underline text-sm" :class="{ 'opacity-50 cursor-not-allowed': settings.saving }">
+            Save / Сохранить
+          </button>
+        </div>
       </div>
     </div>
     <p v-if="store.isPolling" class="text-xs text-gray-500 mt-2">
@@ -113,24 +141,29 @@ import { useAuthStore } from '../stores/auth'
 import { useAdminSse } from '../composables/useAdminSse'
 import { useRealtimeStore } from '../stores/realtime'
 import { useAgentStore } from '../stores/agent'
+import { useAgentSettingsStore } from '../stores/agentSettings'
 
 const route = useRoute()
 const store = useChatConsoleStore()
 const auth = useAuthStore()
 const agents = useAgentStore()
+const settingsStore = useAgentSettingsStore()
 const chatId = route.params.chatId as string
 const tenantId = route.params.tenantId as string
 const error = ref('')
 const canSend = computed(() => auth.can(['owner','operator']))
 const rt = useRealtimeStore()
 let sse: any
-const agentState = computed(() => agents.byChat[chatId] || { state: 'idle', typing: false })
+const agentState = computed(() => agents.byChat[chatId] || { state: 'idle', typing: false, error: null })
+const settings = computed(() => settingsStore.byChat[chatId])
+const generateDisabled = computed(() => agentState.value.error?.code === 'quota_exceeded')
 
 async function load() {
   try {
     await store.loadChat(tenantId, chatId)
     await store.loadTranscript(chatId)
     await store.loadDrafts(chatId)
+    await settingsStore.load(chatId)
     store.startPolling(chatId)
     sse = useAdminSse(tenantId, chatId)
   } catch (e: any) {
@@ -175,6 +208,20 @@ async function generateDraftManual() {
   try { await agents.generate(chatId) } catch (e: any) { error.value = e.message }
 }
 
+async function saveSettings() {
+  if (!settings.value) return
+  try {
+    await settingsStore.save(chatId, {
+      provider: settings.value.provider,
+      systemPrompt: settings.value.systemPrompt,
+      temperature: settings.value.temperature,
+      maxTokens: settings.value.maxTokens
+    })
+  } catch (e: any) {
+    error.value = e.message
+  }
+}
+
 async function approve(id: string) {
   try {
     await store.approveDraft(chatId, id)
@@ -214,5 +261,9 @@ onUnmounted(() => {
 
 watch(() => rt.status, s => {
   if (s === 'open') store.stopPolling()
+})
+
+watch(() => agentState.value.error, e => {
+  if (e) error.value = e.message
 })
 </script>

@@ -61,6 +61,10 @@ export function useAdminSse(tenantId: string, chatId?: string) {
       const d = JSON.parse(ev.data)
       agent.setTyping(d.chatId, d.step === 'start')
     })
+    es.addEventListener('agent:error', (ev) => {
+      const d = JSON.parse(ev.data)
+      agent.setError(d.chatId, { code: d.code, message: d.message })
+    })
   }
   connect()
   function close() {

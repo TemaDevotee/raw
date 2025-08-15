@@ -32,6 +32,22 @@ export async function post(path: string, body?: any) {
   return res.json()
 }
 
+export async function put(path: string, body?: any) {
+  const token = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('studio.token') : ''
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'X-Admin-Key': adminKey
+  }
+  if (token) headers.Authorization = 'Bearer ' + token
+  const res = await fetch(base + path, {
+    method: 'PUT',
+    headers,
+    body: body ? JSON.stringify(body) : undefined
+  })
+  if (!res.ok) throw new Error(res.statusText)
+  return res.json()
+}
+
 export async function del(path: string) {
   const token = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('studio.token') : ''
   const headers: Record<string, string> = { 'X-Admin-Key': adminKey }

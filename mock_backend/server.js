@@ -110,7 +110,7 @@ app.use(
 
 app.use(
   '/admin/agents',
-  cors({ origin: ADMIN_ORIGIN, methods: ['POST', 'OPTIONS'], allowedHeaders: ['X-Admin-Key','Content-Type','Authorization'] }),
+  cors({ origin: ADMIN_ORIGIN, methods: ['GET','POST','PUT','OPTIONS'], allowedHeaders: ['X-Admin-Key','Content-Type','Authorization'] }),
   rateLimit,
   requireAdmin,
   adminAgentsRoutes
