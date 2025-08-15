@@ -33,6 +33,7 @@ const { router: adminDevRoutes, tokens: devTokens } = require('./routes/admin-de
 const adminChatsRoutes = require('./routes/admin-chats');
 const adminEventsRoutes = require('./routes/admin-events');
 const adminAgentsRoutes = require('./routes/admin-agents');
+const adminMockDbRoutes = require('./routes/admin-mockdb');
 const { router: authRoutes, authMiddleware } = require('./routes/auth');
 
 const app = express();
@@ -78,6 +79,14 @@ app.use(
   rateLimit,
   requireAdmin,
   adminBillingRoutes
+);
+
+app.use(
+  '/admin/mockdb',
+  cors({ origin: ADMIN_ORIGIN, methods: ['GET','POST','DELETE','OPTIONS'], allowedHeaders: ['X-Admin-Key','Content-Type','Authorization'] }),
+  rateLimit,
+  requireAdmin,
+  adminMockDbRoutes
 );
 
 app.use(

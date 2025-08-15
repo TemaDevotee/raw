@@ -4,7 +4,7 @@
       <nav class="space-y-2">
         <NavLink to="/tenants" label-en="Tenants" label-ru="Арендаторы" />
         <NavLink to="/search" label-en="Search" label-ru="Поиск" />
-        <NavLink to="/system" label-en="System" label-ru="Система" />
+        <NavLink to="/system/mockdb" label-en="Mock DB" label-ru="Mock БД" />
       </nav>
     </aside>
   <div class="flex-1">

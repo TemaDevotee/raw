@@ -49,9 +49,20 @@ The mock backend can persist its JSON database under `.mockdb/` so edits survive
 npm run mock:save   # snapshot current mock_backend/db.json
 npm run mock:reset  # restore db.json from backup and save
 npm run mock:export # write timestamped copy to .mockdb/exports/
+npm run mock:snapshot:list   # list snapshot files
+npm run mock:snapshot:load -- <name> # load snapshot
 ```
 
 Use the **Mock DB** tab in the tenant view to inspect and edit records. Each save writes to disk and emits an `entity.updated` SSE event so other clients stay in sync.
+
+### System → Mock DB
+
+The Studio sidebar links to **Mock DB** under System. This page allows:
+
+- toggling autosave and journal flags stored in the browser;
+- listing, saving, loading, downloading and deleting snapshots located in `.mockdb/exports/`.
+
+Snapshots show name, creation time and size. “Save current” writes the current backend database to `.mockdb/db.json` and stores a timestamped copy. Loading a snapshot replaces the active database after making a backup.
 
 ## Realtime (SSE)
 
