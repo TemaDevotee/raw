@@ -32,7 +32,13 @@
       </div>
       <div class="w-1/2 pl-2">
         <div class="mb-2 flex items-center space-x-2">
-          <button @click="generateDraftManual" :disabled="generateDisabled" class="underline text-sm" :class="{ 'opacity-50 cursor-not-allowed': generateDisabled }">
+          <button
+            @click="generateDraftManual"
+            :disabled="generateDisabled"
+            :title="generateTitle"
+            class="underline text-sm"
+            :class="{ 'opacity-50 cursor-not-allowed': generateDisabled }"
+          >
             Generate draft / Сгенерировать драфт
           </button>
           <button
@@ -156,7 +162,12 @@ const rt = useRealtimeStore()
 let sse: any
 const agentState = computed(() => agents.byChat[chatId] || { state: 'idle', typing: false, error: null })
 const settings = computed(() => settingsStore.byChat[chatId])
-const generateDisabled = computed(() => agentState.value.error?.code === 'quota_exceeded')
+const generateDisabled = computed(() => agentState.value.state === 'typing' || agentState.value.error?.code === 'quota_exceeded')
+const generateTitle = computed(() => {
+  if (agentState.value.state === 'typing') return 'Generating… / Генерация…'
+  if (agentState.value.error?.code === 'quota_exceeded') return 'Quota exceeded / Квота исчерпана'
+  return ''
+})
 
 async function load() {
   try {

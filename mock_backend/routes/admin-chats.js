@@ -18,6 +18,7 @@ function findChat(db, chatId) {
 const { requireRole } = require('../utils/adminAuth')
 const { emit } = require('../utils/eventBus')
 const { scheduleDraft } = require('../utils/agentRunner')
+const { getSettings, saveSettings } = require('../utils/agentSettings')
 const router = express.Router()
 
 router.use(requireRole(['owner','operator','viewer']))
@@ -54,6 +55,24 @@ router.get('/:id/drafts', (req, res) => {
     ds = ds.filter(d => Date.parse(d.createdAt) > s)
   }
   res.json(ds)
+})
+
+router.get('/:id/settings', requireRole(['owner','operator']), (req, res) => {
+  const found = getSettings(req.params.id)
+  if (!found) return res.status(404).json({ error: 'not_found' })
+  const available = ['mock']
+  if (process.env.OPENAI_API_KEY) available.push('openai')
+  res.json({ settings: found.settings, availableProviders: available })
+})
+
+router.put('/:id/settings', requireRole(['owner','operator']), (req, res) => {
+  const { provider, systemPrompt, temperature, maxTokens } = req.body || {}
+  if (provider && !['mock', 'openai'].includes(provider)) return res.status(422).json({ error: 'invalid' })
+  if (temperature != null && (isNaN(temperature) || temperature < 0 || temperature > 2)) return res.status(422).json({ error: 'invalid' })
+  if (maxTokens != null && (!Number.isInteger(maxTokens) || maxTokens <= 0)) return res.status(422).json({ error: 'invalid' })
+  const updated = saveSettings(req.params.id, { provider, systemPrompt, temperature, maxTokens })
+  if (!updated) return res.status(404).json({ error: 'not_found' })
+  res.json({ settings: updated })
 })
 
 router.post('/', requireRole(['owner','operator']), (req, res) => {

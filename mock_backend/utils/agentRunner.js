@@ -99,9 +99,20 @@ async function run(chatId) {
 }
 
 function generate(chatId) {
-  if (running.has(chatId)) return false
+  const found = findChat(chatId)
+  if (!found) return { ok: false, code: 'not_found' }
+  const billing = found.tenant.billing || {}
+  const available = (billing.tokenQuota || 0) - (billing.tokenUsed || 0)
+  if (available <= 0) {
+    found.chat.agentState = 'error'
+    writeDb(found.db)
+    emit(found.tenant.id, { type: 'agent:state', chatId, state: 'error' })
+    emit(found.tenant.id, { type: 'agent:error', chatId, code: 'quota_exceeded', message: 'Token quota exceeded' })
+    return { ok: false, code: 'quota_exceeded' }
+  }
+  if (running.has(chatId)) return { ok: false, code: 'busy' }
   run(chatId)
-  return true
+  return { ok: true }
 }
 
 function pauseChat(chatId) {

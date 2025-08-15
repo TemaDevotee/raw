@@ -127,9 +127,9 @@ export function generateAgent(chatId: string) {
 }
 
 export function getAgentSettings(chatId: string) {
-  return get(`/admin/agents/${chatId}/settings`)
+  return get(`/admin/chats/${chatId}/settings`)
 }
 
 export function saveAgentSettings(chatId: string, body: any) {
-  return put(`/admin/agents/${chatId}/settings`, body)
+  return put(`/admin/chats/${chatId}/settings`, body)
 }
