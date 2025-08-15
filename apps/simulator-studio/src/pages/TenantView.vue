@@ -129,7 +129,26 @@
 
     <div v-else-if="detail.activeTab === 'billing'">
       <Card v-if="billing.summary" class="mb-4">
-        <p>Plan: {{ billing.summary.plan }}</p>
+        <p class="mb-2">Plan / План: {{ billing.summary.plan }}</p>
+        <div class="mb-2">
+          <select v-model="selectedPlan" class="border px-2 py-1">
+            <option v-for="(info, id) in billing.plans" :key="id" :value="id">
+              {{ id }} ({{ info.tokenQuota }} tok · {{ info.storageQuotaMB }} MB)
+            </option>
+          </select>
+          <button class="underline ml-2" @click="applyPlan">Change plan / Сменить план</button>
+        </div>
+        <div class="mb-2">
+          <label class="mr-2">
+            Tokens / Токены
+            <input type="number" v-model.number="quotaForm.tokenQuota" class="border w-24 ml-1" />
+          </label>
+          <label>
+            Storage MB / Хранилище MB
+            <input type="number" v-model.number="quotaForm.storageQuotaMB" class="border w-24 ml-1" />
+          </label>
+          <button class="underline ml-2" @click="saveQuotas">Save quotas / Сохранить квоты</button>
+        </div>
         <p class="mt-2 mb-1">Tokens / Токены</p>
         <ProgressBar :percent="tokenPercent" />
         <p class="text-xs mt-1">
@@ -201,6 +220,8 @@ const router = useRouter()
 const detail = useTenantDetailStore()
 const knowledge = useKnowledgeStore()
 const billing = useBillingStore()
+const selectedPlan = ref('')
+const quotaForm = reactive({ tokenQuota: 0, storageQuotaMB: 0 })
 
 const tabs = [
   { key: 'workspaces', en: 'Workspaces', ru: 'Рабочие пространства' },
@@ -284,6 +305,14 @@ async function resetPeriod() {
   await billing.reset(reason)
 }
 
+function applyPlan() {
+  if (selectedPlan.value) billing.changePlan(selectedPlan.value)
+}
+
+function saveQuotas() {
+  billing.updateQuotas(quotaForm.tokenQuota, quotaForm.storageQuotaMB)
+}
+
 function openConsole(id: string) {
   router.push(`/tenants/${route.params.tenantId}/chats/${id}/console`)
 }
@@ -325,7 +354,11 @@ function loadTab() {
       detail.loadChats(id)
       break
     case 'billing':
-      billing.load(id)
+      billing.load(id).then(() => {
+        selectedPlan.value = billing.summary.plan
+        quotaForm.tokenQuota = billing.summary.tokenQuota
+        quotaForm.storageQuotaMB = billing.summary.storageQuotaMB
+      })
       break
   }
 }

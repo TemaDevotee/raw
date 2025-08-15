@@ -7,12 +7,16 @@ export const useBillingStore = defineStore('billing', {
     summary: null as any,
     ledger: [] as any[],
     cursor: null as string | null,
+    plans: {} as Record<string, any>,
   }),
   actions: {
     async load(id: string) {
       this.tenantId = id
       const res = await admin.getBilling(id)
       this.summary = res.billing
+      if (!Object.keys(this.plans).length) {
+        this.plans = await admin.getPlans()
+      }
       this.ledger = []
       this.cursor = null
       await this.loadLedger()
@@ -33,6 +37,14 @@ export const useBillingStore = defineStore('billing', {
     },
     async reset(reason?: string) {
       await admin.resetPeriod({ tenantId: this.tenantId, reason })
+      await this.load(this.tenantId)
+    },
+    async changePlan(plan: string, reason?: string) {
+      await admin.changePlan({ tenantId: this.tenantId, plan, reason })
+      await this.load(this.tenantId)
+    },
+    async updateQuotas(tokenQuota?: number, storageQuotaMB?: number, reason?: string) {
+      await admin.updateQuotas({ tenantId: this.tenantId, tokenQuota, storageQuotaMB, reason })
       await this.load(this.tenantId)
     }
   }

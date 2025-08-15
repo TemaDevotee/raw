@@ -2,6 +2,7 @@ import { reactive } from 'vue'
 import apiClient from '@/api'
 import { showToast } from '@/stores/toastStore'
 import langStore from '@/stores/langStore.js'
+import billingStore from '@/stores/billingStore.js'
 import { isE2E } from '@/utils/e2e'
 
 const STORAGE_KEY = 'app.outbox.v1'
@@ -51,7 +52,12 @@ function attemptSend(msg) {
       showToast(langStore.t('sent'), 'success')
     })
     .catch((err) => {
-      if (!navigator.onLine || !err.response || err.response.status >= 500) {
+      if (err.status === 402) {
+        msg.status = 'failed'
+        persist()
+        billingStore.state.tokenLocked = true
+        showToast(langStore.t('outOfTokens'), 'error')
+      } else if (!navigator.onLine || !err.status || err.status >= 500) {
         msg.status = 'pending'
         scheduleRetry(msg)
       } else {

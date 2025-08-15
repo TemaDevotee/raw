@@ -6,6 +6,7 @@ Trickster is a multi-tenant chat console for managing AI agents and human operat
 - **Agents**, **Knowledge**, **Pricing**, and **Settings** areas
 Data is persisted to `localStorage['app.state.v2']` while a mock backend under `mock_backend/` provides API endpoints. A separate
 Simulator Studio in [`apps/simulator-studio/`](../apps/simulator-studio/) browses tenants, workspaces, agents, billing and integrations. It offers an interactive **Chat Console** for posting messages and handling agent drafts, a tenant **Knowledge Manager** for collections/files CRUD with quota tracking and a **Billing Manager** for token credit/debit with ledger history.
+The Billing section now includes a **Plan Manager** to switch plans and edit quotas with ledger audit and the mock API enforces token and storage limits.
 
 ## 2. Directory map
 

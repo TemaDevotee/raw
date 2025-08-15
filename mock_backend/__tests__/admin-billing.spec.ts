@@ -43,4 +43,21 @@ describe('admin billing', () => {
     const ledger = await ledgerRes.json()
     expect(ledger.items[0].type).toBe('credit')
   })
+
+  it('changes plan and updates quotas', async () => {
+    const res = await post('/admin/billing/plan/change', { tenantId: 't1', plan: 'PRO' })
+    expect(res.status).toBe(201)
+    const sumRes = await get('/admin/billing?tenantId=t1')
+    const sum = await sumRes.json()
+    expect(sum.billing.plan).toBe('PRO')
+  })
+
+  it('updates quotas manually', async () => {
+    const res = await post('/admin/billing/quota/update', { tenantId: 't1', tokenQuota: 123, storageQuotaMB: 5 })
+    expect(res.status).toBe(201)
+    const sumRes = await get('/admin/billing?tenantId=t1')
+    const sum = await sumRes.json()
+    expect(sum.billing.tokenQuota).toBe(123)
+    expect(sum.billing.storageQuotaMB).toBe(5)
+  })
 })

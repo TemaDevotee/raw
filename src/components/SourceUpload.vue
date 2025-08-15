@@ -2,11 +2,14 @@
   <div>
     <div
       class="border-2 border-dashed rounded p-6 text-center cursor-pointer mb-4"
+      :class="{ 'opacity-50 pointer-events-none': billingStore.state.storageLocked }"
       @dragover.prevent
       @drop.prevent="onDrop"
     >
       <p class="mb-2">{{ t('knowledgeDropHere') }}</p>
-      <button class="btn-secondary" type="button" @click="pick">{{ t('knowledgeSelectFiles') }}</button>
+      <button class="btn-secondary" type="button" @click="pick" :disabled="billingStore.state.storageLocked">
+        {{ t('knowledgeSelectFiles') }}
+      </button>
       <input ref="input" type="file" multiple class="hidden" @change="onChange" accept=".pdf,.docx,.txt,.md,.csv" />
     </div>
     <ul v-if="files.length" class="mb-4">
@@ -17,7 +20,9 @@
     </ul>
     <div class="flex justify-end gap-2">
       <button class="btn-secondary" type="button" @click="emit('close')">{{ t('commonCancel') }}</button>
-      <button class="btn-primary" :disabled="!files.length" @click="upload">{{ t('knowledgeUpload') }}</button>
+      <button class="btn-primary" :disabled="!files.length || billingStore.state.storageLocked" @click="upload">
+        {{ t('knowledgeUpload') }}
+      </button>
     </div>
   </div>
 </template>
@@ -26,6 +31,7 @@
 import { ref } from 'vue'
 import { knowledgeStore } from '@/stores/knowledgeStore'
 import langStore from '@/stores/langStore'
+import billingStore from '@/stores/billingStore.js'
 
 const props = defineProps({
   collectionId: String,

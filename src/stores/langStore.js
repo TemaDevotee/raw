@@ -131,6 +131,8 @@ const messages = {
     'billing.usedOf': '{used} of {quota}',
     'billing.resets': 'resets {date}',
     'billing.fetchFailed': 'Failed to load billing',
+    outOfTokens: 'Out of tokens. Ask admin to credit or upgrade plan.',
+    storageQuotaExceeded: 'Storage quota exceeded',
     // 404 page
     pageNotFound: 'Page not found',
     goHome: 'Go to dashboard',
@@ -410,6 +412,8 @@ const messages = {
     'billing.usedOf': '{used} из {quota}',
     'billing.resets': 'сброс {date}',
     'billing.fetchFailed': 'Не удалось загрузить биллинг',
+    outOfTokens: 'Токены закончились. Попросите администратора пополнить или сменить тариф.',
+    storageQuotaExceeded: 'Превышена квота хранилища',
     // 404 page
     pageNotFound: 'Страница не найдена',
     goHome: 'На главную',

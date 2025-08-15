@@ -97,3 +97,15 @@ export function debitTokens(payload: { tenantId: string; amount: number; reason:
 export function resetPeriod(payload: { tenantId: string; reason?: string }) {
   return post('/admin/billing/period/reset', payload)
 }
+
+export function getPlans() {
+  return get('/admin/billing/plans')
+}
+
+export function changePlan(payload: { tenantId: string; plan: string; reason?: string }) {
+  return post('/admin/billing/plan/change', payload)
+}
+
+export function updateQuotas(payload: { tenantId: string; tokenQuota?: number; storageQuotaMB?: number; reason?: string }) {
+  return post('/admin/billing/quota/update', payload)
+}

@@ -189,6 +189,9 @@
       <div v-if="outboxStore.state.isOffline" class="text-center text-xs mb-2" data-testid="offline-banner">
         {{ langStore.t('offlineBanner') }}
       </div>
+      <div v-if="billingStore.state.tokenLocked" class="text-center text-xs text-red-600 mb-2" data-testid="quota-banner">
+        {{ langStore.t('outOfTokens') }}
+      </div>
       <div class="flex items-center mb-2">
         <Button
           v-if="!inputEnabled"
@@ -222,8 +225,8 @@
           v-model="newMessage"
           type="text"
           data-testid="composer"
-          :disabled="!inputEnabled"
-          :data-locked="String(!inputEnabled)"
+          :disabled="!inputEnabled || billingStore.state.tokenLocked"
+          :data-locked="String(!inputEnabled || billingStore.state.tokenLocked)"
           :placeholder="placeholderText"
           class="flex-1 form-input mr-3 rounded-full"
           @keyup.enter="sendMessage"
@@ -234,7 +237,7 @@
           <Button
             variant="primary"
             size="sm"
-            :disabled="!inputEnabled || !newMessage"
+            :disabled="!inputEnabled || billingStore.state.tokenLocked || !newMessage"
             @click="sendMessage"
           >
             <span class="material-icons-outlined text-base mr-1">send</span>
@@ -463,12 +466,15 @@ async function fetchChat() {
   }
 }
 
+let billingPoll;
 onMounted(async () => {
   await fetchChat();
   await fetchAgents();
   await fetchDrafts();
   await presenceStore.hydrate([chatId]);
   await presenceStore.join(chatId, currentUser);
+  billingStore.hydrate();
+  billingPoll = setInterval(() => billingStore.hydrate(), 10000);
 });
 
 async function fetchAgents() {
@@ -539,6 +545,7 @@ async function sendMessage() {
 
 onBeforeUnmount(() => {
   presenceStore.leave(chatId, currentUser);
+  if (billingPoll) clearInterval(billingPoll);
 });
 
 async function interfere() {

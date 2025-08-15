@@ -1,12 +1,17 @@
 const express = require('express')
 const { readDb, writeDb, ensureScopes } = require('../utils/db')
 const { withIdempotency } = require('../utils/adminAuth')
+const { PLANS } = require('../fixtures/plans')
 
 const router = express.Router()
 
 function findTenant(db, id) {
   return (db.tenants || []).find(t => t.id === id)
 }
+
+router.get('/plans', (_req, res) => {
+  res.json(PLANS)
+})
 
 router.get('/', (req, res) => {
   const { tenantId } = req.query
@@ -97,6 +102,58 @@ router.post('/period/reset', withIdempotency((req, res) => {
     delta: 0,
     balance: (b.tokenQuota || 0),
     reason,
+    idemKey: req.header('Idempotency-Key') || undefined
+  }
+  b.ledger = [entry, ...(b.ledger || [])]
+  writeDb(db)
+  res.status(201).json({ billing: b })
+}))
+
+router.post('/plan/change', withIdempotency((req, res) => {
+  const { tenantId, plan, reason } = req.body || {}
+  if (!tenantId || !PLANS[plan]) return res.status(422).json({ error: 'invalid' })
+  const db = ensureScopes(readDb())
+  const t = findTenant(db, tenantId)
+  if (!t) return res.status(404).json({ error: 'not_found' })
+  const b = t.billing
+  const from = b.plan
+  b.plan = plan
+  b.tokenQuota = PLANS[plan].tokenQuota
+  b.storageQuotaMB = PLANS[plan].storageQuotaMB
+  const entry = {
+    id: Date.now().toString(),
+    time: new Date().toISOString(),
+    type: 'plan-change',
+    delta: 0,
+    balance: (b.tokenQuota || 0) - (b.tokenUsed || 0),
+    reason,
+    meta: { from, to: plan },
+    idemKey: req.header('Idempotency-Key') || undefined
+  }
+  b.ledger = [entry, ...(b.ledger || [])]
+  writeDb(db)
+  res.status(201).json({ billing: b })
+}))
+
+router.post('/quota/update', withIdempotency((req, res) => {
+  const { tenantId, tokenQuota, storageQuotaMB, reason } = req.body || {}
+  if (!tenantId) return res.status(422).json({ error: 'invalid' })
+  if (tokenQuota != null && (!Number.isInteger(tokenQuota) || tokenQuota < 0)) return res.status(422).json({ error: 'invalid' })
+  if (storageQuotaMB != null && (!Number.isInteger(storageQuotaMB) || storageQuotaMB < 0)) return res.status(422).json({ error: 'invalid' })
+  const db = ensureScopes(readDb())
+  const t = findTenant(db, tenantId)
+  if (!t) return res.status(404).json({ error: 'not_found' })
+  const b = t.billing
+  if (tokenQuota != null) b.tokenQuota = tokenQuota
+  if (storageQuotaMB != null) b.storageQuotaMB = storageQuotaMB
+  const entry = {
+    id: Date.now().toString(),
+    time: new Date().toISOString(),
+    type: 'quota-change',
+    delta: 0,
+    balance: (b.tokenQuota || 0) - (b.tokenUsed || 0),
+    reason,
+    meta: { tokenQuota, storageQuotaMB },
     idemKey: req.header('Idempotency-Key') || undefined
   }
   b.ledger = [entry, ...(b.ledger || [])]

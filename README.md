@@ -158,6 +158,10 @@ The **Knowledge** tab lets you manage tenant files:
 
 Files are stored on disk under `mock_storage/{tenantId}/{collectionId}/`.
 
+### Plan Manager
+
+The **Billing** tab now allows changing tenant plans and adjusting quotas. Use the dropdown to switch between `FREE`, `PRO`, `TEAM` and `ENTERPRISE` plans or enter custom `tokenQuota` and `storageQuotaMB`. All changes are recorded in the billing ledger. Quota errors return HTTP `402` for tokens and `403/413` for storage.
+
 Examples:
 
 ```

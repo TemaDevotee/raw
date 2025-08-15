@@ -10,6 +10,8 @@ afterEach(() => {
   billingStore.state.tokenUsed = 0;
   billingStore.state.period = null;
   billingStore.state.error = null;
+  billingStore.state.tokenLocked = false;
+  billingStore.state.storageLocked = false;
 });
 
 describe('billingStore', () => {
@@ -31,6 +33,7 @@ describe('billingStore', () => {
     expect(billingStore.tokenLeft()).toBe(165150);
     expect(billingStore.tokenPct()).toBe(17);
     expect(billingStore.storagePct()).toBe(1);
+    expect(billingStore.state.tokenLocked).toBe(false);
   });
 
   it('handles zero quota gracefully', async () => {
@@ -49,6 +52,7 @@ describe('billingStore', () => {
     await billingStore.hydrate();
     expect(billingStore.tokenLeft()).toBe(0);
     expect(billingStore.tokenPct()).toBe(0);
+    expect(billingStore.state.tokenLocked).toBe(true);
   });
 });
 

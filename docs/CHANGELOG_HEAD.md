@@ -36,6 +36,7 @@ Use this section to draft release notes for the next version. Copy relevant entr
 - Interactive Chat Console with dual-sided messaging and agent draft approve/discard
 - Tenant Knowledge Manager with collections/files CRUD, uploads with quota enforcement
 - Billing Manager for token credit/debit with ledger history
+- Plan Manager to change plans and quotas with enforced token/storage limits
 
 ## Billing
 

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { readDb, writeDb, ensureScopes } = require('../utils/db');
+const estimateTokens = require('../utils/tokens');
 
 // Return list of chat summaries.  When a workspaceId query param is
 // provided the chats scoped to that workspace are returned.  Fallback
@@ -35,6 +36,27 @@ router.post('/:id/messages', (req, res) => {
   if (!db.chatDetails || !db.chatDetails[chatId]) {
     return res.status(404).send();
   }
+  const cost = estimateTokens(text || '');
+  db.billing = db.billing || { tokenQuota: 0, tokenUsed: 0, ledger: [] };
+  const b = db.billing;
+  if ((b.tokenUsed || 0) + cost > (b.tokenQuota || 0)) {
+    b.ledger = b.ledger || [];
+    b.ledger.push({
+      id: Date.now().toString(),
+      time: new Date().toISOString(),
+      type: 'token-denied',
+      delta: 0,
+      balance: (b.tokenQuota || 0) - (b.tokenUsed || 0),
+      meta: { cost }
+    });
+    writeDb(db);
+    return res.status(402).json({
+      error: 'token_quota_exceeded',
+      needed: cost,
+      remaining: Math.max(0, (b.tokenQuota || 0) - (b.tokenUsed || 0))
+    });
+  }
+  b.tokenUsed = (b.tokenUsed || 0) + cost;
   const message = {
     sender,
     text,
