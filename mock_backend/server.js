@@ -31,6 +31,7 @@ const adminRoutes = require('./routes/admin');
 const adminBillingRoutes = require('./routes/admin-billing');
 const { router: adminDevRoutes, tokens: devTokens } = require('./routes/admin-dev');
 const adminChatsRoutes = require('./routes/admin-chats');
+const adminEventsRoutes = require('./routes/admin-events');
 const { router: authRoutes, authMiddleware } = require('./routes/auth');
 
 const app = express();
@@ -97,6 +98,13 @@ app.use(
   rateLimit,
   requireAdmin,
   adminChatsRoutes
+);
+
+app.use(
+  '/admin/events',
+  cors({ origin: ADMIN_ORIGIN, methods: ['GET', 'OPTIONS'], allowedHeaders: ['X-Admin-Key','Authorization'] }),
+  requireAdmin,
+  adminEventsRoutes
 );
 
 app.use(
@@ -337,6 +345,13 @@ if (process.env.NODE_ENV !== 'production') {
     const { chatId, participants = [] } = req.body || {};
     if (!chatId) return res.status(400).json({ error: 'chatId required' });
     setPresence(chatId, participants);
+    res.json({ ok: true });
+  });
+  const { emit } = require('./utils/eventBus');
+  app.post('/__e2e__/emit', (req, res) => {
+    const { tenantId, chatId, text = '' } = req.body || {};
+    if (!tenantId || !chatId) return res.status(400).json({ error: 'invalid' });
+    emit(tenantId, { type: 'message:new', chatId, message: { id: 'm'+Date.now(), role: 'agent', text, ts: Date.now() } });
     res.json({ ok: true });
   });
   const e2eDraftRoutes = require('./routes/e2e-drafts');

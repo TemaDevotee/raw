@@ -27,6 +27,10 @@ curl -X POST -H "X-Admin-Key: $ADMIN_KEY" \
 
 The Chat Console lists chats for a tenant and lets you converse as the client or agent. Draft messages appear in gray until approved or discarded. Use the **Open in App** button to view the same chat in the main UI.
 
+## Realtime (SSE)
+
+Studio listens for chat events via a Server‑Sent Events stream when `ADMIN_SSE=1` (default). The backend requires both `X-Admin-Key` and a tenant token; in dev the studio passes them as query params. Heartbeats (`ADMIN_SSE_HEARTBEAT_MS`, default 20000 ms) keep the connection alive and `ADMIN_SSE_CONN_LIMIT` caps simultaneous streams per token. If SSE is disabled or unsupported the Studio falls back to polling every few seconds and the header indicator turns yellow or red.
+
 ## RBAC
 
 Enable login with `DEV_LOGIN=1` (backend) and `VITE_DEV_LOGIN=1` (studio). Demo accounts:

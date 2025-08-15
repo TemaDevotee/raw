@@ -8,6 +8,7 @@ export const useChatConsoleStore = defineStore('chatConsole', {
     chat: null as any,
     transcript: [] as any[],
     drafts: [] as any[],
+    presence: [] as any[],
     isPolling: false,
     since: 0,
     interval: null as any
@@ -36,6 +37,30 @@ export const useChatConsoleStore = defineStore('chatConsole', {
       if (ds.length) {
         this.drafts = ds
       }
+    },
+    upsertMessage(chatId: string, msg: any) {
+      if (this.chat?.id !== chatId) return
+      const idx = this.transcript.findIndex(m => m.id === msg.id)
+      if (idx === -1) this.transcript.push(msg)
+      else this.transcript[idx] = msg
+    },
+    upsertDraft(chatId: string, draft: any) {
+      if (this.chat?.id !== chatId) return
+      const idx = this.drafts.findIndex(d => d.id === draft.id)
+      if (idx === -1) this.drafts.push(draft)
+      else this.drafts[idx] = draft
+    },
+    removeDraft(chatId: string, id: string) {
+      if (this.chat?.id !== chatId) return
+      this.drafts = this.drafts.filter(d => d.id !== id)
+    },
+    setPresence(chatId: string, participants: any[]) {
+      if (this.chat?.id !== chatId) return
+      this.presence = participants
+    },
+    setStatus(chatId: string, status: string) {
+      if (this.chat?.id !== chatId) return
+      if (this.chat) this.chat.status = status
     },
     async sendAsUser(chatId: string, text: string) {
       await admin.postMessage(chatId, { from: 'user', text })

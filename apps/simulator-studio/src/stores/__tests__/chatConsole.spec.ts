@@ -20,4 +20,15 @@ describe('chatConsole store', () => {
     expect(store.chat.id).toBe('c1')
     expect(store.timeline.length).toBe(2)
   })
+
+  it('upserts messages and drafts', () => {
+    const store = useChatConsoleStore()
+    store.chat = { id: 'c1' }
+    store.upsertMessage('c1', { id: 'm2', role: 'user', text: 'x', ts: 2 })
+    expect(store.transcript.find(m => m.id === 'm2')).toBeTruthy()
+    store.upsertDraft('c1', { id: 'd2', text: 'draft', createdAt: new Date().toISOString() })
+    expect(store.drafts.find(d => d.id === 'd2')).toBeTruthy()
+    store.removeDraft('c1', 'd2')
+    expect(store.drafts.find(d => d.id === 'd2')).toBeFalsy()
+  })
 })

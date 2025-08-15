@@ -16,6 +16,7 @@ function findChat(db, chatId) {
 }
 
 const { requireRole } = require('../utils/adminAuth')
+const { emit } = require('../utils/eventBus')
 const router = express.Router()
 
 router.use(requireRole(['owner','operator','viewer']))
@@ -80,6 +81,7 @@ router.post('/:id/messages', requireRole(['owner','operator']), (req, res) => {
   found.chat.messages.push(msg)
   found.chat.updatedAt = new Date().toISOString()
   writeDb(db)
+  emit(found.tenant.id, { type: 'message:new', chatId: found.chat.id, message: msg })
   res.status(201).json(msg)
 })
 
@@ -93,6 +95,7 @@ router.post('/:id/drafts', requireRole(['owner','operator']), (req, res) => {
   found.chat.drafts.push(draft)
   found.chat.updatedAt = draft.createdAt
   writeDb(db)
+  emit(found.tenant.id, { type: 'draft:created', chatId: found.chat.id, draft })
   res.status(201).json(draft)
 })
 
@@ -107,6 +110,8 @@ router.post('/:id/drafts/:draftId/approve', requireRole(['owner','operator']), (
   found.chat.messages.push(msg)
   found.chat.updatedAt = new Date().toISOString()
   writeDb(db)
+  emit(found.tenant.id, { type: 'draft:removed', chatId: found.chat.id, draftId: draft.id, reason: 'approved' })
+  emit(found.tenant.id, { type: 'message:new', chatId: found.chat.id, message: msg })
   res.json({ message: msg })
 })
 
@@ -119,6 +124,7 @@ router.post('/:id/drafts/:draftId/discard', requireRole(['owner','operator']), (
   found.chat.drafts.splice(idx, 1)
   found.chat.updatedAt = new Date().toISOString()
   writeDb(db)
+  emit(found.tenant.id, { type: 'draft:removed', chatId: found.chat.id, draftId: req.params.draftId, reason: 'discarded' })
   res.json({ removed: true })
 })
 

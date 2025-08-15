@@ -79,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, computed } from 'vue'
+import { onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useChatConsoleStore } from '../stores/chatConsole'
 import ChatBubble from '../components/ChatBubble.vue'
@@ -88,6 +88,8 @@ import Composer from '../components/Composer.vue'
 import Tag from '../components/Tag.vue'
 import { impersonateTenant } from '../api/admin'
 import { useAuthStore } from '../stores/auth'
+import { useAdminSse } from '../composables/useAdminSse'
+import { useRealtimeStore } from '../stores/realtime'
 
 const route = useRoute()
 const store = useChatConsoleStore()
@@ -96,6 +98,8 @@ const chatId = route.params.chatId as string
 const tenantId = route.params.tenantId as string
 const error = ref('')
 const canSend = computed(() => auth.can(['owner','operator']))
+const rt = useRealtimeStore()
+let sse: any
 
 async function load() {
   try {
@@ -103,6 +107,7 @@ async function load() {
     await store.loadTranscript(chatId)
     await store.loadDrafts(chatId)
     store.startPolling(chatId)
+    sse = useAdminSse(tenantId, chatId)
   } catch (e: any) {
     error.value = e.message
   }
@@ -162,6 +167,15 @@ async function openInApp() {
   }
 }
 
-onMounted(load)
-onUnmounted(() => store.stopPolling())
+onMounted(() => {
+  load()
+})
+onUnmounted(() => {
+  store.stopPolling()
+  sse?.close()
+})
+
+watch(() => rt.status, s => {
+  if (s === 'open') store.stopPolling()
+})
 </script>
