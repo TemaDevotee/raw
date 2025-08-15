@@ -48,7 +48,11 @@ router.afterEach(() => {
 // To reach it, we must do a full navigation here.
 router.beforeEach((to, from, next) => {
   const skip = to.query.skipAuth === '1' || import.meta.env.VITE_E2E === '1';
-  if (skip) return next();
+  if (skip) {
+    authStore.forceLogin();
+    localStorage.setItem('skipAuth', 'true');
+    return next();
+  }
 
   const isAuthed = authStore.isAuthenticated();
   const isLoginRoute = to.path === '/login' || to.path === '/login.html';

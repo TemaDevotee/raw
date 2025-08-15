@@ -8,6 +8,7 @@
         "tokenQuota": 20000,
         "tokenUsed": 4500,
         "storageQuotaMB": 100,
+        "storageUsedMB": 0,
         "period": {
           "start": "2025-08-01",
           "end": "2025-08-31"
@@ -15,10 +16,11 @@
         "ledger": [
           {
             "id": "seed-t1",
-            "ts": "2025-08-01T00:00:00.000Z",
+            "time": "2025-08-01T00:00:00.000Z",
             "type": "debit",
-            "amount": 4500,
-            "by": "seed"
+            "delta": -4500,
+            "balance": 15500,
+            "reason": "seed"
           }
         ]
       },
@@ -35,6 +37,7 @@
         "tokenQuota": 200000,
         "tokenUsed": 34850,
         "storageQuotaMB": 5000,
+        "storageUsedMB": 0,
         "period": {
           "start": "2025-08-01",
           "end": "2025-08-31"
@@ -42,10 +45,11 @@
         "ledger": [
           {
             "id": "seed-t2",
-            "ts": "2025-08-01T00:00:00.000Z",
+            "time": "2025-08-01T00:00:00.000Z",
             "type": "debit",
-            "amount": 34850,
-            "by": "seed"
+            "delta": -34850,
+            "balance": 165150,
+            "reason": "seed"
           }
         ]
       },
@@ -62,6 +66,7 @@
         "tokenQuota": 1000000,
         "tokenUsed": 780230,
         "storageQuotaMB": 50000,
+        "storageUsedMB": 0,
         "period": {
           "start": "2025-08-01",
           "end": "2025-08-31"
@@ -69,10 +74,11 @@
         "ledger": [
           {
             "id": "seed-t3",
-            "ts": "2025-08-01T00:00:00.000Z",
+            "time": "2025-08-01T00:00:00.000Z",
             "type": "debit",
-            "amount": 780230,
-            "by": "seed"
+            "delta": -780230,
+            "balance": 219770,
+            "reason": "seed"
           }
         ]
       },

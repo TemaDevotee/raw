@@ -31,8 +31,11 @@ Use this section to draft release notes for the next version. Copy relevant entr
 
 ## Simulator
 
-- Bootstrap read-only Admin Simulator app on port 5175 under `apps/admin-sim`
+- Bootstrap read-only Simulator Studio app on port 5174 under `apps/simulator-studio`
 - Seed admin fixtures and expose read-only `/admin` endpoints for plans and users
+- Interactive Chat Console with dual-sided messaging and agent draft approve/discard
+- Tenant Knowledge Manager with collections/files CRUD, uploads with quota enforcement
+- Billing Manager for token credit/debit with ledger history
 
 ## Billing
 

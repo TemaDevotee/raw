@@ -28,6 +28,7 @@ const {
 } = require('./routes/presence');
 const knowledgeRoutes = require('./routes/knowledge');
 const adminRoutes = require('./routes/admin');
+const adminBillingRoutes = require('./routes/admin-billing');
 
 const app = express();
 const PORT = process.env.MOCK_PORT || 3100;
@@ -40,13 +41,7 @@ app.get('/health', (_req, res) => {
 });
 
 const ADMIN_ORIGIN = process.env.ADMIN_ORIGIN || 'http://localhost:5175';
-const checkAdminAuth = (req, res, next) => {
-  const key = req.header('X-Admin-Key');
-  if (key !== process.env.ADMIN_KEY) {
-    return res.status(401).json({ error: 'unauthorized' });
-  }
-  next();
-};
+const { requireAdmin } = require('./utils/adminAuth');
 
 const rateLimitMap = new Map();
 const rateLimit = (req, res, next) => {
@@ -65,6 +60,14 @@ const rateLimit = (req, res, next) => {
 };
 
 app.use(
+  '/admin/billing',
+  cors({ origin: ADMIN_ORIGIN, methods: ['GET', 'POST', 'OPTIONS'], allowedHeaders: ['X-Admin-Key','Content-Type','Idempotency-Key'] }),
+  rateLimit,
+  requireAdmin,
+  adminBillingRoutes
+);
+
+app.use(
   '/admin',
   cors({
     origin: ADMIN_ORIGIN,
@@ -72,7 +75,7 @@ app.use(
     allowedHeaders: ['X-Admin-Key', 'Content-Type']
   }),
   rateLimit,
-  checkAdminAuth,
+  requireAdmin,
   adminRoutes
 );
 

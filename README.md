@@ -43,6 +43,12 @@ This repository contains the complete front‑end and mock API server for the **
 
    The login form is accessible (keyboard friendly) and shows unobtrusive toasts on validation errors.  Successful authentication sets a session flag in `localStorage` and redirects to the main application.
 
+## Quick login bypass (Быстрый вход без логина)
+
+- [http://localhost:5173/#/?skipAuth=1](http://localhost:5173/#/?skipAuth=1) — skip the login screen once.
+- Create a `.env.local` with `VITE_E2E=1` and restart the dev server to stay logged in.
+- Common pitfall: opening `/login.html` directly. Use the hash route (`/#/`) or append `?skipAuth=1`.
+
 ## Production build
 
 To produce a production build of the front‑end, run:
@@ -112,63 +118,88 @@ If you wish to start from scratch, stop the dev servers and delete `localStorage
 
 The `docs/` folder (not provided here) should contain screenshots and GIFs demonstrating the login flow, workspace creation and switching, and pricing plan upgrade.  Please refer to those assets for a visual tour of the application.
 
-## Admin Simulator (read-only)
+## Simulator Studio
 
-A separate admin interface lives in [apps/admin-sim](apps/admin-sim) and runs on port **5175**. It reads tenant billing data via `/admin` endpoints.
+A dedicated read-only admin interface lives in [apps/simulator-studio](apps/simulator-studio) and runs on port **5199**.
 
 ```bash
-npm run dev:admin
-# open http://localhost:5175
+cp apps/simulator-studio/.env.example apps/simulator-studio/.env
+# backend: set ADMIN_KEY and ADMIN_ORIGIN in the root .env
+# studio: adjust VITE_ADMIN_API_BASE and VITE_ADMIN_KEY to match
+npm run dev          # main front + mock backend
+npm run admin:dev    # studio at http://localhost:5199
 ```
 
-The simulator lists tenants with plan and token usage and lets you inspect a tenant’s billing summary.
+If requests from the studio return **401/403**, ensure the mock backend
+allows CORS from `http://localhost:5199` and that `X-Admin-Key`
+matches between `ADMIN_KEY` and `VITE_ADMIN_KEY`.
 
-## Admin write-ops
+The sidebar lists **Tenants**, **Search** and **System**.
+From the Tenants table you can open a tenant and browse tabs for:
 
-The simulator also supports changing tenant billing via protected `/admin` endpoints.
+* **Workspaces** — tenant workspaces list.
+* **Agents** — agent name, model/provider and status.
+* **Knowledge** — collections and files with upload / download / delete and storage usage.
+* **Chats** — chat list with "Open Console" and "New Chat".
+* **Billing** — plan, token and storage usage.
+* **Integrations** — connected providers.
+
+The Chat Console lets you talk to yourself: left side as client, right side as agent/operator. Grey bubbles are agent drafts; approve publishes, discard removes. Other sections remain read-only (только просмотр).
+
+Open it via **Tenants → Chats → Open Console** or start a new chat with **New Chat**. The same chat can be viewed in the main app at `http://localhost:5173/#/chats/<chatId>?skipAuth=1`.
+
+### Knowledge Manager
+
+The **Knowledge** tab lets you manage tenant files:
+
+- create collections,
+- upload / download / delete files,
+- monitor used vs quota with a progress bar.
+
+Files are stored on disk under `mock_storage/{tenantId}/{collectionId}/`.
+
+Examples:
 
 ```
-npm run dev:admin
-# requires ADMIN_KEY and ADMIN_ORIGIN env vars
+curl -H 'X-Admin-Key: dev-admin' \
+  'http://localhost:5173/admin/knowledge?tenantId=t1'
+
+curl -H 'X-Admin-Key: dev-admin' \
+  -F file=@README.md \
+  http://localhost:5173/admin/knowledge/collections/<collectionId>/files
 ```
 
-Endpoints require `X-Admin-Key` header and record every change in a billing ledger.
+Increase a tenant's storage quota through existing billing endpoints.
 
-### Admin Simulator – Chat Console
+### Billing Manager
 
-Run the standalone console:
+The **Billing** tab shows token and storage usage and lets you adjust the
+token balance or reset the period. Actions create ledger entries that can be
+inspected below the summary.
 
-    npm run admin:dev
-    # requires ADMIN_KEY and ADMIN_ORIGIN env vars
+Examples:
 
-Available endpoints:
+```
+curl -H 'X-Admin-Key: dev-admin-key' \
+  -H 'Idempotency-Key: 123' \
+  -d '{"tenantId":"t1","amount":100,"reason":"bonus"}' \
+  -H 'Content-Type: application/json' \
+  http://localhost:5173/admin/billing/tokens/credit
 
-- `POST /admin/chats/:chatId/messages`
-- `POST /admin/chats/:chatId/drafts`
-- `GET  /admin/chats/:chatId/transcript`
-- `GET  /admin/chats/:chatId/presence`
-
-Example:
-
-    curl -H "X-Admin-Key: $ADMIN_KEY" -H "Content-Type: application/json" \
-      -d '{"role":"client","text":"Hi"}' \
-      $API/admin/chats/CHAT_1/messages
-
-    curl -H "X-Admin-Key: $ADMIN_KEY" -H "Content-Type: application/json" \
-      -d '{"agentId":"A1","text":"Draft"}' \
-      $API/admin/chats/CHAT_1/drafts
-
-    curl -H "X-Admin-Key: $ADMIN_KEY" $API/admin/chats/CHAT_1/transcript
+curl -H 'X-Admin-Key: dev-admin-key' \
+  'http://localhost:5173/admin/billing/ledger?tenantId=t1'
+```
 
 ## Knowledge (mock storage)
 
-The mock backend persists uploaded knowledge files on disk under `mock_backend/storage/`.
-Supported types: plain text, markdown, PDF, PNG and JPEG up to 10 MB each.
+The mock backend persists uploaded knowledge files on disk under `mock_storage/`.
+Supported types: pdf, txt, md, docx, xlsx, csv, png, jpg up to 20 MB each.
 
 ```
-POST /api/knowledge/upload      # multipart: tenantId, collectionId, file
-GET  /api/knowledge/collections?tenantId=t1
-GET  /api/knowledge/sources?collectionId=<id>
+GET  /admin/knowledge?tenantId=t1
+POST /admin/knowledge/collections
+POST /admin/knowledge/collections/:id/files   # multipart field "file"
+GET  /admin/knowledge/collections/:id/files
 ```
 
-Storage usage and quota are exposed via `/api/account/billing` (`storageUsedMB` / `storageQuotaMB`).
+Storage usage and quota are exposed via `/admin/knowledge` response (`storageUsedMB` / `storageQuotaMB`).

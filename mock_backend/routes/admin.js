@@ -227,77 +227,321 @@ router.get('/users/:id/chats', (req, res) => {
 
 // --- Chat console endpoints ---
 
+router.get('/chats', (req, res) => {
+  const { tenantId, page = '1', q = '', limit = '20' } = req.query;
+  const db = readDb();
+  let items = [];
+  for (const t of db.tenants || []) {
+    if (tenantId && t.id !== tenantId) continue;
+    for (const c of t.chats || []) {
+      items.push({ ...c, tenantId: t.id });
+    }
+  }
+  if (q) {
+    const lq = String(q).toLowerCase();
+    items = items.filter(c => (c.subject || '').toLowerCase().includes(lq));
+  }
+  const p = parseInt(page, 10) || 1;
+  const ps = parseInt(limit, 10) || 20;
+  const total = items.length;
+  const start = (p - 1) * ps;
+  const paged = items.slice(start, start + ps);
+  res.json({ items: paged, total, page: p, pageSize: ps });
+});
+
+router.get('/chats/:chatId/transcript', (req, res) => {
+  const { since = '0' } = req.query;
+  const db = readDb();
+  const chatId = String(req.params.chatId);
+  const s = parseInt(since, 10) || 0;
+  const messages = (db.chatDetails?.[chatId]?.messages || []).filter(m => (m.ts || 0) > s);
+  const norm = messages.map(m => ({
+    id: m.id,
+    role: m.role,
+    text: m.text,
+    ts: m.ts,
+  }));
+  res.json(norm);
+});
+
+router.get('/chats/:chatId/drafts', (req, res) => {
+  const { since = '0' } = req.query;
+  const db = readDb();
+  const chatId = String(req.params.chatId);
+  const s = parseInt(since, 10) || 0;
+  const drafts = (db.draftsByChat?.[chatId] || []).filter(d => d.state !== 'discarded' && (Date.parse(d.createdAt) || 0) > s);
+  res.json(drafts);
+});
+
+router.post('/chats', (req, res) => {
+  const { tenantId, workspaceId, subject = '', participants = [] } = req.body || {};
+  if (!tenantId || !workspaceId) return res.status(422).json({ error: 'invalid_payload' });
+  const db = readDb();
+  const tenant = (db.tenants || []).find(t => t.id === tenantId);
+  if (!tenant) return res.status(404).json({ error: 'not_found' });
+  tenant.chats = tenant.chats || [];
+  const id = `c${Date.now()}`;
+  const chat = {
+    id,
+    workspaceId,
+    subject,
+    participants,
+    status: 'open',
+    updatedAt: new Date().toISOString(),
+  };
+  tenant.chats.push(chat);
+  writeDb(db);
+  res.json({ chatId: id });
+});
+
 router.post('/chats/:chatId/messages', (req, res) => {
+  const { from, text = '', meta } = req.body || {};
+  if (!from || !['user', 'agent', 'operator'].includes(from)) return res.status(422).json({ error: 'invalid_from' });
   const db = readDb();
   const chatId = String(req.params.chatId);
   db.chatDetails = db.chatDetails || {};
-  if (!db.chatDetails[chatId]) {
-    db.chatDetails[chatId] = { id: chatId, messages: [] };
-  }
-  const now = req.body?.ts || Date.now();
-  const msg = {
-    id: `msg_${now}`,
-    chatId,
-    role: req.body?.role === 'agent' ? 'agent' : 'client',
-    sender: req.body?.role === 'agent' ? 'agent' : 'client',
-    text: req.body?.text || '',
-    ts: now,
-    time: new Date(now).toISOString(),
-    visibility: 'public',
-    agentId: req.body?.agentId,
-    attachments: req.body?.attachments || [],
-  };
+  if (!db.chatDetails[chatId]) db.chatDetails[chatId] = { id: chatId, messages: [] };
+  const now = Date.now();
+  const msg = { id: `m${now}`, from, text, meta, ts: now };
   db.chatDetails[chatId].messages.push(msg);
+  // touch chat updatedAt
+  for (const t of db.tenants || []) {
+    const chat = (t.chats || []).find(c => c.id === chatId);
+    if (chat) chat.updatedAt = new Date(now).toISOString();
+  }
   writeDb(db);
-  res.json(msg);
+  res.json({ id: msg.id, createdAt: new Date(now).toISOString() });
 });
 
 router.post('/chats/:chatId/drafts', (req, res) => {
+  const { text = '' } = req.body || {};
   const db = readDb();
   const chatId = String(req.params.chatId);
   db.draftsByChat = db.draftsByChat || {};
   db.draftsByChat[chatId] = db.draftsByChat[chatId] || [];
-  const now = req.body?.ts || Date.now();
-  const draft = {
-    id: `d${now}`,
-    chatId,
-    author: 'agent',
-    agentId: req.body?.agentId,
-    text: req.body?.text || '',
-    createdAt: new Date(now).toISOString(),
-    state: 'queued',
-  };
+  const now = Date.now();
+  const draft = { id: `d${now}`, text, createdAt: new Date(now).toISOString(), state: 'queued' };
   db.draftsByChat[chatId].push(draft);
   writeDb(db);
-  res.json(draft);
+  res.json({ id: draft.id, createdAt: draft.createdAt });
 });
 
-router.get('/chats/:chatId/transcript', (req, res) => {
+router.post('/chats/:chatId/drafts/:draftId/approve', (req, res) => {
   const db = readDb();
-  const chatId = String(req.params.chatId);
-  const messages = db.chatDetails?.[chatId]?.messages || [];
-  const drafts = (db.draftsByChat?.[chatId] || []).filter(d => d.state !== 'discarded');
-  const normMsgs = messages.map(m => ({
-    id: m.id,
-    role: m.role || m.sender,
-    text: m.text,
-    ts: m.ts || Date.now(),
-    agentId: m.agentId,
-  }));
-  const normDrafts = drafts.map(d => ({
-    id: d.id,
-    role: 'agent',
-    text: d.text,
-    ts: Date.parse(d.createdAt) || Date.now(),
-    draft: true,
-    agentId: d.agentId,
-  }));
-  const transcript = [...normMsgs, ...normDrafts].sort((a, b) => a.ts - b.ts);
-  res.json(transcript);
+  const { chatId, draftId } = req.params;
+  const drafts = db.draftsByChat?.[chatId] || [];
+  const idx = drafts.findIndex(d => d.id === draftId);
+  if (idx === -1) return res.status(404).json({ error: 'not_found' });
+  const draft = drafts[idx];
+  draft.state = 'approved';
+  const now = Date.now();
+  db.chatDetails = db.chatDetails || {};
+  if (!db.chatDetails[chatId]) db.chatDetails[chatId] = { id: chatId, messages: [] };
+  const msg = { id: `m${now}`, from: 'agent', text: draft.text, ts: now };
+  db.chatDetails[chatId].messages.push(msg);
+  drafts.splice(idx, 1);
+  for (const t of db.tenants || []) {
+    const chat = (t.chats || []).find(c => c.id === chatId);
+    if (chat) chat.updatedAt = new Date(now).toISOString();
+  }
+  writeDb(db);
+  res.json({ message: { id: msg.id, role: 'agent', text: msg.text, createdAt: new Date(now).toISOString() } });
+});
+
+router.post('/chats/:chatId/drafts/:draftId/discard', (req, res) => {
+  const db = readDb();
+  const { chatId, draftId } = req.params;
+  const drafts = db.draftsByChat?.[chatId] || [];
+  const idx = drafts.findIndex(d => d.id === draftId);
+  if (idx === -1) return res.status(404).json({ error: 'not_found' });
+  drafts[idx].state = 'discarded';
+  writeDb(db);
+  res.json({ removed: true });
 });
 
 router.get('/chats/:chatId/presence', (req, res) => {
   res.json(snapshot(String(req.params.chatId)));
+});
+
+const STORAGE_DIR = path.join(__dirname, '..', '..', 'mock_storage');
+fs.mkdirSync(STORAGE_DIR, { recursive: true });
+
+function calcUsage(db, tenantId) {
+  return db.knowledgeSources
+    .filter(s => s.tenantId === tenantId)
+    .reduce((sum, s) => sum + (s.size || 0), 0);
+}
+
+router.get('/knowledge', (req, res) => {
+  const { tenantId } = req.query;
+  const db = readDb();
+  const collections = (db.knowledgeCollections || [])
+    .filter(c => c.tenantId === tenantId)
+    .map(c => {
+      const files = (db.knowledgeSources || []).filter(s => s.collectionId === c.id);
+      const bytes = files.reduce((sum, f) => sum + (f.size || 0), 0);
+      return { id: c.id, name: c.name, filesCount: files.length, bytes };
+    });
+  const used = collections.reduce((sum, c) => sum + c.bytes, 0);
+  const tenant = (db.tenants || []).find(t => t.id === tenantId);
+  const quota = tenant?.billing?.storageQuotaMB || 0;
+  res.json({ collections, storageUsedMB: used / (1024 * 1024), storageQuotaMB: quota });
+});
+
+router.post('/knowledge/collections', (req, res) => {
+  const { tenantId, name } = req.body || {};
+  if (!tenantId || !name) return res.status(422).json({ error: 'invalid' });
+  const db = readDb();
+  const coll = { id: String(Date.now()), tenantId, name, createdAt: new Date().toISOString() };
+  db.knowledgeCollections = db.knowledgeCollections || [];
+  db.knowledgeCollections.push(coll);
+  writeDb(db);
+  res.status(201).json(coll);
+});
+
+router.delete('/knowledge/collections/:id', (req, res) => {
+  const id = req.params.id;
+  const db = readDb();
+  const coll = (db.knowledgeCollections || []).find(c => c.id === id);
+  if (!coll) return res.status(404).json({ error: 'not_found' });
+  db.knowledgeCollections = db.knowledgeCollections.filter(c => c.id !== id);
+  const files = (db.knowledgeSources || []).filter(s => s.collectionId === id);
+  db.knowledgeSources = (db.knowledgeSources || []).filter(s => s.collectionId !== id);
+  files.forEach(f => {
+    try {
+      fs.rmSync(path.join(STORAGE_DIR, f.path), { force: true });
+    } catch {}
+  });
+  const tenant = (db.tenants || []).find(t => t.id === coll.tenantId);
+  if (tenant && tenant.billing) {
+    tenant.billing.storageUsedMB = calcUsage(db, coll.tenantId) / (1024 * 1024);
+  }
+  writeDb(db);
+  res.json({ removed: true });
+});
+
+router.get('/knowledge/collections/:id/files', (req, res) => {
+  const id = req.params.id;
+  const db = readDb();
+  const files = (db.knowledgeSources || [])
+    .filter(s => s.collectionId === id)
+    .map(f => ({
+      id: f.id,
+      name: f.name,
+      sizeBytes: f.size,
+      contentType: f.mime,
+      createdAt: f.createdAt
+    }));
+  res.json(files);
+});
+
+router.post('/knowledge/collections/:id/files', (req, res) => {
+  const collectionId = req.params.id;
+  const ct = req.headers['content-type'] || '';
+  const m = ct.match(/boundary=(.+)$/);
+  if (!m) return res.status(400).json({ error: 'no_boundary' });
+  const boundary = '--' + m[1];
+  const chunks = [];
+  let size = 0;
+  req.on('data', chunk => {
+    size += chunk.length;
+    if (size > 20 * 1024 * 1024) {
+      req.destroy();
+      return res.status(413).json({ error: 'FILE_TOO_LARGE' });
+    }
+    chunks.push(chunk);
+  });
+  req.on('end', () => {
+    const buffer = Buffer.concat(chunks);
+    const parts = buffer
+      .toString('binary')
+      .split(boundary)
+      .filter(p => p.trim());
+    let filePart = null;
+    let filename = '';
+    let mime = 'application/octet-stream';
+    for (const part of parts) {
+      const [head, body] = part.split('\r\n\r\n');
+      if (!head || !body) continue;
+      const nameMatch = /name="([^"]+)"/.exec(head);
+      const filenameMatch = /filename="([^"]+)"/.exec(head);
+      if (nameMatch && filenameMatch) {
+        filename = filenameMatch[1];
+        const mimeMatch = /Content-Type: ([^\r\n]+)/.exec(head);
+        if (mimeMatch) mime = mimeMatch[1];
+        const content = body.slice(0, -2);
+        filePart = Buffer.from(content, 'binary');
+      }
+    }
+    if (!filePart) return res.status(422).json({ error: 'NO_FILE' });
+    const allowed = [
+      'application/pdf',
+      'text/plain',
+      'text/markdown',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/csv',
+      'image/png',
+      'image/jpeg'
+    ];
+    if (!allowed.includes(mime)) return res.status(415).json({ error: 'UNSUPPORTED_TYPE' });
+    const db = readDb();
+    const coll = (db.knowledgeCollections || []).find(c => c.id === collectionId);
+    if (!coll) return res.status(404).json({ error: 'not_found' });
+    const used = calcUsage(db, coll.tenantId);
+    const quota = (db.tenants.find(t => t.id === coll.tenantId)?.billing?.storageQuotaMB || 0) * 1024 * 1024;
+    if (used + filePart.length > quota) {
+      return res.status(409).json({ code: 'QUOTA_EXCEEDED' });
+    }
+    const fileId = String(Date.now());
+    const rel = path.join(coll.tenantId, collectionId, `${fileId}_${filename}`);
+    const full = path.join(STORAGE_DIR, rel);
+    fs.mkdirSync(path.dirname(full), { recursive: true });
+    fs.writeFileSync(full, filePart);
+    db.knowledgeSources = db.knowledgeSources || [];
+    db.knowledgeSources.push({
+      id: fileId,
+      tenantId: coll.tenantId,
+      collectionId,
+      name: filename,
+      size: filePart.length,
+      mime,
+      path: rel,
+      createdAt: new Date().toISOString()
+    });
+    const tenant = db.tenants.find(t => t.id === coll.tenantId);
+    if (tenant && tenant.billing) {
+      tenant.billing.storageUsedMB = calcUsage(db, coll.tenantId) / (1024 * 1024);
+    }
+    writeDb(db);
+    res.status(201).json({ id: fileId, name: filename, sizeBytes: filePart.length, contentType: mime, createdAt: new Date().toISOString() });
+  });
+});
+
+router.get('/knowledge/files/:id', (req, res) => {
+  const id = req.params.id;
+  const db = readDb();
+  const f = (db.knowledgeSources || []).find(s => s.id === id);
+  if (!f) return res.status(404).json({ error: 'not_found' });
+  res.type(f.mime);
+  fs.createReadStream(path.join(STORAGE_DIR, f.path)).pipe(res);
+});
+
+router.delete('/knowledge/files/:id', (req, res) => {
+  const id = req.params.id;
+  const db = readDb();
+  const f = (db.knowledgeSources || []).find(s => s.id === id);
+  if (!f) return res.status(404).json({ error: 'not_found' });
+  db.knowledgeSources = db.knowledgeSources.filter(s => s.id !== id);
+  try {
+    fs.rmSync(path.join(STORAGE_DIR, f.path), { force: true });
+  } catch {}
+  const tenant = db.tenants.find(t => t.id === f.tenantId);
+  if (tenant && tenant.billing) {
+    tenant.billing.storageUsedMB = calcUsage(db, f.tenantId) / (1024 * 1024);
+  }
+  writeDb(db);
+  res.json({ removed: true });
 });
 
 module.exports = router;
