@@ -41,6 +41,18 @@ After each run a usage line shows `{inputTokens, outputTokens, totalTokens}`; es
 
 If token quota runs out the console shows a warning and disables **Generate draft** until more tokens are credited in Billing. Provider failures emit `provider_error` events; the banner disappears after a new attempt.
 
+### Mock DB management
+
+The mock backend can persist its JSON database under `.mockdb/` so edits survive restarts.
+
+```bash
+npm run mock:save   # snapshot current mock_backend/db.json
+npm run mock:reset  # restore db.json from backup and save
+npm run mock:export # write timestamped copy to .mockdb/exports/
+```
+
+Use the **Mock DB** tab in the tenant view to inspect and edit records. Each save writes to disk and emits an `entity.updated` SSE event so other clients stay in sync.
+
 ## Realtime (SSE)
 
 Studio listens for chat events via a Server‑Sent Events stream when `ADMIN_SSE=1` (default). The backend requires both `X-Admin-Key` and a tenant token; in dev the studio passes them as query params. Heartbeats (`ADMIN_SSE_HEARTBEAT_MS`, default 20000 ms) keep the connection alive and `ADMIN_SSE_CONN_LIMIT` caps simultaneous streams per token. If SSE is disabled or unsupported the Studio falls back to polling every few seconds and the header indicator turns yellow or red.

@@ -62,6 +62,17 @@ PROVIDER_TIMEOUT_MS=60000
 - Create a `.env.local` with `VITE_E2E=1` and restart the dev server to stay logged in.
 - Common pitfall: opening `/login.html` directly. Use the hash route (`/#/`) or append `?skipAuth=1`.
 
+## Mock DB utilities
+
+The mock back‑end stores its data in `mock_backend/db.json`. Helper scripts mirror the current state to the
+`.mockdb/` directory so it can be reset or archived.
+
+```bash
+npm run mock:save   # copy db.json to .mockdb/db.json
+npm run mock:reset  # restore db.json from backup and save
+npm run mock:export # snapshot to .mockdb/exports/
+```
+
 ## Production build
 
 To produce a production build of the front‑end, run:

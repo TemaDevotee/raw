@@ -2,3 +2,5 @@ node_modules/
 mock_backend/node_modules/
 dist/
 .env
+
+.mockdb/

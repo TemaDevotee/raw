@@ -49,6 +49,7 @@ Use this section to draft release notes for the next version. Copy relevant entr
 - Live chat console with polling and draft approve/discard
 - Realtime SSE stream for chats, drafts and presence in Simulator Studio
 - Background agent runner generating draft replies with pause/resume controls
+- Mock DB persistence scripts (`mock:save`, `mock:reset`, `mock:export`)
 
 ## Billing
 
