@@ -71,6 +71,8 @@ The mock back‑end stores its data in `mock_backend/db.json`. Helper scripts mi
 npm run mock:save   # copy db.json to .mockdb/db.json
 npm run mock:reset  # restore db.json from backup and save
 npm run mock:export # snapshot to .mockdb/exports/
+npm run mock:snapshot:list   # list available snapshots
+npm run mock:snapshot:load -- <name> # load snapshot into current
 ```
 
 ## Production build

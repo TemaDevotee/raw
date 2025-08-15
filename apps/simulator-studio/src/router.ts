@@ -4,6 +4,7 @@ import TenantView from './pages/TenantView.vue'
 import ChatConsole from './pages/ChatConsole.vue'
 import Login from './pages/Login.vue'
 import NotFound from './pages/NotFound.vue'
+import SystemMockDb from './pages/SystemMockDb.vue'
 import { useAuthStore } from './stores/auth'
 
 const router = createRouter({
@@ -13,6 +14,7 @@ const router = createRouter({
     { path: '/tenants', component: TenantsList },
     { path: '/tenants/:tenantId', component: TenantView },
     { path: '/tenants/:tenantId/chats/:chatId/console', component: ChatConsole },
+    { path: '/system/mockdb', component: SystemMockDb },
     { path: '/login', component: Login },
     { path: '/:pathMatch(.*)*', component: NotFound }
   ]

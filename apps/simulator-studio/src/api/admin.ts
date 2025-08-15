@@ -137,3 +137,24 @@ export function getAgentSettings(chatId: string) {
 export function saveAgentSettings(chatId: string, body: any) {
   return put(`/admin/chats/${chatId}/settings`, body)
 }
+
+// Mock DB management
+export function listMockDbSnapshots() {
+  return get('/admin/mockdb/snapshots')
+}
+
+export function saveMockDb() {
+  return post('/admin/mockdb/save')
+}
+
+export function loadMockDb(name: string) {
+  return post('/admin/mockdb/load', { name })
+}
+
+export function deleteMockDbSnapshot(name: string) {
+  return del(`/admin/mockdb/snapshots/${encodeURIComponent(name)}`)
+}
+
+export function downloadMockDbSnapshot(name: string) {
+  return download(`/admin/mockdb/snapshots/${encodeURIComponent(name)}`)
+}
