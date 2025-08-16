@@ -1,9 +1,20 @@
 <template>
-  <Shell>
-    <router-view />
-  </Shell>
+  <div class="h-screen w-screen flex bg-[#0b0f17] text-slate-100">
+    <Sidebar />
+    <main class="flex-1 overflow-auto p-6">
+      <RouterView />
+    </main>
+    <SidePanel />
+    <ToastNotification />
+  </div>
 </template>
 
 <script setup lang="ts">
-import Shell from './components/Shell.vue'
+import Sidebar from '@/components/Sidebar.vue'
+import SidePanel from '@/components/SidePanel.vue'
+import ToastNotification from '@/components/ToastNotification.vue'
 </script>
+
+<style>
+html,body,#app { margin:0; height:100%; }
+</style>

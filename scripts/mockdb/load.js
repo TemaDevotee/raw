@@ -5,10 +5,9 @@ const root = path.resolve(__dirname, '..', '..');
 const dir = path.join(root, '.mockdb');
 const dbPath = path.join(root, 'mock_backend', 'db.json');
 
-const idx = process.argv.indexOf('--name');
-const name = idx !== -1 ? process.argv[idx + 1] : '';
+const name = process.argv[2];
 if (!name) {
-  console.error('usage: node load.js --name <snapshot>');
+  console.error('usage: node load.js <snapshot>');
   process.exit(1);
 }
 const src = path.join(dir, `${name}.json`);
