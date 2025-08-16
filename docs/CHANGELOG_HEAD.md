@@ -50,6 +50,9 @@ Use this section to draft release notes for the next version. Copy relevant entr
 - Realtime SSE stream for chats, drafts and presence in Simulator Studio
 - Background agent runner generating draft replies with pause/resume controls
 - Mock DB persistence scripts (`mock:save`, `mock:reset`, `mock:export`)
+- Standalone Studio on port 5199 with dashboard, chats, knowledge, billing and account views
+- Sidebar Mock DB Manager with autosave, snapshots, reset and export
+- Chat Console uses mock backend for client/agent messaging
 
 ## Billing
 
