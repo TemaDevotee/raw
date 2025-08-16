@@ -47,9 +47,13 @@ router.afterEach(() => {
 const PUBLIC = new Set(['login']);
 
 router.beforeEach((to, _from, next) => {
-  ensureAuthFromQuery();
+  const authed = ensureAuthFromQuery();
+  if (authed && to.fullPath !== '/') return next('/');
   if (PUBLIC.has(String(to.name))) return next();
-  if (!isAuthed()) return next({ name: 'login' });
+  if (!isAuthed()) {
+    window.location.href = '/login.html';
+    return;
+  }
   return next();
 });
 
