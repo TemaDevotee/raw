@@ -32,7 +32,6 @@
     "mock:autosave:on": "MOCK_AUTOSAVE=1 node mock_backend/server.js",
     "mock:autosave:off": "MOCK_AUTOSAVE=0 node mock_backend/server.js",
     "dev:all": "concurrently -k -n BACKEND,APP,STUDIO -c cyan,green,magenta \"npm:mock:dev\" \"npm:dev\" \"npm:admin:dev\"",
-    "seed:demo": "node scripts/seed-demo.js",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
     "e2e:headed": "playwright test --headed",

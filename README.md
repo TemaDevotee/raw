@@ -4,12 +4,6 @@ This repository contains the complete front‑end and mock API server for the **
 
 ## Локальный запуск (мок-режим)
 
-1. `npm install`
-2. `cp .env.example .env`
-3. `npm run mock:dev` — мок‑бэкенд на 5174
-4. `npm run admin:dev` — откройте [http://localhost:5199/login.html?skipAuth=1](http://localhost:5199/login.html?skipAuth=1)
-   или войдите `app / 123qweQWE!@#`
-5. Навигация и **Mock DB** (Autosave/Save/Load/Reset/Export) должны работать; тосты появляются сверху
 
 If `npm install` fails with a 403 error, reset the npm registry:
 
@@ -17,12 +11,6 @@ If `npm install` fails with a 403 error, reset the npm registry:
 npm config set registry https://registry.npmjs.org/
 npm cache clean --force
 ```
-
-## Demo accounts & seeding
-
-- `npm run seed:demo` — re-seed mock backend with three demo tenants
-- Accounts: `alpha / Alpha123!`, `bravo / Bravo123!`, `charlie / Charlie123!`
-
 ## For developers
 
 - [AGENTS.md](AGENTS.md) – ground rules for contributors
