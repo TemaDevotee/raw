@@ -5,14 +5,15 @@
   "type": "module",
   "scripts": {
     "deploy": "gh-pages -d dist",
-    "dev": "vite",
+    "dev": "vite --port 5173",
+    "client:dev": "vite --port 5173",
     "build": "vite build",
     "postbuild": "node scripts/after-build.cjs",
     "postinstall": "npx playwright install --with-deps || true",
     "preview": "vite preview --host --port 5173",
     "dev:e2e": "vite --host 127.0.0.1 --port 5173 --strictPort --mode e2e",
     "preview:e2e": "vite build --mode e2e && vite preview --host 127.0.0.1 --port 5173 --strictPort",
-    "mock:dev": "node ./server/mock/index.js",
+    "mock:dev": "node apps/mock-backend/server.js",
     "admin:dev": "vite --config apps/simulator-studio/vite.config.ts --port 5199",
     "admin:build": "vite build --config apps/simulator-studio/vite.config.ts",
     "admin:preview": "vite preview --config apps/simulator-studio/vite.config.ts --port 5199",
@@ -23,27 +24,32 @@
     "test": "vitest run",
     "dev:backend": "npm --prefix mock_backend start",
     "mock": "node mock_backend/server.js",
-    "mock:save": "node scripts/mockdb/save.js",
-    "mock:reset": "node scripts/mockdb/reset.js",
+    "mock:save": "node apps/mock-backend/snapshots/save.js",
+    "mock:reset": "node apps/mock-backend/snapshots/reset.js",
     "mock:export": "node scripts/mockdb/export.js",
-    "mock:list": "node scripts/mockdb/list.js",
-    "mock:load": "node scripts/mockdb/load.js",
+    "mock:list": "node apps/mock-backend/snapshots/list.js",
+    "mock:load": "node apps/mock-backend/snapshots/load.js",
     "mock:autosave:on": "MOCK_AUTOSAVE=1 node mock_backend/server.js",
     "mock:autosave:off": "MOCK_AUTOSAVE=0 node mock_backend/server.js",
-    "dev:all": "concurrently \"npm run dev\" \"npm run dev:backend\"",
+    "dev:all": "concurrently -k -n BACKEND,APP,STUDIO -c cyan,green,magenta \"npm:mock:dev\" \"npm:dev\" \"npm:admin:dev\"",
+    "seed:demo": "node scripts/seed-demo.js",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
     "e2e:headed": "playwright test --headed",
     "e2e:report": "playwright show-report",
     "docs:open": "xdg-open docs/ARCHITECTURE.md || open docs/ARCHITECTURE.md || start docs/ARCHITECTURE.md",
-    "open:dev": "start http://localhost:5199/#/console"
+    "open:dev": "start http://localhost:5199/#/console",
+    "admin:open": "start http://localhost:5199/login.html?skipAuth=1"
   },
   "dependencies": {
     "axios": "^1.7.0",
     "dayjs": "^1.11.11",
     "pinia": "^2.1.7",
     "vue": "^3.4.21",
-    "vue-router": "^4.3.0"
+    "vue-router": "^4.3.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "nanoid": "^5.0.7"
   },
   "devDependencies": {
     "@playwright/test": "^1.46.0",
@@ -57,5 +63,9 @@
     "postcss": "^8.4.38",
     "prettier": "^3.2.5",
     "tailwindcss": "^3.4.3",
+    "typescript": "^5.4.0",
+    "vite": "^5.4.0",
+    "vue-tsc": "^1.8.27",
+    "@types/node": "^20.11.30"
   }
 }

@@ -6,10 +6,8 @@
     (function () {
       const sp = new URLSearchParams(location.search);
       if (sp.get('skipAuth') === '1') {
-        try {
-          localStorage.setItem('auth:session', JSON.stringify({user:'dev',role:'user',ts:Date.now()}));
-        } catch(e) {}
-        location.replace('/#/');
+        try { sessionStorage.setItem('skipAuth','1'); } catch(e) {}
+        location.replace('/#/?skipAuth=1');
       }
     })();
   </script>

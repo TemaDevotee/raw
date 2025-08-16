@@ -30,10 +30,9 @@ if (isE2E) {
 }
 
 const params = new URLSearchParams(location.search)
-const skipAuth = params.get('skipAuth') === '1'
+const skipAuth = params.get('skipAuth') === '1' || sessionStorage.getItem('skipAuth') === '1'
 if (isE2E || skipAuth) {
   authStore.forceLogin()
-  localStorage.setItem('skipAuth', 'true')
 }
 
 const app = createApp(App)
