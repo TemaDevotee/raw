@@ -1,7 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import DashboardView from '@/views/DashboardView.vue';
 import AgentDetailView from '@/views/AgentDetailView.vue';
-import { authStore } from '@/stores/authStore';
+import { isAuthed, ensureAuthFromQuery } from '@/auth/session';
 import langStore from '@/stores/langStore';
 import { showToast } from '@/stores/toastStore';
 
@@ -44,43 +44,13 @@ router.afterEach(() => {
   }
 });
 
-// NOTE: login.html is a separate static page (outside the SPA).
-// To reach it, we must do a full navigation here.
-router.beforeEach(async (to, from, next) => {
-  if (to.query.impersonate && !sessionStorage.getItem('dev.tenant')) {
-    try {
-      const res = await fetch(`/api/dev/impersonate/verify?token=${to.query.impersonate}`)
-      if (res.ok) {
-        const data = await res.json()
-        sessionStorage.setItem('dev.tenant', data.tenantId)
-        authStore.forceLogin()
-        localStorage.setItem('skipAuth', 'true')
-        const q = { ...to.query }
-        delete q.impersonate
-        next({ path: to.path, query: q, replace: true })
-        return
-      }
-    } catch {}
-  }
-  const skip = to.query.skipAuth === '1' || import.meta.env.VITE_E2E === '1'
-  if (skip) {
-    authStore.forceLogin()
-    localStorage.setItem('skipAuth', 'true')
-    return next()
-  }
+const PUBLIC = new Set(['login']);
 
-  const isAuthed = authStore.isAuthenticated()
-  const isLoginRoute = to.path === '/login' || to.path === '/login.html'
-  const skipAuth = localStorage.getItem('skipAuth') === 'true'
-  if (!isAuthed && !isLoginRoute && !skipAuth) {
-    window.location.assign('/login.html')
-    return
-  }
-  if (isAuthed && isLoginRoute) {
-    next({ path: '/' })
-    return
-  }
-  next()
-})
+router.beforeEach((to, _from, next) => {
+  ensureAuthFromQuery();
+  if (PUBLIC.has(String(to.name))) return next();
+  if (!isAuthed()) return next({ name: 'login' });
+  return next();
+});
 
 export default router;

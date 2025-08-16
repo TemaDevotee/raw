@@ -4,15 +4,13 @@
     <main class="flex-1 overflow-auto p-6">
       <RouterView />
     </main>
-    <SidePanel />
-    <ToastNotification />
+    <ToastContainer />
   </div>
 </template>
 
 <script setup lang="ts">
 import Sidebar from '@/components/Sidebar.vue'
-import SidePanel from '@/components/SidePanel.vue'
-import ToastNotification from '@/components/ToastNotification.vue'
+import ToastContainer from '@/components/ToastContainer.vue'
 </script>
 
 <style>

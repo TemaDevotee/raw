@@ -327,14 +327,17 @@ const assignMenu = computed(() => {
   }
   return items;
 });
-const messages = ref([]);
+const transcriptStore = useTranscriptStore();
+const messages = computed(() => transcriptStore.messages);
 watch(messages, (arr, prev) => {
-  if (arr.length > prev.length) {
-    const msg = arr[arr.length - 1];
-    if (msg.sender === 'agent' && !msg.tokenUsage) {
-      const outputTokens = estimateTokensForText(msg.text);
+  const latest = arr.at(-1);
+  const prevLatest = prev.at(-1);
+  if (latest && (!prevLatest || latest.id !== prevLatest.id)) {
+    outboxStore.flush();
+    if (latest.sender === 'agent' && !latest.tokenUsage) {
+      const outputTokens = estimateTokensForText(latest.text);
       const inputTokens = 0;
-      msg.tokenUsage = {
+      latest.tokenUsage = {
         inputTokens,
         outputTokens,
         totalTokens: inputTokens + outputTokens,
@@ -349,7 +352,7 @@ watch(messages, (arr, prev) => {
       });
     }
   }
-});
+}, { deep: true });
 const messagesContainer = ref(null);
 watch(messages, () => {
   nextTick(() => {
@@ -453,7 +456,10 @@ async function fetchChat() {
     chat.value = res.data;
     chatStore.updateChat(res.data);
     chatStore.handleStatusChange(chat.value, chat.value.status);
-    messages.value = res.data.messages || [];
+    transcriptStore.messages = res.data.messages || [];
+    transcriptStore.currentId = chatId;
+    transcriptStore.lastTs = transcriptStore.messages.length ? Math.max(...transcriptStore.messages.map((m) => m.ts)) : null;
+    transcriptStore.startAutoRefresh();
     if (!chat.value.controlBy) chat.value.controlBy = res.data.controlBy || 'agent'
     if (res.data.heldBy) chat.value.heldBy = res.data.heldBy
     const draft = composerStore.get(chatId);
@@ -532,7 +538,7 @@ async function sendMessage() {
   if (!newMessage.value.trim()) return;
   const body = newMessage.value.trim();
   const msgRef = outboxStore.enqueue(chatId, body);
-  messages.value.push({
+  transcriptStore.messages.push({
     sender: 'operator',
     text: body,
     time: new Date().toLocaleTimeString(),
@@ -546,6 +552,7 @@ async function sendMessage() {
 onBeforeUnmount(() => {
   presenceStore.leave(chatId, currentUser);
   if (billingPoll) clearInterval(billingPoll);
+  transcriptStore.close();
 });
 
 async function interfere() {
@@ -587,7 +594,7 @@ async function fetchDrafts() {
 
 async function approveDraft(d) {
   const msg = await draftStore.approve(chatId, d.id);
-  if (msg) messages.value.push(msg);
+  if (msg) transcriptStore.messages.push(msg);
 }
 
 async function rejectDraft(d) {
