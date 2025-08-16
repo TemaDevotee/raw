@@ -15,11 +15,16 @@ export function setDevAuth() {
 
 export function ensureAuthFromQuery(): boolean {
   const sp = new URLSearchParams(location.search);
-  if (sp.get('skipAuth') === '1') {
+  const fromQuery = sp.get('skipAuth') === '1';
+  const fromFlag = sessionStorage.getItem('skipAuth') === '1';
+  if (fromQuery || fromFlag) {
     setDevAuth();
-    const url = new URL(location.href);
-    url.searchParams.delete('skipAuth');
-    history.replaceState({}, '', url);
+    sessionStorage.removeItem('skipAuth');
+    if (fromQuery) {
+      const url = new URL(location.href);
+      url.searchParams.delete('skipAuth');
+      history.replaceState({}, '', url);
+    }
     return true;
   }
   return false;
