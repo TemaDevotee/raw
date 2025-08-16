@@ -78,6 +78,7 @@ Simulator Studio in [`apps/simulator-studio/`](../apps/simulator-studio/) browse
 | --- | --- |
 | [mock_backend/server.js](../mock_backend/server.js) | Express mock server |
 | [mock_backend/db.json](../mock_backend/db.json) | Fixture data for chats, agents and knowledge |
+| [mock_backend/routes/admin-db.js](../mock_backend/routes/admin-db.js) | Dev endpoints for snapshot, load and autosave |
 
 ## 3. Key flows
 - **Chats list:** groups chats by status, applies filters, displays status dot, SLA chip, presence stacks and agent badge. Search normalizes client name, ID and agent name. Group collapse state saved in `sessionStorage`.

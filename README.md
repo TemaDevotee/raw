@@ -151,31 +151,23 @@ The mock backend seeds three demo tenants: `acme` (FREE), `globex` (PRO) and `in
 Use the **Open App** button on a tenant to launch the main app as that tenant via a short-lived impersonation token.
 See [docs/ADMIN_STUDIO.md](docs/ADMIN_STUDIO.md) for details.
 
-```bash
-cp apps/simulator-studio/.env.example apps/simulator-studio/.env
-# backend: set ADMIN_KEY and ADMIN_ORIGIN in the root .env
-# studio: adjust VITE_ADMIN_API_BASE and VITE_ADMIN_KEY to match
-npm run dev          # main front + mock backend
-npm run admin:dev    # studio at http://localhost:5199
+### Local setup
 
-# optional: enable dev login with roles
-export DEV_LOGIN=1        # backend
-echo 'VITE_DEV_LOGIN=1' >> apps/simulator-studio/.env
-```
+1. `cp .env.example .env`
+   - `VITE_API_BASE=http://localhost:5173`
+   - `VITE_ADMIN_KEY=dev-admin`
+2. `npm install`
+3. `npm run dev` – main app on **5173**
+4. `npm run admin:dev` – Studio on **5199**
+5. Mock DB panel offers:
+   - Autosave toggle
+   - Save / Load snapshot
+   - Reset
+   - Export
 
-If requests from the studio return **401/403**, ensure the mock backend
+If Studio requests return **401/403**, ensure the mock backend
 allows CORS from `http://localhost:5199` and that `X-Admin-Key`
-matches between `ADMIN_KEY` and `VITE_ADMIN_KEY`.
-
-The sidebar lists **Tenants**, **Search** and **System**.
-From the Tenants table you can open a tenant and browse tabs for:
-
-* **Workspaces** — tenant workspaces list.
-* **Agents** — agent name, model/provider and status.
-* **Knowledge** — collections and files with upload / download / delete and storage usage.
-* **Chats** — chat list with "Open Console" and "New Chat".
-* **Billing** — plan, token and storage usage. Owner role can change plan or quotas, operators/viewers see read-only data.
-* **Integrations** — connected providers.
+matches `VITE_ADMIN_KEY`.
 
 The Chat Console lets you talk to yourself: left side as client, right side as agent/operator. Grey bubbles are agent drafts; approve publishes, discard removes. Role affects abilities: viewers see read-only, operators and owners can send and moderate.
 
