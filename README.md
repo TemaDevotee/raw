@@ -4,13 +4,6 @@ This repository contains the complete front‑end and mock API server for the **
 
 ## Локальный запуск (мок-режим)
 
-1. `npm ci`
-2. `cp .env.example .env`
-3. `npm run dev:all`
-4. Клиент: http://localhost:5173/login.html?skipAuth=1
-   Studio: http://localhost:5199/#/console
-
-Панель **Mock DB** в Studio содержит: Autosave, Save, Load, Reset, Export. Файлы лежат в `.mockdb/`.
 
 If `npm install` fails with a 403 error, reset the npm registry:
 
@@ -18,7 +11,6 @@ If `npm install` fails with a 403 error, reset the npm registry:
 npm config set registry https://registry.npmjs.org/
 npm cache clean --force
 ```
-
 ## For developers
 
 - [AGENTS.md](AGENTS.md) – ground rules for contributors
