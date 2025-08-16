@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 
 const routes = [
+  { path: '/console', name: 'console', component: () => import('@studio/views/ConsoleView.vue') },
   { path: '/', name: 'dashboard', component: () => import('@/views/DashboardView.vue') },
   { path: '/chats', name: 'chats', component: () => import('@/views/ChatsView.vue') },
   { path: '/chats/:id', name: 'chat', component: () => import('@/views/ChatWindow.vue'), props: true },

@@ -5,13 +5,14 @@
   "type": "module",
   "scripts": {
     "deploy": "gh-pages -d dist",
-    "dev": "vite --port 5173",
+    "dev": "vite",
     "build": "vite build",
     "postbuild": "node scripts/after-build.cjs",
     "postinstall": "npx playwright install --with-deps || true",
     "preview": "vite preview --host --port 5173",
     "dev:e2e": "vite --host 127.0.0.1 --port 5173 --strictPort --mode e2e",
     "preview:e2e": "vite build --mode e2e && vite preview --host 127.0.0.1 --port 5173 --strictPort",
+    "mock:dev": "node ./server/mock/index.js",
     "admin:dev": "vite --config apps/simulator-studio/vite.config.ts --port 5199",
     "admin:build": "vite build --config apps/simulator-studio/vite.config.ts",
     "admin:preview": "vite preview --config apps/simulator-studio/vite.config.ts --port 5199",
@@ -34,11 +35,12 @@
     "e2e:ui": "playwright test --ui",
     "e2e:headed": "playwright test --headed",
     "e2e:report": "playwright show-report",
-    "docs:open": "xdg-open docs/ARCHITECTURE.md || open docs/ARCHITECTURE.md || start docs/ARCHITECTURE.md"
+    "docs:open": "xdg-open docs/ARCHITECTURE.md || open docs/ARCHITECTURE.md || start docs/ARCHITECTURE.md",
+    "open:dev": "start http://localhost:5199/#/console"
   },
   "dependencies": {
-    "axios": "^1.6.8",
-    "dayjs": "^1.11.10",
+    "axios": "^1.7.0",
+    "dayjs": "^1.11.11",
     "pinia": "^2.1.7",
     "vue": "^3.4.21",
     "vue-router": "^4.3.0"
@@ -55,10 +57,5 @@
     "postcss": "^8.4.38",
     "prettier": "^3.2.5",
     "tailwindcss": "^3.4.3",
-    "@types/node": "^20",
-    "typescript": "^5",
-    "vite": "^5.2.8",
-    "vitest": "^1.6.0",
-    "vue-tsc": "^2"
   }
 }

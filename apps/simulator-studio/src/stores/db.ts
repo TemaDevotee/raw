@@ -1,51 +1,74 @@
-import { defineStore } from 'pinia'
-import { adminClient } from '@/lib/adminClient'
+import { defineStore } from 'pinia';
+import api from '@studio/adminClient';
+import { showToast } from '@studio/stores/toast';
+import { t } from '@/i18n.js';
+
+const lang = navigator.language.startsWith('ru') ? 'ru' : 'en';
 
 export const useDbStore = defineStore('db', {
-  state: () => ({
-    autosave: false as boolean,
-    snapshots: [] as string[],
-    loading: false as boolean,
-    toast: '' as string
-  }),
+  state: () => ({ autosave: false, snapshots: [] as string[], busy: false }),
   actions: {
-    async ping() {
-      try { await adminClient.get('/admin/db/ping') } catch {}
-    },
-    async refreshSnapshots() {
-      this.loading = true
+    async refresh() {
       try {
-        const { data } = await adminClient.get('/admin/db/snapshots')
-        this.snapshots = data?.snapshots ?? []
-      } finally { this.loading = false }
+        const { data } = await api.get('/admin/db/snapshots');
+        this.snapshots = data.snapshots || [];
+        this.autosave = !!data.autosave;
+      } catch {
+        showToast('Error / Ошибка', 'error');
+      }
     },
-    async setAutosave(on: boolean) {
-      this.autosave = on
-      await adminClient.post('/admin/db/autosave', { enabled: on })
-      this.notify(on ? 'Autosave enabled / Автосохранение включено' : 'Autosave disabled / Автосохранение выключено')
+    async toggleAutosave() {
+      this.busy = true;
+      try {
+        const { data } = await api.post('/admin/db/autosave/toggle', { enabled: !this.autosave });
+        this.autosave = !!data.enabled;
+        showToast(t(lang, this.autosave ? 'autosaveOn' : 'autosaveOff'));
+      } catch {
+        showToast('Error / Ошибка', 'error');
+      } finally {
+        this.busy = false;
+      }
     },
-    async save(name?: string) {
-      await adminClient.post('/admin/db/snapshots', { name })
-      await this.refreshSnapshots()
-      this.notify('Snapshot saved / Снапшот сохранён')
+    async saveSnapshot() {
+      this.busy = true;
+      try {
+        await api.post('/admin/db/snapshot/save');
+        showToast(t(lang, 'savedSnapshot'));
+      } catch {
+        showToast('Error / Ошибка', 'error');
+      } finally {
+        this.busy = false;
+      }
     },
-    async load(name: string) {
-      await adminClient.post(`/admin/db/snapshots/${encodeURIComponent(name)}/load`)
-      this.notify(`Loaded snapshot: ${name} / Загружен снапшот: ${name}`)
+    async loadSnapshot(name: string) {
+      this.busy = true;
+      try {
+        await api.post('/admin/db/snapshot/load', { name });
+        showToast(t(lang, 'loadedSnapshot'));
+      } catch {
+        showToast('Error / Ошибка', 'error');
+      } finally {
+        this.busy = false;
+      }
     },
-    async reset() {
-      await adminClient.post('/admin/db/reset')
-      this.notify('Mock DB reset / Мок-БД сброшена')
+    async resetDb() {
+      this.busy = true;
+      try {
+        await api.post('/admin/db/snapshot/reset');
+        showToast(t(lang, 'reset'));
+      } catch {
+        showToast('Error / Ошибка', 'error');
+      } finally {
+        this.busy = false;
+      }
     },
-    async export() {
-      const { data } = await adminClient.get('/admin/db/export')
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url; a.download = 'mockdb-export.json'; a.click()
-      URL.revokeObjectURL(url)
-      this.notify('Mock DB exported / Мок-БД экспортирована')
+    async exportDb() {
+      try {
+        location.href = `${import.meta.env.VITE_API_BASE}/admin/db/export`;
+        showToast(t(lang, 'exported'));
+      } catch {
+        showToast('Error / Ошибка', 'error');
+      }
     },
-    notify(msg: string) { this.toast = msg; setTimeout(() => this.toast = '', 2500) }
   }
-})
+});

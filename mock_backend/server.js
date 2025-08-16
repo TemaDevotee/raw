@@ -33,6 +33,7 @@ const { router: adminDevRoutes, tokens: devTokens } = require('./routes/admin-de
 const adminChatsRoutes = require('./routes/admin-chats');
 const adminEventsRoutes = require('./routes/admin-events');
 const adminAgentsRoutes = require('./routes/admin-agents');
+const appChatsRoutes = require('./routes/app-chats');
 // dev-only admin DB routes
 let adminDbRoutes = null
 if (process.env.NODE_ENV !== 'production') {
@@ -119,7 +120,6 @@ app.use(
 app.use(
   '/admin/events',
   cors({ origin: ADMIN_ORIGIN, methods: ['GET', 'OPTIONS'], allowedHeaders: ['X-Admin-Key','Authorization'] }),
-  requireAdmin,
   adminEventsRoutes
 );
 
@@ -136,6 +136,8 @@ app.use(
     origin: ['http://localhost:5173', 'http://localhost:5174', ADMIN_ORIGIN]
   })
 );
+
+app.use('/app/chats', appChatsRoutes);
 
 // Mount modular routers.  The base path for each module corresponds
 // to the resource it manages.  See the files in mock_backend/routes
