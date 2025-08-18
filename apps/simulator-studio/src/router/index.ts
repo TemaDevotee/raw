@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/authStore';
 const routes = [
   
   { path: '/login', name: 'login', component: () => import('@/views/LoginView.vue') },
+  { path: '/preflight', name: 'preflight', component: () => import('@/views/PreflightView.vue') },
   { path: '/', name: 'dashboard', component: () => import('@/views/DashboardView.vue') },
   { path: '/chats', name: 'chats', component: () => import('@/views/ChatsView.vue') },
   { path: '/chats/:id', name: 'chat', component: () => import('@/views/ChatWindow.vue'), props: true },

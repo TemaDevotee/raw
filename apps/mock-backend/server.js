@@ -4,6 +4,7 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { nanoid } from 'nanoid';
+import crypto from 'crypto';
 import { db } from './db.js';
 import { seedDemo } from './seed/demoTenants.js';
 import { estimateTokens, chargeMessage, ensureReset } from './services/billing.js';
@@ -16,10 +17,10 @@ export const app = express();
 const appPort = Number(process.env.APP_PORT) || 5173;
 const studioPort = Number(process.env.STUDIO_PORT) || 5199;
 const port = Number(process.env.MOCK_PORT) || 3001;
-const ADMIN_KEY = process.env.VITE_ADMIN_KEY || 'dev_admin_key';
+const ADMIN_KEY = process.env.VITE_ADMIN_KEY || 'dev-admin-key';
+const JWT_SECRET = process.env.MOCK_JWT_SECRET || 'dev-secret-please-change';
 
 const userIndex = new Map(); // email -> user
-const sessions = new Map(); // token -> { userId, tenantId }
 
 function buildUserIndex() {
   userIndex.clear();
@@ -28,19 +29,15 @@ function buildUserIndex() {
   }
 }
 
-if (process.env.SEED_ON_START === '1') {
-  seedDemo(db, { writeFiles: true });
-  buildUserIndex();
-}
+// seeds are triggered via scripts; just build index on start
+buildUserIndex();
 
-if (process.env.VITE_ALLOW_CORS === '1') {
-  app.use(
-    cors({
-      origin: [`http://localhost:${appPort}`, `http://localhost:${studioPort}`],
-      credentials: true,
-    }),
-  );
-}
+app.use(
+  cors({
+    origin: [`http://localhost:${appPort}`, `http://localhost:${studioPort}`],
+    credentials: true,
+  }),
+);
 
 app.use(express.json());
 
@@ -70,16 +67,36 @@ function getTenant(req, res) {
   return tenant;
 }
 
+function signToken(payload) {
+  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+  const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const signature = crypto
+    .createHmac('sha256', JWT_SECRET)
+    .update(`${header}.${body}`)
+    .digest('base64url');
+  return `${header}.${body}.${signature}`;
+}
+
+function verifyToken(token) {
+  const [header, body, sig] = token.split('.');
+  if (!header || !body || !sig) return null;
+  const expected = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest('base64url');
+  if (expected !== sig) return null;
+  try {
+    return JSON.parse(Buffer.from(body, 'base64url').toString());
+  } catch {
+    return null;
+  }
+}
+
 app.post('/auth/login', (req, res) => {
-  if (process.env.USE_DEMO_AUTH !== '1') return res.status(501).json({ error: 'auth_disabled' });
   const { email, password } = req.body || {};
   const user = userIndex.get(email);
   if (!user || user.password !== password || !user.isActive) {
-    return res.status(401).json({ error: 'invalid_credentials' });
+    return res.status(401).json({ message: 'Invalid credentials' });
   }
   const tenantId = user.memberships[0]?.tenantId;
-  const token = nanoid();
-  sessions.set(token, { userId: user.id, tenantId });
+  const token = signToken({ userId: user.id, tenantId });
   const tenants = user.memberships.map((m) => ({
     id: m.tenantId,
     name: db.tenants.find((t) => t.slug === m.tenantId)?.name || m.tenantId,
@@ -91,13 +108,12 @@ app.post('/auth/login', (req, res) => {
 function authMiddleware(req, res, next) {
   const header = req.get('Authorization') || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : '';
-  const session = sessions.get(token);
-  if (!session) return res.status(401).json({ error: 'invalid_token' });
-  const user = db.users.find((u) => u.id === session.userId);
+  const payload = verifyToken(token);
+  if (!payload) return res.status(401).json({ error: 'invalid_token' });
+  const user = db.users.find((u) => u.id === payload.userId);
   if (!user || !user.isActive) return res.status(401).json({ error: 'invalid_token' });
   req.user = user;
-  req.token = token;
-  req.tenantId = session.tenantId;
+  req.tenantId = payload.tenantId;
   next();
 }
 
@@ -119,23 +135,24 @@ app.post('/auth/switch-tenant', authMiddleware, (req, res) => {
   const { tenantId } = req.body || {};
   const membership = req.user.memberships.find((m) => m.tenantId === tenantId);
   if (!membership) return res.status(403).json({ error: 'forbidden' });
-  const newToken = nanoid();
-  sessions.delete(req.token);
-  sessions.set(newToken, { userId: req.user.id, tenantId });
+  const token = signToken({ userId: req.user.id, tenantId });
   const tenants = req.user.memberships.map((m) => ({
     id: m.tenantId,
     name: db.tenants.find((t) => t.slug === m.tenantId)?.name || m.tenantId,
     role: m.role,
   }));
-  res.json({ token: newToken, currentTenantId: tenantId, tenants });
+  res.json({ token, currentTenantId: tenantId, tenants });
 });
 
-app.post('/auth/logout', authMiddleware, (req, res) => {
-  sessions.delete(req.token);
+app.post('/auth/logout', authMiddleware, (_req, res) => {
   res.json({ ok: true });
 });
 
 app.get('/', (_req, res) => res.json({ ok: true }));
+
+app.get('/health', (_req, res) => {
+  res.json({ ok: true, uptime: process.uptime(), tenants: db.tenants.length, users: db.users.length });
+});
 
 app.post('/admin/dev/reseed', requireAdmin, (req, res) => {
   if (process.env.NODE_ENV === 'production') return res.status(404).end();
@@ -167,6 +184,13 @@ app.get('/admin/agents', authMiddleware, requireAdmin, (req, res) => {
   if (!tenant) return;
   const items = tenant.agents.map((a) => ({ id: a.id, name: a.name, avatarUrl: a.avatarUrl }));
   res.json({ items });
+});
+
+app.get('/admin/knowledge/files', authMiddleware, requireAdmin, (req, res) => {
+  const tenant = getTenant(req, res);
+  if (!tenant) return;
+  const collection = tenant.knowledge.collections[0];
+  res.json({ items: collection ? collection.files : [] });
 });
 
 app.get('/admin/users', authMiddleware, requireAdmin, (req, res) => {
@@ -468,7 +492,7 @@ if (process.env.NODE_ENV !== 'test') {
   });
   if (process.env.MOCK_ENABLE_SIMULATOR === 'true') {
     const { initWs } = await import('./ws/server.js');
-    initWs(serverInstance, sessions);
+    initWs(serverInstance, verifyToken);
   }
 }
 

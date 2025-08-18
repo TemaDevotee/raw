@@ -2,18 +2,18 @@ import { WebSocketServer } from 'ws';
 
 const tenants = new Map(); // tenantId -> Set<WebSocket>
 
-export function initWs(server, sessions) {
+export function initWs(server, verifyToken) {
   const wss = new WebSocketServer({ server, path: '/ws' });
   wss.on('connection', (socket, req) => {
     try {
       const url = new URL(req.url, 'http://localhost');
       const token = url.searchParams.get('token');
-      const session = sessions.get(token);
-      if (!session) {
+      const payload = verifyToken(token || '');
+      if (!payload) {
         socket.close();
         return;
       }
-      const tenantId = session.tenantId;
+      const tenantId = payload.tenantId;
       socket._tenantId = tenantId;
       if (!tenants.has(tenantId)) tenants.set(tenantId, new Set());
       tenants.get(tenantId).add(socket);

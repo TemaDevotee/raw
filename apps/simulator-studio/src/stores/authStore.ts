@@ -26,8 +26,9 @@ export const useAuthStore = defineStore('auth', {
   },
   actions: {
     persistToken(token: string | null) {
-      if (token) localStorage.setItem('studio.auth.token', token);
-      else localStorage.removeItem('studio.auth.token');
+      const key = import.meta.env.VITE_STUDIO_TOKEN_KEY || 'studio.auth.token';
+      if (token) localStorage.setItem(key, token);
+      else localStorage.removeItem(key);
     },
     async fetchMe() {
       if (!this.token) return;
@@ -67,7 +68,8 @@ export const useAuthStore = defineStore('auth', {
       this.persistToken(null);
     },
     hydrate() {
-      const t = localStorage.getItem('studio.auth.token');
+      const key = import.meta.env.VITE_STUDIO_TOKEN_KEY || 'studio.auth.token';
+      const t = localStorage.getItem(key);
       if (t) {
         this.token = t;
       }

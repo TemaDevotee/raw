@@ -7,7 +7,6 @@
       <button type="submit" class="w-full py-2 bg-blue-600 text-white rounded">Login / Войти</button>
     </form>
     <p v-if="error" class="text-red-400">{{ error }}</p>
-    <router-link to="/login?skipAuth=1" class="underline text-sm">Skip / Без входа</router-link>
     <div class="text-xs text-slate-400">
       Demo accounts / Демо-аккаунты:<br />
       alpha@raw.dev / RawDev!2025<br />
@@ -19,7 +18,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
 import { showToast } from '@/stores/toast';
 
@@ -27,6 +26,7 @@ const email = ref('');
 const password = ref('');
 const error = ref('');
 const router = useRouter();
+const route = useRoute();
 const auth = useAuthStore();
 
 async function submit() {
@@ -34,7 +34,8 @@ async function submit() {
   try {
     await auth.login(email.value, password.value);
     showToast('Logged in / Вход выполнен');
-    router.push({ name: 'dashboard' });
+    const redirect = (route.query.redirect as string) || '/';
+    router.push({ name: 'preflight', query: { redirect } });
   } catch {
     error.value = 'Invalid credentials / Неверные данные';
     showToast('Invalid credentials / Неверные данные', 'error');

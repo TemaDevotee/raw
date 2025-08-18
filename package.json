@@ -6,14 +6,13 @@
   "scripts": {
     "deploy": "gh-pages -d dist",
     "dev": "vite --config apps/main-app/vite.config.ts",
-    "client:dev": "vite --config apps/main-app/vite.config.ts",
     "build": "vite build --config apps/main-app/vite.config.ts",
     "postbuild": "node scripts/after-build.cjs",
     "preview": "vite preview --host --config apps/main-app/vite.config.ts",
     "dev:e2e": "vite --host 127.0.0.1 --strictPort --mode e2e --config apps/main-app/vite.config.ts",
     "preview:e2e": "vite build --mode e2e --config apps/main-app/vite.config.ts && vite preview --host 127.0.0.1 --strictPort --config apps/main-app/vite.config.ts",
     "mock:dev": "node apps/mock-backend/server.js",
-    "admin:dev": "vite --config apps/simulator-studio/vite.config.ts",
+    "admin:dev": "vite --config apps/simulator-studio/vite.config.ts --port %STUDIO_PORT%",
     "admin:build": "vite build --config apps/simulator-studio/vite.config.ts",
     "admin:preview": "vite preview --config apps/simulator-studio/vite.config.ts",
     "typecheck": "vue-tsc --noEmit",
@@ -30,7 +29,7 @@
     "mock:load": "node apps/mock-backend/snapshots/load.js",
     "mock:autosave:on": "MOCK_AUTOSAVE=1 node mock_backend/server.js",
     "mock:autosave:off": "MOCK_AUTOSAVE=0 node mock_backend/server.js",
-    "dev:all": "npm-run-all -p mock:dev client:dev admin:dev",
+    "dev:all": "npm-run-all -p mock:dev admin:dev",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
     "e2e:headed": "playwright test --headed",
@@ -38,7 +37,9 @@
     "docs:open": "xdg-open docs/ARCHITECTURE.md || open docs/ARCHITECTURE.md || start docs/ARCHITECTURE.md",
     "open:dev": "start http://localhost:5199/#/console",
     "admin:open": "start http://localhost:5199/login.html?skipAuth=1",
-    "seed:demo": "node apps/mock-backend/scripts/seed-demo.js"
+    "seed:clean": "node apps/mock-backend/scripts/seed.clean.js",
+    "seed:demo": "node apps/mock-backend/scripts/seed.demo.js",
+    "test:studio:smoke": "playwright test tests/studio-smoke.spec.ts --project=chromium"
   },
   "dependencies": {
     "axios": "^1.7.0",

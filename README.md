@@ -6,21 +6,24 @@ This repository contains the complete front‑end and mock API server for the **
 
 1. Скопируйте переменные окружения: `cp .env.example .env` (Windows: `copy .env.example .env`).
 2. Установите зависимости: `npm install`.
-3. Запустите все сервисы:
+3. Подготовьте демо-данные: `npm run seed:clean && npm run seed:demo`.
+4. Запустите все сервисы:
    - macOS/Linux: `APP_PORT=5173 STUDIO_PORT=5199 npm run dev:all`
    - Windows (CMD/PowerShell): `npm run dev:all`
-4. Откройте в браузере:
+5. Откройте в браузере:
    - Main app — http://localhost:5173/
    - Simulator Studio — http://localhost:5199/login
    - Mock backend — http://localhost:3001/
 
-5. Войдите одной из демо‑учёток:
+6. Войдите одной из демо‑учёток:
 
-   - `alpha / Alpha123!`
-   - `bravo / Bravo123!`
-   - `charlie / Charlie123!`
+   - `alpha@raw.dev / RawDev!2025`
+   - `alpha.op@raw.dev / RawDev!2025`
+   - `alpha.view@raw.dev / RawDev!2025`
+   - `beta@raw.dev / RawDev!2025`
+   - `gamma@raw.dev / RawDev!2025`
 
-   или откройте `/login?skipAuth=1` для быстрого входа без пароля.
+   Для быстрого входа можно использовать `/login?skipAuth=1`.
 
 If `npm install` fails with a 403 error, reset the npm registry:
 
