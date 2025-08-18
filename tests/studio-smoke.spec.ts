@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const base = `http://localhost:${process.env.STUDIO_PORT || '5199'}`;
+const base = `http://localhost:${process.env.STUDIO_PORT || '3000'}`;
 
 async function login(page, email: string) {
   await page.goto(`${base}/#/login`);

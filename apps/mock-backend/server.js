@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { nanoid } from 'nanoid';
 import crypto from 'crypto';
 import { db } from './db.js';
 import { seedDemo } from './seed/demoTenants.js';
@@ -17,7 +16,6 @@ require('dotenv').config();
 
 export const app = express();
 const MOCK_PORT = Number(process.env.MOCK_PORT) || 3001;
-const STUDIO_PORT = Number(process.env.STUDIO_PORT) || 5199;
 const ADMIN_KEY = process.env.VITE_ADMIN_KEY || 'dev-admin-key';
 const JWT_SECRET = process.env.MOCK_JWT_SECRET || 'dev-secret-please-change';
 const { json } = require('express');
@@ -31,7 +29,10 @@ function buildUserIndex() {
   }
 }
 
-// seeds are triggered via scripts; just build index on start
+// seed demo data on first run so default credentials work out of the box
+if (db.users.length === 0) {
+  seedDemo(db);
+}
 buildUserIndex();
 
 app.use(cors({ origin: [/^http:\/\/localhost:\d+$/], credentials: true }));
