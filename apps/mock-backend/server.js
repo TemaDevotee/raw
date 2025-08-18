@@ -1,4 +1,3 @@
-import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -10,15 +9,18 @@ import { seedDemo } from './seed/demoTenants.js';
 import { estimateTokens, chargeMessage, ensureReset } from './services/billing.js';
 import { registerBillingRoutes } from './routes/billing.js';
 import { registerSimulatorRoutes } from './routes/simulator.js';
+import { getQuery, getBody, toNumber, toBool, reqId } from './utils/req.js';
+import { createRequire } from 'module';
 
-dotenv.config();
+const require = createRequire(import.meta.url);
+require('dotenv').config();
 
 export const app = express();
-const appPort = Number(process.env.APP_PORT) || 5173;
-const studioPort = Number(process.env.STUDIO_PORT) || 5199;
-const port = Number(process.env.MOCK_PORT) || 3001;
+const MOCK_PORT = Number(process.env.MOCK_PORT) || 3001;
+const STUDIO_PORT = Number(process.env.STUDIO_PORT) || 5199;
 const ADMIN_KEY = process.env.VITE_ADMIN_KEY || 'dev-admin-key';
 const JWT_SECRET = process.env.MOCK_JWT_SECRET || 'dev-secret-please-change';
+const { json } = require('express');
 
 const userIndex = new Map(); // email -> user
 
@@ -32,14 +34,9 @@ function buildUserIndex() {
 // seeds are triggered via scripts; just build index on start
 buildUserIndex();
 
-app.use(
-  cors({
-    origin: [`http://localhost:${appPort}`, `http://localhost:${studioPort}`],
-    credentials: true,
-  }),
-);
+app.use(cors({ origin: [/^http:\/\/localhost:\d+$/], credentials: true }));
 
-app.use(express.json());
+app.use(json({ limit: '5mb' }));
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use('/avatars', express.static(path.join(__dirname, 'public/avatars')));
@@ -52,7 +49,8 @@ function requireAdmin(req, res, next) {
 }
 
 function getTenant(req, res) {
-  const slug = req.query.tenant;
+  const q = getQuery(req);
+  const slug = q.tenant;
   const current = req.tenantId;
   if (slug && slug !== current) {
     res.status(403).json({ error: 'forbidden' });
@@ -90,7 +88,11 @@ function verifyToken(token) {
 }
 
 app.post('/auth/login', (req, res) => {
-  const { email, password } = req.body || {};
+  const body = getBody(req);
+  const { email, password } = body;
+  if (!email || !password) {
+    return res.status(400).json({ message: 'email and password required' });
+  }
   const user = userIndex.get(email);
   if (!user || user.password !== password || !user.isActive) {
     return res.status(401).json({ message: 'Invalid credentials' });
@@ -132,7 +134,9 @@ app.get('/auth/me', authMiddleware, (req, res) => {
 });
 
 app.post('/auth/switch-tenant', authMiddleware, (req, res) => {
-  const { tenantId } = req.body || {};
+  const body = getBody(req);
+  const { tenantId } = body;
+  if (!tenantId) return res.status(400).json({ message: 'tenantId required' });
   const membership = req.user.memberships.find((m) => m.tenantId === tenantId);
   if (!membership) return res.status(403).json({ error: 'forbidden' });
   const token = signToken({ userId: req.user.id, tenantId });
@@ -151,7 +155,7 @@ app.post('/auth/logout', authMiddleware, (_req, res) => {
 app.get('/', (_req, res) => res.json({ ok: true }));
 
 app.get('/health', (_req, res) => {
-  res.json({ ok: true, uptime: process.uptime(), tenants: db.tenants.length, users: db.users.length });
+  res.json({ ok: true, uptime: process.uptime() });
 });
 
 app.post('/admin/dev/reseed', requireAdmin, (req, res) => {
@@ -209,13 +213,17 @@ app.get('/admin/chats', authMiddleware, requireAdmin, (req, res) => {
   const tenant = getTenant(req, res);
   if (!tenant) return;
   let items = tenant.chats.slice();
-  const { status, q, limit = 30, cursor } = req.query;
+  const q = getQuery(req);
+  const status = q.status;
+  const search = q.q;
+  const limit = toNumber(q.limit, 30);
+  const cursor = q.cursor !== undefined ? toNumber(q.cursor) : null;
   if (status) {
     const statuses = String(status).split(',');
     items = items.filter((c) => statuses.includes(c.status));
   }
-  if (q) {
-    const s = String(q).toLowerCase();
+  if (search) {
+    const s = String(search).toLowerCase();
     items = items.filter((c) => {
       const agentName = c.participants.agentId
         ? tenant.agents.find((a) => a.id === c.participants.agentId)?.name || ''
@@ -230,19 +238,20 @@ app.get('/admin/chats', authMiddleware, requireAdmin, (req, res) => {
   items.sort((a, b) => b.lastMessageAt - a.lastMessageAt);
   let filtered = items;
   if (cursor) {
-    const cur = Number(cursor);
-    filtered = items.filter((c) => c.lastMessageAt < cur);
+    filtered = items.filter((c) => c.lastMessageAt < cursor);
   }
-  const lim = Number(limit) || 30;
-  const page = filtered.slice(0, lim + 1);
-  const next = page.length > lim ? page.pop().lastMessageAt : null;
+  const page = filtered.slice(0, limit + 1);
+  const next = page.length > limit ? page.pop().lastMessageAt : null;
   res.json({ items: page, nextCursor: next });
 });
 
 app.post('/admin/chats', authMiddleware, requireAdmin, (req, res) => {
   const tenant = getTenant(req, res);
   if (!tenant) return;
-  const { title, clientName, agentId = null, workspaceId = null } = req.body || {};
+  const body = getBody(req);
+  const { title, clientName } = body;
+  const agentId = body.agentId !== undefined ? body.agentId : null;
+  const workspaceId = body.workspaceId !== undefined ? body.workspaceId : null;
   if (!title || !clientName) return res.status(400).json({ error: 'invalid_payload' });
   const id = nanoid();
   const chat = {
@@ -265,7 +274,8 @@ app.post('/admin/chats', authMiddleware, requireAdmin, (req, res) => {
 app.get('/admin/chats/:id', authMiddleware, requireAdmin, (req, res) => {
   const tenant = getTenant(req, res);
   if (!tenant) return;
-  const chat = tenant.chats.find((c) => c.id === req.params.id);
+  const id = reqId(req);
+  const chat = tenant.chats.find((c) => c.id === id);
   if (!chat) return res.status(404).json({ error: 'not_found' });
   res.json(chat);
 });
@@ -273,9 +283,11 @@ app.get('/admin/chats/:id', authMiddleware, requireAdmin, (req, res) => {
 app.patch('/admin/chats/:id', authMiddleware, requireAdmin, (req, res) => {
   const tenant = getTenant(req, res);
   if (!tenant) return;
-  const chat = tenant.chats.find((c) => c.id === req.params.id);
+  const id = reqId(req);
+  const chat = tenant.chats.find((c) => c.id === id);
   if (!chat) return res.status(404).json({ error: 'not_found' });
-  const { status, title, workspaceId, agentId } = req.body || {};
+  const body = getBody(req);
+  const { status, title, workspaceId, agentId } = body;
   if (status) {
     const allowed = ['live', 'paused', 'attention', 'resolved', 'ended'];
     if (!allowed.includes(status)) return res.status(422).json({ error: 'invalid_status' });
@@ -298,12 +310,15 @@ app.patch('/admin/chats/:id', authMiddleware, requireAdmin, (req, res) => {
 app.post('/admin/chats/:id/messages', authMiddleware, requireAdmin, (req, res) => {
   const tenant = getTenant(req, res);
   if (!tenant) return;
-  const chat = tenant.chats.find((c) => c.id === req.params.id);
+  const id = reqId(req);
+  const chat = tenant.chats.find((c) => c.id === id);
   if (!chat) return res.status(404).json({ error: 'not_found' });
-  const { role, text, draft } = req.body || {};
+  const body = getBody(req);
+  const { role, text } = body;
+  const draft = toBool(body.draft);
   if (!role || !text || !text.trim()) return res.status(400).json({ error: 'invalid_payload' });
   if (text.length > 10000) return res.status(422).json({ error: 'text_too_long' });
-  let isDraft = draft === true;
+  let isDraft = draft;
   if (role === 'agent') {
     if (chat.control.mode === 'operator') {
       isDraft = true;
@@ -416,17 +431,20 @@ app.post(
 app.get('/admin/chats/:id/transcript', authMiddleware, requireAdmin, (req, res) => {
   const tenant = getTenant(req, res);
   if (!tenant) return;
-  const chat = tenant.chats.find((c) => c.id === req.params.id);
+  const id = reqId(req);
+  const chat = tenant.chats.find((c) => c.id === id);
   if (!chat) return res.status(404).json({ error: 'not_found' });
-  const { since, limit = 50, includeDiscarded } = req.query as any;
+  const q = getQuery(req);
+  const since = q.since !== undefined ? toNumber(q.since) : undefined;
+  const limit = toNumber(q.limit, 50);
+  const includeDiscarded = toBool(q.includeDiscarded);
   let items = tenant.messages.filter(
-    (m) => m.chatId === chat.id && (includeDiscarded === '1' || !m.discardedAt),
+    (m) => m.chatId === chat.id && (includeDiscarded || !m.discardedAt),
   );
-  if (since) {
-    const s = Number(since);
-    items = items.filter((m) => m.cursor > s);
+  if (since !== undefined) {
+    items = items.filter((m) => m.cursor > since);
   } else {
-    items = items.sort((a, b) => b.ts - a.ts).slice(0, Number(limit));
+    items = items.sort((a, b) => b.ts - a.ts).slice(0, limit);
   }
   items.sort((a, b) => a.ts - b.ts);
   const lastCursor = items.length ? items[items.length - 1].cursor : tenant._cursors[chat.id] || 0;
@@ -434,20 +452,22 @@ app.get('/admin/chats/:id/transcript', authMiddleware, requireAdmin, (req, res) 
 });
 
 app.get('/public/chats/:id/transcript', (req, res) => {
-  const slug = req.query.tenant;
+  const q = getQuery(req);
+  const slug = q.tenant;
   const tenant = db.tenants.find((t) => t.slug === slug);
   if (!tenant) return res.status(404).json({ error: 'tenant_not_found' });
-  const chat = tenant.chats.find((c) => c.id === req.params.id);
+  const id = reqId(req);
+  const chat = tenant.chats.find((c) => c.id === id);
   if (!chat) return res.status(404).json({ error: 'not_found' });
-  const { since, limit = 50 } = req.query;
+  const since = q.since !== undefined ? toNumber(q.since) : undefined;
+  const limit = toNumber(q.limit, 50);
   let items = tenant.messages.filter(
     (m) => m.chatId === chat.id && m.draft !== true && !m.discardedAt,
   );
-  if (since) {
-    const s = Number(since);
-    items = items.filter((m) => m.cursor > s);
+  if (since !== undefined) {
+    items = items.filter((m) => m.cursor > since);
   } else {
-    items = items.sort((a, b) => b.ts - a.ts).slice(0, Number(limit));
+    items = items.sort((a, b) => b.ts - a.ts).slice(0, limit);
   }
   items.sort((a, b) => a.ts - b.ts);
   const lastCursor = items.length ? items[items.length - 1].cursor : tenant._cursors[chat.id] || 0;
@@ -457,7 +477,8 @@ app.get('/public/chats/:id/transcript', (req, res) => {
 app.post('/admin/chats/:id/interfere', authMiddleware, requireAdmin, (req, res) => {
   const tenant = getTenant(req, res);
   if (!tenant) return;
-  const chat = tenant.chats.find((c) => c.id === req.params.id);
+  const id = reqId(req);
+  const chat = tenant.chats.find((c) => c.id === id);
   if (!chat) return res.status(404).json({ error: 'not_found' });
   if (chat.status === 'ended' || chat.status === 'resolved') {
     return res.status(409).json({ error: 'chat_final' });
@@ -472,7 +493,8 @@ app.post('/admin/chats/:id/interfere', authMiddleware, requireAdmin, (req, res) 
 app.post('/admin/chats/:id/return', authMiddleware, requireAdmin, (req, res) => {
   const tenant = getTenant(req, res);
   if (!tenant) return;
-  const chat = tenant.chats.find((c) => c.id === req.params.id);
+  const id = reqId(req);
+  const chat = tenant.chats.find((c) => c.id === id);
   if (!chat) return res.status(404).json({ error: 'not_found' });
   if (chat.control.mode === 'agent') return res.json(chat);
   if (chat.control.ownerUserId !== req.user.id) {
@@ -487,8 +509,8 @@ registerSimulatorRoutes(app, { authMiddleware, requireAdmin });
 
 let serverInstance;
 if (process.env.NODE_ENV !== 'test') {
-  serverInstance = app.listen(port, () => {
-    console.log(`Mock backend listening on ${port}`);
+  serverInstance = app.listen(MOCK_PORT, () => {
+    console.log(`Mock backend listening on ${MOCK_PORT}`);
   });
   if (process.env.MOCK_ENABLE_SIMULATOR === 'true') {
     const { initWs } = await import('./ws/server.js');

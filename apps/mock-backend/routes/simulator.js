@@ -2,11 +2,13 @@ import { nanoid } from 'nanoid';
 import { db } from '../db.js';
 import { broadcast } from '../ws/server.js';
 import { estimateTokens, ensureReset, chargeMessage } from '../services/billing.js';
+import { getBody } from '../utils/req.js';
 
 export function registerSimulatorRoutes(app, { authMiddleware, requireAdmin }) {
   if (process.env.MOCK_ENABLE_SIMULATOR !== 'true') return;
   app.post('/admin/sim/events', authMiddleware, requireAdmin, (req, res) => {
-    const events = Array.isArray(req.body) ? req.body : [req.body];
+    const body = getBody(req);
+    const events = Array.isArray(body) ? body : [body];
     let applied = 0;
     for (const evt of events) {
       const ok = applyEvent(req, evt);

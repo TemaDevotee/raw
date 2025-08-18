@@ -1,4 +1,5 @@
 import { PLANS, ensureReset, adjustTokens } from '../services/billing.js';
+import { getQuery, getBody, toNumber } from '../utils/req.js';
 
 export function registerBillingRoutes(app, { authMiddleware, requireAdmin, getTenant }) {
   app.get('/admin/billing/plan', authMiddleware, requireAdmin, (req, res) => {
@@ -11,7 +12,9 @@ export function registerBillingRoutes(app, { authMiddleware, requireAdmin, getTe
   app.post('/admin/billing/plan', authMiddleware, requireAdmin, (req, res) => {
     const tenant = getTenant(req, res);
     if (!tenant) return;
-    const { planId } = req.body || {};
+    const body = getBody(req);
+    const { planId } = body;
+    if (!planId) return res.status(400).json({ message: 'planId required' });
     const plan = PLANS[planId];
     if (!plan) return res.status(422).json({ error: 'invalid_plan' });
     tenant.billing.plan = plan;
@@ -22,16 +25,19 @@ export function registerBillingRoutes(app, { authMiddleware, requireAdmin, getTe
   app.post('/admin/billing/adjust-tokens', authMiddleware, requireAdmin, (req, res) => {
     const tenant = getTenant(req, res);
     if (!tenant) return;
-    const { delta, reason } = req.body || {};
-    const balance = adjustTokens(tenant, Number(delta) || 0, reason);
+    const body = getBody(req);
+    const { delta, reason } = body;
+    if (delta === undefined) return res.status(400).json({ message: 'delta required' });
+    const balance = adjustTokens(tenant, toNumber(delta, 0), reason);
     res.json({ tokenBalance: balance });
   });
 
   app.get('/admin/billing/usage/summary', authMiddleware, requireAdmin, (req, res) => {
     const tenant = getTenant(req, res);
     if (!tenant) return;
-    const since = Number(req.query.since || 0);
-    const until = Number(req.query.until || Date.now());
+    const q = getQuery(req);
+    const since = toNumber(q.since, 0);
+    const until = toNumber(q.until, Date.now());
     const logs = (tenant.spendLogs || []).filter((l) => l.ts >= since && l.ts <= until);
     const totalTokens = logs.reduce((a, l) => a + l.tokens, 0);
     const byAgent = [];
@@ -57,8 +63,9 @@ export function registerBillingRoutes(app, { authMiddleware, requireAdmin, getTe
   app.get('/admin/billing/usage/logs', authMiddleware, requireAdmin, (req, res) => {
     const tenant = getTenant(req, res);
     if (!tenant) return;
-    const limit = Number(req.query.limit) || 50;
-    const cursor = req.query.cursor ? Number(req.query.cursor) : null;
+    const q = getQuery(req);
+    const limit = toNumber(q.limit, 50);
+    const cursor = q.cursor !== undefined ? toNumber(q.cursor) : null;
     let logs = [...(tenant.spendLogs || [])].sort((a, b) => b.ts - a.ts);
     if (cursor) logs = logs.filter((l) => l.ts < cursor);
     const items = logs.slice(0, limit);
