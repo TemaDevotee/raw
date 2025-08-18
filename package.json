@@ -12,7 +12,7 @@
     "dev:e2e": "vite --host 127.0.0.1 --strictPort --mode e2e --config apps/main-app/vite.config.ts",
     "preview:e2e": "vite build --mode e2e --config apps/main-app/vite.config.ts && vite preview --host 127.0.0.1 --strictPort --config apps/main-app/vite.config.ts",
     "mock:dev": "cross-env NODE_ENV=development node apps/mock-backend/server.js",
-    "admin:dev": "cross-env NODE_ENV=development vite --config apps/simulator-studio/vite.config.ts --port %STUDIO_PORT%",
+    "admin:dev": "cross-env NODE_ENV=development vite --config apps/simulator-studio/vite.config.ts",
     "admin:build": "vite build --config apps/simulator-studio/vite.config.ts",
     "admin:preview": "vite preview --config apps/simulator-studio/vite.config.ts",
     "typecheck": "vue-tsc --noEmit",
@@ -52,7 +52,6 @@
     "vue-router": "^4.3.0",
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "nanoid": "^5.0.7",
     "dotenv": "^16.4.5"
   },
   "devDependencies": {
