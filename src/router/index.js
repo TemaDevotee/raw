@@ -41,7 +41,12 @@ const router = createRouter({
 router.beforeEach((to) => {
   const auth = useAuthStore();
   if (to.query.skipAuth === '1') {
-    auth.setSession('dev-skip', { id: 'alpha', username: 'alpha', role: 'owner', tenant: 'alpha' });
+    auth.setSession(
+      'dev-skip',
+      { id: 'alpha', email: 'alpha@raw.dev', name: 'Alpha' },
+      [{ id: 'alpha', name: 'Alpha', role: 'owner' }],
+      'alpha',
+    );
     const q = { ...to.query };
     delete q.skipAuth;
     return { path: '/', query: q };
