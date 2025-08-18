@@ -15,8 +15,8 @@ export async function orchestratedLogout({ force = false } = {}) {
   try {
     showToast(langStore.t('loggingOut'), 'info')
     const user = JSON.parse(
-      localStorage.getItem('auth.user') ||
-        sessionStorage.getItem('auth.user') ||
+      localStorage.getItem('auth:user') ||
+        sessionStorage.getItem('auth:user') ||
         'null',
     ) || { id: null }
     const controlled = chatStore.state.chats.filter((c) => c.controlBy === 'operator')
@@ -58,12 +58,10 @@ export async function orchestratedLogout({ force = false } = {}) {
     themeStore.init()
 
     // clear auth and app state storage
-    localStorage.removeItem('auth.token')
-    localStorage.removeItem('auth.user')
-    localStorage.removeItem('authenticated')
-    sessionStorage.removeItem('auth.token')
-    sessionStorage.removeItem('auth.user')
-    sessionStorage.removeItem('authenticated')
+    localStorage.removeItem('auth:token')
+    localStorage.removeItem('auth:user')
+    sessionStorage.removeItem('auth:token')
+    sessionStorage.removeItem('auth:user')
     localStorage.removeItem('app.state.v2')
     sessionStorage.removeItem('app.state.v2')
 
@@ -75,7 +73,7 @@ export async function orchestratedLogout({ force = false } = {}) {
     } catch { /* noop */ }
   } finally {
     running = false
-    window.location.assign('/login.html')
+    window.location.assign('/#/login')
   }
 }
 

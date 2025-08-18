@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import api from '@studio/adminClient';
+import api from '@/shared/http/api';
 import { showToast } from '@studio/stores/toast';
 import { t } from '@/i18n.js';
 

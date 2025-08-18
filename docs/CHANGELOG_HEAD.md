@@ -57,6 +57,7 @@ Use this section to draft release notes for the next version. Copy relevant entr
 ## Billing
 
 - Show account plan and token usage with progress bar
+- Implement token balance enforcement and adjust tokens from Billing screen
 
 ## Template
 
@@ -74,3 +75,4 @@ Use this section to draft release notes for the next version. Copy relevant entr
 
 ## Files changed (N)
 ```
+\n## Simulator console\n\n- WebSocket events and dev console to emit presence, messages and status updates\n

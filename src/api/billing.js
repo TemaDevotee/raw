@@ -1,7 +1,8 @@
+import api from '@/shared/http/api';
+
 export async function getBilling() {
-  const res = await fetch('/api/account/billing');
-  if (!res.ok) throw new Error('billing.fetchFailed');
-  return res.json();
+  const { data } = await api.get('/account/billing');
+  return data;
 }
 
 // Mock helpers for usage tracking

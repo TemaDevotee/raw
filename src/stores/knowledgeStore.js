@@ -40,7 +40,7 @@ function getSelection(collectionId) {
 async function fetchCollections() {
   state.isLoading = true
   try {
-    const tenantId = authStore.state.user?.tenantId || 't1'
+    const tenantId = authStore.user?.tenantId || 't1'
     const { data } = await api.listCollections(tenantId)
     state.collections = Array.isArray(data) ? data : []
     persist()
@@ -54,7 +54,7 @@ async function fetchCollections() {
 async function createCollection(payload) {
   const name = (payload?.name || '').trim()
   if (!name) throw new Error('Collection name required')
-  const tenantId = authStore.state.user?.tenantId || 't1'
+  const tenantId = authStore.user?.tenantId || 't1'
   const { data } = await api.createCollection({ tenantId, name })
   const coll =
     data || {
@@ -95,7 +95,7 @@ async function updatePermissions(id, perms) {
   coll.editors = perms.editors || []
   try {
     await api.updatePermissions(id, perms)
-    const uid = authStore.state.user?.id
+    const uid = authStore.user?.id
     if (coll.visibility === 'private' && !(coll.editors || []).includes(uid)) {
       const idx = state.collections.findIndex((c) => c.id === id)
       if (idx !== -1) state.collections.splice(idx, 1)
@@ -170,7 +170,7 @@ async function uploadFiles(collectionId, files) {
   list.push(...entries)
   state.isUploading = true
   try {
-    const tenantId = authStore.state.user?.tenantId || 't1'
+    const tenantId = authStore.user?.tenantId || 't1'
     await api.uploadFiles(tenantId, collectionId, Array.from(files), (evt) => {
       const percent = Math.round((evt.loaded / evt.total) * 100)
       entries.forEach((e) => (e.progress = percent))

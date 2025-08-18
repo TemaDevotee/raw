@@ -29,7 +29,7 @@ vi.mock('@/stores/knowledgeStore.js', () => ({
 vi.mock('@/stores/toastStore', () => ({ showToast: vi.fn() }))
 vi.mock('@/stores/langStore', () => ({ default: { t: (k) => k } }))
 vi.mock('@/api/agents.js', () => ({ patchKnowledge: vi.fn(() => Promise.resolve({})) }))
-vi.mock('@/stores/authStore', () => ({ authStore: { state: { user: { id: 'u1' } } } }))
+vi.mock('@/stores/authStore', () => ({ authStore: { user: { id: 'u1' } } }))
 
 import { useAgentKnowledge } from '../agentKnowledgeLogic.js'
 import { agentStore } from '@/stores/agentStore.js'

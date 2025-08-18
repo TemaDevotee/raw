@@ -1,13 +1,20 @@
 import { defineStore } from 'pinia';
 import apiClient from '@/api';
+import { useAuthStore } from './authStore';
 
-export interface Msg { id: string; role: 'user' | 'agent'; text: string; ts: number }
+export interface Msg {
+  id: string;
+  role: 'client' | 'agent' | 'system';
+  text: string;
+  ts: number;
+  cursor: number;
+}
 
 export const useChatStore = defineStore('chat', {
   state: () => ({
     currentId: null as string | null,
     messages: [] as Msg[],
-    lastTs: null as number | null,
+    lastCursor: null as number | null,
     refreshTimer: null as number | null,
     es: null as EventSource | null,
     loading: false,
@@ -18,9 +25,12 @@ export const useChatStore = defineStore('chat', {
       this.currentId = id;
       this.loading = true;
       try {
-        const { data } = await apiClient.get(`/app/chats/${id}/transcript`);
-        this.messages = data.messages || [];
-        this.lastTs = data.lastTs ?? (this.messages.length ? Math.max(...this.messages.map(m => m.ts)) : null);
+        const auth = useAuthStore();
+        const { data } = await apiClient.get(`/public/chats/${id}/transcript`, {
+          params: { tenant: auth.user?.tenant },
+        });
+        this.messages = data.items || [];
+        this.lastCursor = data.lastCursor ?? null;
         this.startSse();
       } finally {
         this.loading = false;
@@ -54,15 +64,18 @@ export const useChatStore = defineStore('chat', {
       }
     },
     async fetchSince() {
-      if (!this.currentId || this.lastTs === null) return;
+      if (!this.currentId || this.lastCursor === null) return;
       try {
-        const { data } = await apiClient.get(`/app/chats/${this.currentId}/transcript`, { params: { since: this.lastTs } });
-        const newMsgs: Msg[] = data.messages || [];
+        const auth = useAuthStore();
+        const { data } = await apiClient.get(`/public/chats/${this.currentId}/transcript`, {
+          params: { tenant: auth.user?.tenant, since: this.lastCursor },
+        });
+        const newMsgs: Msg[] = data.items || [];
         if (newMsgs.length) {
           const existing = new Set(this.messages.map(m => m.id));
           newMsgs.forEach(m => { if (!existing.has(m.id)) this.messages.push(m); });
         }
-        if (data.lastTs !== undefined) this.lastTs = data.lastTs;
+        if (data.lastCursor !== undefined) this.lastCursor = data.lastCursor;
       } catch {
         /* silent */
       }
@@ -71,7 +84,7 @@ export const useChatStore = defineStore('chat', {
       if (this.refreshTimer) { clearInterval(this.refreshTimer); this.refreshTimer = null; }
       if (this.es) { this.es.close(); this.es = null; }
       this.currentId = null;
-      this.lastTs = null;
+      this.lastCursor = null;
     },
     async sendUser(text: string) {
       if (!this.currentId || !text.trim()) return;

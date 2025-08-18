@@ -12,16 +12,6 @@
   </head>
 
   <body>
-    <script>
-      const isAuthed =
-        (localStorage.getItem('authenticated') === 'true' &&
-          localStorage.getItem('auth.token')) ||
-        (sessionStorage.getItem('authenticated') === 'true' &&
-          sessionStorage.getItem('auth.token'));
-      if (!isAuthed) {
-        window.location.href = '/login.html';
-      }
-    </script>
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
   </body>

@@ -52,15 +52,15 @@ describe('orchestratedLogout', () => {
     workspaceStore.createWorkspace('Extra')
     chatStore.state.chats = [{ id: '1', controlBy: 'operator', heldBy: 'u1' }]
     draftStore.state.draftsByChat['1'] = [{ id: 'd1', text: 't' }]
-    localStorage.setItem('auth.token', 't')
+    localStorage.setItem('auth:token', 't')
     const api = (await import('@/api')).default
     await orchestratedLogout()
     expect(api.post).toHaveBeenCalledWith('/presence/leave', expect.anything())
     expect(workspaceStore.state.workspaces).toHaveLength(1)
     expect(chatStore.state.chats[0].controlBy).toBe('agent')
-    expect(localStorage.getItem('auth.token')).toBe(null)
+    expect(localStorage.getItem('auth:token')).toBe(null)
     expect(localStorage.getItem('auth.logoutAt')).not.toBeNull()
-    expect(window.location.assign).toHaveBeenCalledWith('/login.html')
+    expect(window.location.assign).toHaveBeenCalledWith('/#/login')
   })
 
   it('is idempotent', async () => {
@@ -75,6 +75,6 @@ describe('orchestratedLogout', () => {
     mod.initLogoutListener()
     window.dispatchEvent({ type: 'storage', key: 'auth.logoutAt' })
     await new Promise((r) => setTimeout(r, 0))
-    expect(window.location.assign).toHaveBeenCalledWith('/login.html')
+    expect(window.location.assign).toHaveBeenCalledWith('/#/login')
   })
 })

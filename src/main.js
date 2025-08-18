@@ -8,7 +8,8 @@ import { showToast } from '@/stores/toastStore'
 import { workspaceStore } from '@/stores/workspaceStore'
 import accountStore from '@/stores/accountStore'
 import { initLogoutListener } from '@/stores/logout.js'
-import { authStore } from '@/stores/authStore'
+import { useAuthStore } from '@/stores/authStore'
+import { pinia } from '@/stores/pinia'
 import { agentStore } from '@/stores/agentStore'
 import { knowledgeStore } from '@/stores/knowledgeStore'
 import { chatStore } from '@/stores/chatStore.js'
@@ -29,15 +30,12 @@ if (isE2E) {
   }
 }
 
-const params = new URLSearchParams(location.search)
-const skipAuth = params.get('skipAuth') === '1' || sessionStorage.getItem('skipAuth') === '1'
-if (isE2E || skipAuth) {
-  authStore.forceLogin()
-}
-
 const app = createApp(App)
-
+app.use(pinia)
 app.use(router)
+
+const authStore = useAuthStore()
+authStore.hydrate()
 
 // Global error handling to prevent white-screen on runtime errors
 app.config.errorHandler = (err, instance, info) => {
