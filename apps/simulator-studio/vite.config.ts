@@ -10,6 +10,7 @@ export default defineConfig(() => {
 
   return {
     root: 'apps/simulator-studio',
+    envDir: path.resolve(__dirname, '../..'),
     plugins: [vue()],
     resolve: {
       alias: {

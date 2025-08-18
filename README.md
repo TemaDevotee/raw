@@ -6,13 +6,12 @@ This repository contains the complete front‑end and mock API server for the **
 
 1. Скопируйте переменные окружения: `cp .env.example .env` (Windows: `copy .env.example .env`).
 2. Установите зависимости: `npm install`.
-3. Подготовьте демо-данные: `npm run seed:clean && npm run seed:demo`.
-4. Запустите все сервисы:
-   - macOS/Linux: `APP_PORT=5173 STUDIO_PORT=5199 npm run dev:all`
-   - Windows (CMD/PowerShell): `npm run dev:all`
+3. (Optional) reset demo data / (Опционально) сбросьте демо-данные: `npm run seed:clean && npm run seed:demo`.
+   Mock backend auto-seeds default users / Мок-бэкенд автоматически создаёт демо-учётки.
+4. Запустите все сервисы: `npm run dev:all`
 5. Откройте в браузере:
    - Main app — http://localhost:5173/
-   - Simulator Studio — http://localhost:5199/login
+   - Simulator Studio — http://localhost:3000/
    - Mock backend — http://localhost:3001/
 
 6. Войдите одной из демо‑учёток:
