@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { nanoid } from 'nanoid';
 import crypto from 'crypto';
 import { db } from './db.js';
 import { seedDemo } from './seed/demoTenants.js';

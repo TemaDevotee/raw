@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { nanoid } from 'nanoid';
+import { randomUUID } from 'crypto';
 import { estimateTokens, PLANS } from '../services/billing.js';
 
 function writeFile(slug, name, content, mime, root) {
@@ -9,7 +9,7 @@ function writeFile(slug, name, content, mime, root) {
   const filePath = path.join(dir, name);
   fs.writeFileSync(filePath, content);
   const size = Buffer.byteLength(content);
-  return { id: nanoid(), name, size, mime, uploadedAt: Date.now(), path: `/files/${slug}/${name}` };
+  return { id: randomUUID(), name, size, mime, uploadedAt: Date.now(), path: `/files/${slug}/${name}` };
 }
 
 export function seedDemo(db, { writeFiles = false } = {}) {
@@ -24,7 +24,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
   const now = Date.now();
 
   // demo users
-  const alphaOwnerId = nanoid();
+  const alphaOwnerId = randomUUID();
   db.users.push({
     id: alphaOwnerId,
     email: 'alpha@raw.dev',
@@ -38,7 +38,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     createdAt: now,
     updatedAt: now,
   });
-  const alphaOpId = nanoid();
+  const alphaOpId = randomUUID();
   db.users.push({
     id: alphaOpId,
     email: 'alpha.op@raw.dev',
@@ -50,7 +50,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     updatedAt: now,
   });
   db.users.push({
-    id: nanoid(),
+    id: randomUUID(),
     email: 'alpha.view@raw.dev',
     name: 'Alpha Viewer',
     password: 'RawDev!2025',
@@ -60,7 +60,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     updatedAt: now,
   });
   db.users.push({
-    id: nanoid(),
+    id: randomUUID(),
     email: 'beta@raw.dev',
     name: 'Beta Owner',
     password: 'RawDev!2025',
@@ -70,7 +70,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     updatedAt: now,
   });
   db.users.push({
-    id: nanoid(),
+    id: randomUUID(),
     email: 'beta.op@raw.dev',
     name: 'Beta Operator',
     password: 'RawDev!2025',
@@ -80,7 +80,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     updatedAt: now,
   });
   db.users.push({
-    id: nanoid(),
+    id: randomUUID(),
     email: 'gamma@raw.dev',
     name: 'Gamma Owner',
     password: 'RawDev!2025',
@@ -110,19 +110,19 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     let tokenBalance = plan.includedMonthlyTokens;
     const spendLogs = [];
     const agents = [
-      { id: nanoid(), name: 'Sales Assistant', avatarUrl: '/avatars/agent1.svg', approveMode: 'off', model: 'gpt-4' },
-      { id: nanoid(), name: 'Support L1', avatarUrl: '/avatars/agent2.svg', approveMode: 'manual', model: 'gpt-4' },
+      { id: randomUUID(), name: 'Sales Assistant', avatarUrl: '/avatars/agent1.svg', approveMode: 'off', model: 'gpt-4' },
+      { id: randomUUID(), name: 'Support L1', avatarUrl: '/avatars/agent2.svg', approveMode: 'manual', model: 'gpt-4' },
     ];
     const workspaces = [
-      { id: nanoid(), name: 'Default' },
-      { id: nanoid(), name: 'Website' },
+      { id: randomUUID(), name: 'Default' },
+      { id: randomUUID(), name: 'Website' },
     ];
     const files = [];
     if (writeFiles) {
       files.push(writeFile(slug, 'welcome.txt', 'Welcome to alpha knowledge', 'text/plain', root));
       files.push(writeFile(slug, 'faq.md', '# FAQ\nAlpha answers', 'text/markdown', root));
     }
-    const knowledge = { collections: [{ id: nanoid(), name: 'General', files }] };
+    const knowledge = { collections: [{ id: randomUUID(), name: 'General', files }] };
     const chats = [];
     const messages = [];
     const _cursors = {};
@@ -131,7 +131,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
       const cursor = (_cursors[chat.id] || 0) + 1;
       _cursors[chat.id] = cursor;
       const msg = {
-        id: nanoid(),
+        id: randomUUID(),
         chatId: chat.id,
         cursor,
         approvedAt: null,
@@ -144,7 +144,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
         const tks = estimateTokens(data.text);
         tokenBalance -= tks;
         spendLogs.push({
-          id: nanoid(),
+          id: randomUUID(),
           ts: data.ts,
           tenantId: '',
           chatId: chat.id,
@@ -158,7 +158,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     }
 
     const chat1 = {
-      id: nanoid(),
+      id: randomUUID(),
       title: 'Website pricing',
       status: 'live',
       workspaceId: workspaces[0].id,
@@ -172,7 +172,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     addMessage(chat1, { role: 'agent', text: 'Our plans start at $10.', ts: now - 290000 });
 
     const chat2 = {
-      id: nanoid(),
+      id: randomUUID(),
       title: 'Billing issue',
       status: 'attention',
       workspaceId: workspaces[0].id,
@@ -187,7 +187,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     addMessage(chat2, { role: 'agent', text: 'Please provide invoice number', ts: now - 110000, draft: true });
 
     const chat3 = {
-      id: nanoid(),
+      id: randomUUID(),
       title: 'Onboarding help',
       status: 'paused',
       workspaceId: workspaces[1].id,
@@ -201,7 +201,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     addMessage(chat3, { role: 'agent', text: 'Follow the guide in dashboard.', ts: now - 205000 });
 
     const chat4 = {
-      id: nanoid(),
+      id: randomUUID(),
       title: 'General feedback',
       status: 'resolved',
       workspaceId: workspaces[0].id,
@@ -215,7 +215,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     addMessage(chat4, { role: 'agent', text: 'Thanks for feedback!', ts: now - 505000 });
 
     const chat5 = {
-      id: nanoid(),
+      id: randomUUID(),
       title: 'Old issue',
       status: 'ended',
       workspaceId: workspaces[0].id,
@@ -231,7 +231,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     const quotas = { tokensMonthly: plan.includedMonthlyTokens, storageMB: 500, maxAgents: 5, maxWorkspaces: 5 };
     const usage = { tokensUsed: plan.includedMonthlyTokens - tokenBalance, storageUsedMB: files.reduce((a, f) => a + f.size, 0) / 1024 / 1024 };
 
-    const tenantId = nanoid();
+    const tenantId = randomUUID();
     spendLogs.forEach((l) => (l.tenantId = tenantId));
     const billing = { plan, tokenBalance, cycleResetAt: now };
 
@@ -260,15 +260,15 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     let tokenBalance = plan.includedMonthlyTokens;
     const spendLogs = [];
     const agents = [
-      { id: nanoid(), name: 'Solo Bot', avatarUrl: '/avatars/agent1.svg', approveMode: 'off', model: 'gpt-3.5' },
+      { id: randomUUID(), name: 'Solo Bot', avatarUrl: '/avatars/agent1.svg', approveMode: 'off', model: 'gpt-3.5' },
     ];
-    const workspaces = [{ id: nanoid(), name: 'Default' }];
+    const workspaces = [{ id: randomUUID(), name: 'Default' }];
     const files = [];
     if (writeFiles) {
       files.push(writeFile(slug, 'notes.txt', 'Beta knowledge base', 'text/plain', root));
       files.push(writeFile(slug, 'guide.md', '# Guide', 'text/markdown', root));
     }
-    const knowledge = { collections: [{ id: nanoid(), name: 'General', files }] };
+    const knowledge = { collections: [{ id: randomUUID(), name: 'General', files }] };
     const chats = [];
     const messages = [];
     const _cursors = {};
@@ -277,7 +277,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
       const cursor = (_cursors[chat.id] || 0) + 1;
       _cursors[chat.id] = cursor;
       const msg = {
-        id: nanoid(),
+        id: randomUUID(),
         chatId: chat.id,
         cursor,
         approvedAt: null,
@@ -290,7 +290,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
         const tks = estimateTokens(data.text);
         tokenBalance -= tks;
         spendLogs.push({
-          id: nanoid(),
+          id: randomUUID(),
           ts: data.ts,
           tenantId: '',
           chatId: chat.id,
@@ -304,7 +304,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     }
 
     const chat1 = {
-      id: nanoid(),
+      id: randomUUID(),
       title: 'Order status',
       status: 'live',
       workspaceId: workspaces[0].id,
@@ -317,7 +317,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     addMessage(chat1, { role: 'client', text: 'Where is my order?', ts: now - 20000 });
     addMessage(chat1, { role: 'agent', text: 'It ships tomorrow.', ts: now - 15000 });
     const chat2 = {
-      id: nanoid(),
+      id: randomUUID(),
       title: 'Subscription',
       status: 'attention',
       workspaceId: workspaces[0].id,
@@ -331,7 +331,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     addMessage(chat2, { role: 'agent', text: 'Use the dashboard link.', ts: now - 33000 });
 
     const chat3 = {
-      id: nanoid(),
+      id: randomUUID(),
       title: 'Payment failure',
       status: 'paused',
       workspaceId: workspaces[0].id,
@@ -345,7 +345,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     addMessage(chat3, { role: 'agent', text: 'Try another card', ts: now - 41000 });
 
     const chat4 = {
-      id: nanoid(),
+      id: randomUUID(),
       title: 'Refund request',
       status: 'resolved',
       workspaceId: workspaces[0].id,
@@ -359,7 +359,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     addMessage(chat4, { role: 'agent', text: 'Refund issued', ts: now - 51000 });
 
     const chat5 = {
-      id: nanoid(),
+      id: randomUUID(),
       title: 'Old support',
       status: 'ended',
       workspaceId: workspaces[0].id,
@@ -373,7 +373,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     addMessage(chat5, { role: 'agent', text: 'Anytime', ts: now - 71000 });
     const quotas = { tokensMonthly: plan.includedMonthlyTokens, storageMB: 50, maxAgents: 1, maxWorkspaces: 1 };
     const usage = { tokensUsed: plan.includedMonthlyTokens - tokenBalance, storageUsedMB: files.reduce((a, f) => a + f.size, 0) / 1024 / 1024 };
-    const tenantId = nanoid();
+    const tenantId = randomUUID();
     spendLogs.forEach((l) => (l.tenantId = tenantId));
     const billing = { plan, tokenBalance, cycleResetAt: now };
     pushTenant({
@@ -401,21 +401,21 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     let tokenBalance = plan.includedMonthlyTokens;
     const spendLogs = [];
     const agents = [
-      { id: nanoid(), name: 'Enterprise Bot', avatarUrl: '/avatars/agent1.svg', approveMode: 'off', model: 'gpt-4' },
-      { id: nanoid(), name: 'Support L2', avatarUrl: '/avatars/agent2.svg', approveMode: 'manual', model: 'gpt-4' },
-      { id: nanoid(), name: 'Sales Pro', avatarUrl: '/avatars/agent3.svg', approveMode: 'manual', model: 'gpt-4' },
+      { id: randomUUID(), name: 'Enterprise Bot', avatarUrl: '/avatars/agent1.svg', approveMode: 'off', model: 'gpt-4' },
+      { id: randomUUID(), name: 'Support L2', avatarUrl: '/avatars/agent2.svg', approveMode: 'manual', model: 'gpt-4' },
+      { id: randomUUID(), name: 'Sales Pro', avatarUrl: '/avatars/agent3.svg', approveMode: 'manual', model: 'gpt-4' },
     ];
     const workspaces = [
-      { id: nanoid(), name: 'Default' },
-      { id: nanoid(), name: 'RU market' },
-      { id: nanoid(), name: 'Enterprise' },
+      { id: randomUUID(), name: 'Default' },
+      { id: randomUUID(), name: 'RU market' },
+      { id: randomUUID(), name: 'Enterprise' },
     ];
     const files = [];
     if (writeFiles) {
       files.push(writeFile(slug, 'readme.txt', 'Gamma docs', 'text/plain', root));
       files.push(writeFile(slug, 'overview.md', '# Overview', 'text/markdown', root));
     }
-    const knowledge = { collections: [{ id: nanoid(), name: 'General', files }] };
+    const knowledge = { collections: [{ id: randomUUID(), name: 'General', files }] };
     const chats = [];
     const messages = [];
     const _cursors = {};
@@ -424,7 +424,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
       const cursor = (_cursors[chat.id] || 0) + 1;
       _cursors[chat.id] = cursor;
       const msg = {
-        id: nanoid(),
+        id: randomUUID(),
         chatId: chat.id,
         cursor,
         approvedAt: null,
@@ -437,7 +437,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
         const tks = estimateTokens(data.text);
         tokenBalance -= tks;
         spendLogs.push({
-          id: nanoid(),
+          id: randomUUID(),
           ts: data.ts,
           tenantId: '',
           chatId: chat.id,
@@ -451,7 +451,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     }
 
     const chat1 = {
-      id: nanoid(),
+      id: randomUUID(),
       title: 'Partnership',
       status: 'live',
       workspaceId: workspaces[2].id,
@@ -464,7 +464,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     addMessage(chat1, { role: 'client', text: 'We want to partner', ts: now - 50000 });
     addMessage(chat1, { role: 'agent', text: 'Let us schedule a call.', ts: now - 45000 });
     const chat2 = {
-      id: nanoid(),
+      id: randomUUID(),
       title: 'Bug report',
       status: 'paused',
       workspaceId: workspaces[0].id,
@@ -477,7 +477,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     addMessage(chat2, { role: 'client', text: 'Found a bug', ts: now - 65000 });
     addMessage(chat2, { role: 'agent', text: 'We are investigating.', ts: now - 62000 });
     const chat3 = {
-      id: nanoid(),
+      id: randomUUID(),
       title: 'Invoice',
       status: 'resolved',
       workspaceId: workspaces[1].id,
@@ -491,7 +491,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     addMessage(chat3, { role: 'agent', text: 'Sent to your email.', ts: now - 85000 });
 
     const chat4 = {
-      id: nanoid(),
+      id: randomUUID(),
       title: 'Feature request',
       status: 'attention',
       workspaceId: workspaces[0].id,
@@ -505,7 +505,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     addMessage(chat4, { role: 'agent', text: 'Forwarding to product.', ts: now - 71000 });
 
     const chat5 = {
-      id: nanoid(),
+      id: randomUUID(),
       title: 'Legacy ticket',
       status: 'ended',
       workspaceId: workspaces[0].id,
@@ -519,7 +519,7 @@ export function seedDemo(db, { writeFiles = false } = {}) {
     addMessage(chat5, { role: 'agent', text: 'Closing ticket', ts: now - 100500 });
     const quotas = { tokensMonthly: plan.includedMonthlyTokens, storageMB: 5000, maxAgents: 15, maxWorkspaces: 20 };
     const usage = { tokensUsed: plan.includedMonthlyTokens - tokenBalance, storageUsedMB: files.reduce((a, f) => a + f.size, 0) / 1024 / 1024 };
-    const tenantId = nanoid();
+    const tenantId = randomUUID();
     spendLogs.forEach((l) => (l.tenantId = tenantId));
     const billing = { plan, tokenBalance, cycleResetAt: now };
     pushTenant({

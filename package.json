@@ -52,7 +52,6 @@
     "vue-router": "^4.3.0",
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "nanoid": "^5.0.7",
     "dotenv": "^16.4.5"
   },
   "devDependencies": {
