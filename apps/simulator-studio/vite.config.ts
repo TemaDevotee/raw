@@ -6,14 +6,16 @@ import { fileURLToPath } from 'node:url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig(() => {
-  const studioPort = Number(process.env.STUDIO_PORT) || 5199
+  const studioPort = Number(process.env.STUDIO_PORT) || 3000
 
   return {
     root: 'apps/simulator-studio',
+    envDir: path.resolve(__dirname, '../..'),
     plugins: [vue()],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, 'src')
+        '@': path.resolve(__dirname, 'src'),
+        '@studio': path.resolve(__dirname, 'src')
       }
     },
     server: {
