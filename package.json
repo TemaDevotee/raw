@@ -39,6 +39,8 @@
     "admin:open": "start http://localhost:5199/login.html?skipAuth=1",
     "seed:clean": "node apps/mock-backend/scripts/seed.clean.js",
     "seed:demo": "node apps/mock-backend/scripts/seed.demo.js",
+    "verify:no-ts-in-js": "node scripts/verify-no-ts-in-js.cjs",
+    "smoke:health": "node scripts/smoke-health.cjs",
     "test:studio:smoke": "playwright test tests/studio-smoke.spec.ts --project=chromium"
   },
   "dependencies": {
