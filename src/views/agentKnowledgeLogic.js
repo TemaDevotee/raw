@@ -18,7 +18,7 @@ export function useAgentKnowledge(agentId) {
   const saving = ref(false)
 
   const availableCollections = computed(() => {
-    const uid = authStore.state.user?.id
+    const uid = authStore.user?.id
     return knowledgeStore.state.collections.filter(
       (c) =>
         !links.value.some((l) => l.collectionId === c.id) &&

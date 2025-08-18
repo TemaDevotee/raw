@@ -4,6 +4,23 @@ This repository contains the complete front‑end and mock API server for the **
 
 ## Локальный запуск (мок-режим)
 
+1. Скопируйте переменные окружения: `cp .env.example .env` (Windows: `copy .env.example .env`).
+2. Установите зависимости: `npm install`.
+3. Запустите все сервисы:
+   - macOS/Linux: `APP_PORT=5173 STUDIO_PORT=5199 npm run dev:all`
+   - Windows (CMD/PowerShell): `npm run dev:all`
+4. Откройте в браузере:
+   - Main app — http://localhost:5173/
+   - Simulator Studio — http://localhost:5199/login
+   - Mock backend — http://localhost:3001/
+
+5. Войдите одной из демо‑учёток:
+
+   - `alpha / Alpha123!`
+   - `bravo / Bravo123!`
+   - `charlie / Charlie123!`
+
+   или откройте `/login?skipAuth=1` для быстрого входа без пароля.
 
 If `npm install` fails with a 403 error, reset the npm registry:
 

@@ -1,11 +1,12 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import DashboardView from '@/views/DashboardView.vue';
 import AgentDetailView from '@/views/AgentDetailView.vue';
-import { isAuthed, ensureAuthFromQuery } from '@/auth/session';
+import { useAuthStore } from '@/stores/authStore';
 import langStore from '@/stores/langStore';
 import { showToast } from '@/stores/toastStore';
 
 const routes = [
+  { path: '/login', name: 'login', component: () => import('@/views/LoginView.vue') },
   { path: '/', name: 'dashboard', component: DashboardView },
   { path: '/chats', name: 'chats', component: () => import('@/views/ChatsView.vue') },
   { path: '/chats/:id', name: 'chat-detail', component: () => import('@/views/ChatWindow.vue'), props: true },
@@ -37,24 +38,23 @@ const router = createRouter({
   routes,
 });
 
+router.beforeEach((to) => {
+  const auth = useAuthStore();
+  if (to.query.skipAuth === '1') {
+    auth.setSession('dev-skip', { id: 'alpha', username: 'alpha', role: 'owner', tenant: 'alpha' });
+    const q = { ...to.query };
+    delete q.skipAuth;
+    return { path: '/', query: q };
+  }
+  if (!auth.token && to.name !== 'login') return { name: 'login' };
+  if (auth.token && to.name === 'login') return { path: '/' };
+});
+
 router.afterEach(() => {
   if (sessionStorage.getItem('agent-not-found-toast')) {
     sessionStorage.removeItem('agent-not-found-toast');
     setTimeout(() => showToast(langStore.t('agent.notFound.title')), 0);
   }
-});
-
-const PUBLIC = new Set(['login']);
-
-router.beforeEach((to, _from, next) => {
-  const authed = ensureAuthFromQuery();
-  if (authed && to.fullPath !== '/') return next('/');
-  if (PUBLIC.has(String(to.name))) return next();
-  if (!isAuthed()) {
-    window.location.href = '/login.html';
-    return;
-  }
-  return next();
 });
 
 export default router;

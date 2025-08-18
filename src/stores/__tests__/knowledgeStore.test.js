@@ -21,7 +21,7 @@ vi.mock('@/api/knowledge', () => ({
     status: vi.fn(),
   },
 }))
-vi.mock('@/stores/authStore', () => ({ authStore: { state: { user: { id: 'u1' } } } }))
+vi.mock('@/stores/authStore', () => ({ authStore: { user: { id: 'u1' } } }))
 
 beforeEach(() => {
   knowledgeStore.state.collections = []
@@ -119,7 +119,7 @@ describe('knowledgeStore', () => {
   it('updates permissions and hides collection when not allowed', async () => {
     knowledgeStore.state.collections.push({ id: 'p1', name: 'P', visibility: 'public', editors: [] })
     api.updatePermissions.mockResolvedValue({})
-    authStore.state.user = { id: 'u1' }
+    authStore.user = { id: 'u1' }
     await knowledgeStore.updatePermissions('p1', { visibility: 'private', editors: [] })
     expect(knowledgeStore.state.collections.find((c) => c.id === 'p1')).toBeUndefined()
   })

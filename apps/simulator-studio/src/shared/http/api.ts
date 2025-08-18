@@ -2,15 +2,14 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE,
-  withCredentials: false,
 });
 
 api.interceptors.request.use((cfg) => {
-  const key = import.meta.env.VITE_ADMIN_KEY || 'dev-admin-key';
+  const token = localStorage.getItem('studio.auth.token');
+  const key = import.meta.env.VITE_ADMIN_KEY || 'dev_admin_key';
   cfg.headers = cfg.headers || {};
-  cfg.headers['X-Admin-Key'] = key;
-  const token = sessionStorage.getItem('token');
   if (token) cfg.headers['Authorization'] = `Bearer ${token}`;
+  cfg.headers['X-Admin-Key'] = key;
   return cfg;
 });
 

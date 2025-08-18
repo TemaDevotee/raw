@@ -289,7 +289,7 @@ import Popover from '@/components/ui/Popover.vue';
 const devCitations = import.meta.env.DEV;
 const showCitations = ref(true);
 const currentUser =
-  JSON.parse(localStorage.getItem('auth.user') || sessionStorage.getItem('auth.user') || 'null') ||
+  JSON.parse(localStorage.getItem('auth:user') || sessionStorage.getItem('auth:user') || 'null') ||
   { id: 1 };
 const busyByOthers = computed(() =>
   presenceStore.getParticipants(chatId).some((p) => p.id !== currentUser.id)
