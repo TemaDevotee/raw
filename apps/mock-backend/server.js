@@ -1,4 +1,3 @@
-import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -11,15 +10,17 @@ import { estimateTokens, chargeMessage, ensureReset } from './services/billing.j
 import { registerBillingRoutes } from './routes/billing.js';
 import { registerSimulatorRoutes } from './routes/simulator.js';
 import { getQuery, getBody, toNumber, toBool, reqId } from './utils/req.js';
+import { createRequire } from 'module';
 
-dotenv.config();
+const require = createRequire(import.meta.url);
+require('dotenv').config();
 
 export const app = express();
-const appPort = Number(process.env.APP_PORT) || 5173;
-const studioPort = Number(process.env.STUDIO_PORT) || 5199;
-const port = Number(process.env.MOCK_PORT) || 3001;
+const MOCK_PORT = Number(process.env.MOCK_PORT) || 3001;
+const STUDIO_PORT = Number(process.env.STUDIO_PORT) || 5199;
 const ADMIN_KEY = process.env.VITE_ADMIN_KEY || 'dev-admin-key';
 const JWT_SECRET = process.env.MOCK_JWT_SECRET || 'dev-secret-please-change';
+const { json } = require('express');
 
 const userIndex = new Map(); // email -> user
 
@@ -33,14 +34,9 @@ function buildUserIndex() {
 // seeds are triggered via scripts; just build index on start
 buildUserIndex();
 
-app.use(
-  cors({
-    origin: [`http://localhost:${appPort}`, `http://localhost:${studioPort}`],
-    credentials: true,
-  }),
-);
+app.use(cors({ origin: [/^http:\/\/localhost:\d+$/], credentials: true }));
 
-app.use(express.json());
+app.use(json({ limit: '5mb' }));
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use('/avatars', express.static(path.join(__dirname, 'public/avatars')));
@@ -159,7 +155,7 @@ app.post('/auth/logout', authMiddleware, (_req, res) => {
 app.get('/', (_req, res) => res.json({ ok: true }));
 
 app.get('/health', (_req, res) => {
-  res.json({ ok: true, uptime: process.uptime(), tenants: db.tenants.length, users: db.users.length });
+  res.json({ ok: true, uptime: process.uptime() });
 });
 
 app.post('/admin/dev/reseed', requireAdmin, (req, res) => {
@@ -513,8 +509,8 @@ registerSimulatorRoutes(app, { authMiddleware, requireAdmin });
 
 let serverInstance;
 if (process.env.NODE_ENV !== 'test') {
-  serverInstance = app.listen(port, () => {
-    console.log(`Mock backend listening on ${port}`);
+  serverInstance = app.listen(MOCK_PORT, () => {
+    console.log(`Mock backend listening on ${MOCK_PORT}`);
   });
   if (process.env.MOCK_ENABLE_SIMULATOR === 'true') {
     const { initWs } = await import('./ws/server.js');

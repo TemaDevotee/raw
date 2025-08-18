@@ -11,8 +11,8 @@
     "preview": "vite preview --host --config apps/main-app/vite.config.ts",
     "dev:e2e": "vite --host 127.0.0.1 --strictPort --mode e2e --config apps/main-app/vite.config.ts",
     "preview:e2e": "vite build --mode e2e --config apps/main-app/vite.config.ts && vite preview --host 127.0.0.1 --strictPort --config apps/main-app/vite.config.ts",
-    "mock:dev": "node apps/mock-backend/server.js",
-    "admin:dev": "vite --config apps/simulator-studio/vite.config.ts --port %STUDIO_PORT%",
+    "mock:dev": "cross-env NODE_ENV=development node apps/mock-backend/server.js",
+    "admin:dev": "cross-env NODE_ENV=development vite --config apps/simulator-studio/vite.config.ts --port %STUDIO_PORT%",
     "admin:build": "vite build --config apps/simulator-studio/vite.config.ts",
     "admin:preview": "vite preview --config apps/simulator-studio/vite.config.ts",
     "typecheck": "vue-tsc --noEmit",
@@ -39,8 +39,9 @@
     "admin:open": "start http://localhost:5199/login.html?skipAuth=1",
     "seed:clean": "node apps/mock-backend/scripts/seed.clean.js",
     "seed:demo": "node apps/mock-backend/scripts/seed.demo.js",
+    "boot:verify": "npm run seed:clean && npm run seed:demo && npm run verify:no-ts-in-js && node scripts/check-imports.cjs && start-server-and-test \"npm run mock:dev\" http://localhost:%MOCK_PORT% \"npm run studio:probe\"",
+    "studio:probe": "node scripts/smoke-health.cjs",
     "verify:no-ts-in-js": "node scripts/verify-no-ts-in-js.cjs",
-    "smoke:health": "node scripts/smoke-health.cjs",
     "test:studio:smoke": "playwright test tests/studio-smoke.spec.ts --project=chromium"
   },
   "dependencies": {
@@ -70,6 +71,7 @@
     "vue-tsc": "^1.8.27",
     "@types/node": "^20.11.30",
     "cross-env": "^7.0.3",
-    "npm-run-all": "^4.1.5"
+    "npm-run-all": "^4.1.5",
+    "start-server-and-test": "^2.0.3"
   }
 }
