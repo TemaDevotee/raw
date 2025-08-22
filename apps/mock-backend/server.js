@@ -39,6 +39,11 @@ app.use(cors({ origin: [/^http:\/\/localhost:\d+$/], credentials: true }));
 
 app.use(json({ limit: '5mb' }));
 
+app.get('/api/tenants', (_req, res) => {
+  const list = db.tenants.map((t) => ({ id: t.slug, name: t.name }));
+  res.json(list);
+});
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use('/avatars', express.static(path.join(__dirname, 'public/avatars')));
 app.use('/files', express.static(path.resolve('.mockdb/files')));
