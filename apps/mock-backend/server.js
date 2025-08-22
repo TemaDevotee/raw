@@ -93,7 +93,7 @@ function verifyToken(token) {
   }
 }
 
-app.post('/auth/login', (req, res) => {
+app.post('/api/auth/login', (req, res) => {
   const body = getBody(req);
   const { email, password } = body;
   if (!email || !password) {
@@ -125,7 +125,7 @@ function authMiddleware(req, res, next) {
   next();
 }
 
-app.get('/auth/me', authMiddleware, (req, res) => {
+app.get('/api/auth/me', authMiddleware, (req, res) => {
   const tenants = req.user.memberships.map((m) => ({
     id: m.tenantId,
     name: db.tenants.find((t) => t.slug === m.tenantId)?.name || m.tenantId,
@@ -139,7 +139,7 @@ app.get('/auth/me', authMiddleware, (req, res) => {
   });
 });
 
-app.post('/auth/switch-tenant', authMiddleware, (req, res) => {
+app.post('/api/auth/switch-tenant', authMiddleware, (req, res) => {
   const body = getBody(req);
   const { tenantId } = body;
   if (!tenantId) return res.status(400).json({ message: 'tenantId required' });
@@ -154,7 +154,7 @@ app.post('/auth/switch-tenant', authMiddleware, (req, res) => {
   res.json({ token, currentTenantId: tenantId, tenants });
 });
 
-app.post('/auth/logout', authMiddleware, (_req, res) => {
+app.post('/api/auth/logout', authMiddleware, (_req, res) => {
   res.json({ ok: true });
 });
 

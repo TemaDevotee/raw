@@ -147,7 +147,7 @@ Simulator Studio in [`apps/simulator-studio/`](../apps/simulator-studio/) browse
 ## 6. API (mock)
 | Endpoint | Description |
 | --- | --- |
-| `POST /auth/login` | Authenticate user |
+| `POST /api/auth/login` | Authenticate user |
 | `GET /chats` | List chats |
 | `POST /chats/:id/assign` | Claim chat |
 | `POST /chats/:id/unassign` | Unassign chat |

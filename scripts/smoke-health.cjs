@@ -35,12 +35,12 @@ function request(method, path, body, token) {
   try {
     const health = await request('GET', '/health');
     if (health.status !== 200 || !health.json.ok) throw new Error('health');
-    const login = await request('POST', '/auth/login', {
+    const login = await request('POST', '/api/auth/login', {
       email: 'alpha@raw.dev',
       password: 'RawDev!2025',
     });
     if (login.status !== 200 || !login.json.token) throw new Error('login');
-    const me = await request('GET', '/auth/me', null, login.json.token);
+    const me = await request('GET', '/api/auth/me', null, login.json.token);
     if (me.status !== 200) throw new Error('me');
     process.exit(0);
   } catch (e) {

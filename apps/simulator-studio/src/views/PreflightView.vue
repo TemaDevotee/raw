@@ -30,7 +30,7 @@ const checks = reactive<Check[]>([
   { label: 'Env / Переменные', status: 'pending', error: '' },
   { label: 'Backend reachable / Сервер доступен', status: 'pending', error: '' },
   { label: 'Token present / Токен есть', status: 'pending', error: '' },
-  { label: '/auth/me', status: 'pending', error: '' },
+  { label: '/api/auth/me', status: 'pending', error: '' },
   { label: 'Tenant context / Контекст тенанта', status: 'pending', error: '' },
   { label: 'Core feeds / Основные данные', status: 'pending', error: '' },
 ]);
