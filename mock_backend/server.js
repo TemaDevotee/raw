@@ -73,7 +73,7 @@ const rateLimit = (req, res, next) => {
 app.use(authMiddleware);
 
 app.use(
-  '/auth',
+  '/api/auth',
   cors({ origin: ADMIN_ORIGIN, methods: ['GET', 'POST', 'OPTIONS'], allowedHeaders: ['Content-Type','Authorization'] }),
   authRoutes
 );

@@ -9,7 +9,7 @@ const dbPath = path.join(__dirname, '..', 'db.json')
 let original: string
 
 async function login(email: string) {
-  const res = await fetch(`${BASE}/auth/login`, {
+  const res = await fetch(`${BASE}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password: 'demo123!' })
