@@ -73,7 +73,7 @@ export async function orchestratedLogout({ force = false } = {}) {
     } catch { /* noop */ }
   } finally {
     running = false
-    window.location.assign('/#/login')
+    window.location.assign('/login.html')
   }
 }
 

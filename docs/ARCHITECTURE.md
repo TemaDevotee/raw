@@ -4,6 +4,7 @@
 Trickster is a multi-tenant chat console for managing AI agents and human operators. Key sections of the app include:
 - **Chats** and **ChatWindow** for conversations
 - **Agents**, **Knowledge**, **Pricing**, and **Settings** areas
+Unauthenticated users are redirected to `/login.html`.
 Data is persisted to `localStorage['app.state.v2']` while a mock backend under `mock_backend/` provides API endpoints. A separate
 Simulator Studio in [`apps/simulator-studio/`](../apps/simulator-studio/) browses tenants, workspaces, agents, billing and integrations. It offers an interactive **Chat Console** for posting messages, creating new chats and handling agent drafts, a tenant **Knowledge Manager** for collections/files CRUD with quota tracking and a **Billing Manager** for token credit/debit with ledger history. A simple dev login enables tenant‑scoped RBAC (`owner` / `operator` / `viewer`) that guards knowledge uploads, billing actions and chat moderation. The chat console lives in [`apps/simulator-studio/src/views/ConsoleView.vue`](../apps/simulator-studio/src/views/ConsoleView.vue) with state managed in [`apps/simulator-studio/src/stores/chats.ts`](../apps/simulator-studio/src/stores/chats.ts) and a mock DB panel [`apps/simulator-studio/src/components/SidePanel.vue`](../apps/simulator-studio/src/components/SidePanel.vue) backed by [`apps/simulator-studio/src/stores/db.ts`](../apps/simulator-studio/src/stores/db.ts) that exposes snapshot save/load/reset/export and autosave toggle. The Billing section includes a **Plan Manager** to switch plans and edit quotas with ledger audit while the mock API enforces token and storage limits. A lightweight SSE bus pushes chat messages, draft events and presence changes to the Studio in real time.
 
@@ -22,7 +23,6 @@ Simulator Studio in [`apps/simulator-studio/`](../apps/simulator-studio/) browse
 | [src/views/PricingView.vue](../src/views/PricingView.vue) | Upgrade plans |
 | [src/views/DashboardView.vue](../src/views/DashboardView.vue) | Placeholder dashboard |
 | [src/views/NotFoundView.vue](../src/views/NotFoundView.vue) | 404 page |
-| [src/views/LoginView.vue](../src/views/LoginView.vue) | Mock tenant selector login |
 
 ### Components
 | File | Purpose |
@@ -159,7 +159,6 @@ Simulator Studio in [`apps/simulator-studio/`](../apps/simulator-studio/) browse
 | `POST /chats/:id/unsnooze` | Unsnooze chat |
 | `GET /agents` | List agents |
 | `GET /operators` | List operators |
-| `GET /tenants` | List tenants for mock login |
 | `GET /knowledge*` | Knowledge collections and sources |
 | `POST /account/upgrade` | Upgrade pricing plan |
 `mock_backend/db.json` seeds the data and `mock_backend/server.js` serves the endpoints.
