@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login / Вход</title>
+  </head>
+  <body>
+    <form id="login-form">
+      <label>
+        <span class="sr-only">Email / Электронная почта</span>
+        <input id="email" type="email" placeholder="Email / Электронная почта" required />
+      </label>
+      <label>
+        <span class="sr-only">Password / Пароль</span>
+        <input id="password" type="password" placeholder="Password / Пароль" required />
+      </label>
+      <button type="submit">Login / Войти</button>
+      <p id="error" style="color:red"></p>
+    </form>
+    <script>
+      document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        try {
+          const res = await fetch('/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+          });
+          if (!res.ok) throw new Error();
+          const data = await res.json();
+          sessionStorage.setItem('auth:token', data.token);
+          sessionStorage.setItem('auth:user', JSON.stringify(data.user));
+          sessionStorage.setItem('auth:tenants', JSON.stringify(data.tenants || []));
+          if (data.currentTenantId) sessionStorage.setItem('auth:currentTenantId', data.currentTenantId);
+          window.location.href = '/#/';
+        } catch {
+          document.getElementById('error').textContent = 'Invalid credentials / Неверные данные';
+        }
+      });
+    </script>
+  </body>
+</html>

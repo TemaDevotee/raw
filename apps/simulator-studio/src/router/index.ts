@@ -23,12 +23,6 @@ const router = createRouter({ history: createWebHashHistory(), routes });
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore();
-  if (to.query.skipAuth === '1') {
-    await auth.login('alpha@raw.dev', 'RawDev!2025');
-    const q = { ...to.query } as Record<string, any>;
-    delete q.skipAuth;
-    return { name: 'dashboard', query: q };
-  }
   if (!auth.token) {
     if (to.name !== 'login') return { name: 'login', query: { redirect: to.fullPath } };
     return;
