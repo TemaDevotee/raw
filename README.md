@@ -22,8 +22,6 @@ This repository contains the complete front‑end and mock API server for the **
    - `beta@raw.dev / RawDev!2025`
    - `gamma@raw.dev / RawDev!2025`
 
-   Для быстрого входа можно использовать `/login?skipAuth=1`.
-
 If `npm install` fails with a 403 error, reset the npm registry:
 
 ```bash
@@ -83,12 +81,6 @@ PROVIDER_TIMEOUT_MS=60000
    - **Password:** `123qweQWE!@#`
 
    The login form is accessible (keyboard friendly) and shows unobtrusive toasts on validation errors.  Successful authentication sets a session flag in `localStorage` and redirects to the main application.
-
-## Quick login bypass (Быстрый вход без логина)
-
-- [http://localhost:5173/#/?skipAuth=1](http://localhost:5173/#/?skipAuth=1) — skip the login screen once.
-- Create a `.env.local` with `VITE_E2E=1` and restart the dev server to stay logged in.
-- Common pitfall: opening `/login.html` directly. Use the hash route (`/#/`) or append `?skipAuth=1`.
 
 ## Mock DB utilities
 
@@ -199,7 +191,7 @@ matches `VITE_ADMIN_KEY`.
 
 The Chat Console lets you talk to yourself: left side as client, right side as agent/operator. Grey bubbles are agent drafts; approve publishes, discard removes. Role affects abilities: viewers see read-only, operators and owners can send and moderate.
 
-Open it via **Tenants → Chats → Open Console** or start a new chat with **New Chat**. The same chat can be viewed in the main app at `http://localhost:5173/#/chats/<chatId>?skipAuth=1`.
+Open it via **Tenants → Chats → Open Console** or start a new chat with **New Chat**. The same chat can be viewed in the main app at `http://localhost:5173/#/chats/<chatId>`.
 
 ### Knowledge Manager
 

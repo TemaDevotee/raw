@@ -36,7 +36,7 @@
     "e2e:report": "playwright show-report",
     "docs:open": "xdg-open docs/ARCHITECTURE.md || open docs/ARCHITECTURE.md || start docs/ARCHITECTURE.md",
     "open:dev": "start http://localhost:5199/#/console",
-    "admin:open": "start http://localhost:5199/login.html?skipAuth=1",
+    "admin:open": "start http://localhost:5199/login.html",
     "seed:clean": "node apps/mock-backend/scripts/seed.clean.js",
     "seed:demo": "node apps/mock-backend/scripts/seed.demo.js",
     "boot:verify": "npm run seed:clean && npm run seed:demo && npm run verify:no-ts-in-js && node scripts/check-imports.cjs && start-server-and-test \"npm run mock:dev\" http://localhost:%MOCK_PORT% \"npm run studio:probe\"",
