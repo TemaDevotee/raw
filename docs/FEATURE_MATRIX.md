@@ -1,6 +1,5 @@
 # Feature Matrix
 
-Unauthenticated users are redirected to the static `/login.html` page.
 
 | Feature | Main files | Stores | API endpoints | Tests |
 | --- | --- | --- | --- | --- |
