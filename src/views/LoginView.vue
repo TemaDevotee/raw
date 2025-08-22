@@ -26,7 +26,7 @@ const router = useRouter();
 const auth = useAuthStore();
 
 onMounted(async () => {
-  const res = await fetch('/tenants');
+  const res = await fetch('/api/tenants');
   tenants.value = await res.json();
 });
 

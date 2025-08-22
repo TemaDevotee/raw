@@ -11,9 +11,9 @@ afterAll(() => {
   server.close();
 });
 
-describe('GET /tenants', () => {
+describe('GET /api/tenants', () => {
   it('returns tenants with id and name', async () => {
-    const res = await fetch(`${BASE}/tenants`);
+    const res = await fetch(`${BASE}/api/tenants`);
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(Array.isArray(data)).toBe(true);
