@@ -2,6 +2,10 @@
 
 Use this section to draft release notes for the next version. Copy relevant entries into `CHANGELOG.md` when releasing.
 
+## Authentication
+
+- Mock tenant selector login in main app
+
 ## Presence stacks
 
 - Show stacked avatars for chat participants and polling improvements

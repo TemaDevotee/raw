@@ -171,6 +171,13 @@ const { ensureScopes } = require('./utils/db');
 const writeDb = (data) => fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
 
 
+// Tenants listing for mock login
+app.get('/tenants', (_req, res) => {
+  const db = readDb();
+  const list = (db.tenants || []).map(t => ({ id: t.id, name: t.name }));
+  res.json(list);
+});
+
 // AUTH
 
 app.post('/api/auth/login', (req, res) => {
