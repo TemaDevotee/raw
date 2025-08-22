@@ -4,7 +4,7 @@ Use this section to draft release notes for the next version. Copy relevant entr
 
 ## Authentication
 
-- Mock tenant selector login in main app
+- Unauthenticated users are redirected to `/login.html`
 
 ## Presence stacks
 

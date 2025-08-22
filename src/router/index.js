@@ -1,12 +1,10 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import DashboardView from '@/views/DashboardView.vue';
 import AgentDetailView from '@/views/AgentDetailView.vue';
-import { useAuthStore } from '@/stores/authStore';
 import langStore from '@/stores/langStore';
 import { showToast } from '@/stores/toastStore';
 
 const routes = [
-  { path: '/login', name: 'login', component: () => import('@/views/LoginView.vue') },
   { path: '/', name: 'dashboard', component: DashboardView },
   { path: '/chats', name: 'chats', component: () => import('@/views/ChatsView.vue') },
   { path: '/chats/:id', name: 'chat-detail', component: () => import('@/views/ChatWindow.vue'), props: true },
@@ -36,12 +34,6 @@ const routes = [
 const router = createRouter({
   history: createWebHashHistory(),
   routes,
-});
-
-router.beforeEach((to) => {
-  const auth = useAuthStore();
-  if (!auth.token && to.name !== 'login') return { name: 'login' };
-  if (auth.token && to.name === 'login') return { path: '/' };
 });
 
 router.afterEach(() => {

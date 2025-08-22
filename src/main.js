@@ -36,6 +36,13 @@ app.use(router)
 
 const authStore = useAuthStore()
 authStore.hydrate()
+if (location.pathname === '/login.html') {
+  // standalone login page; app is not mounted
+} else if (!authStore.token) {
+  location.href = '/login.html'
+} else {
+  app.mount('#app')
+}
 
 // Global error handling to prevent white-screen on runtime errors
 app.config.errorHandler = (err, instance, info) => {
@@ -72,9 +79,6 @@ app.directive('tooltip', {
   },
   unmounted(el){ el.removeEventListener('mouseenter', el.__ttEnter__); el.removeEventListener('mouseleave', el.__ttLeave__); el.removeEventListener('focus', el.__ttEnter__); el.removeEventListener('blur', el.__ttLeave__) }
 })
-if (location.pathname !== '/login.html') {
-  app.mount('#app')
-}
 
 router.isReady().then(async () => {
   await Promise.all([

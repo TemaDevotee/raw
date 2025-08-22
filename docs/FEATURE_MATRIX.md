@@ -1,9 +1,10 @@
 # Feature Matrix
 
+Unauthenticated users are redirected to `/login.html`.
+
 | Feature | Main files | Stores | API endpoints | Tests |
 | --- | --- | --- | --- | --- |
 | Status colors | [src/utils/statusTheme.js](../src/utils/statusTheme.js) | – | – | – |
-| Mock tenant login | [src/views/LoginView.vue](../src/views/LoginView.vue) | [src/stores/authStore.ts](../src/stores/authStore.ts) | `GET /tenants` | [mock_backend/tests/tenants.spec.ts](../mock_backend/tests/tenants.spec.ts) |
 | Grouping/filters | [src/views/ChatsView.vue](../src/views/ChatsView.vue), [src/views/chatsUtils.js](../src/views/chatsUtils.js) | [src/stores/chatStore.js](../src/stores/chatStore.js) | `GET /chats` | [src/views/__tests__/ChatsView.search.test.js](../src/views/__tests__/ChatsView.search.test.js) |
 | Presence stacks | [src/views/ChatWindow.vue](../src/views/ChatWindow.vue), [src/views/ChatsView.vue](../src/views/ChatsView.vue), [src/components/StackedAvatars.vue](../src/components/StackedAvatars.vue) | [src/stores/presenceStore.js](../src/stores/presenceStore.js) | `POST /presence/list`, `POST /presence/join`, `POST /presence/leave` | [e2e/presence.spec.ts](../e2e/presence.spec.ts), [src/stores/__tests__/presenceStore.test.js](../src/stores/__tests__/presenceStore.test.js) |
 | Tiny agent avatar | [src/components/AgentBadge.vue](../src/components/AgentBadge.vue), [src/views/ChatsView.vue](../src/views/ChatsView.vue) | [src/stores/agentStore.js](../src/stores/agentStore.js) | `GET /agents` | [src/views/__tests__/ChatsView.agentBadge.test.js](../src/views/__tests__/ChatsView.agentBadge.test.js) |
