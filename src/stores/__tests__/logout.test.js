@@ -60,7 +60,7 @@ describe('orchestratedLogout', () => {
     expect(chatStore.state.chats[0].controlBy).toBe('agent')
     expect(localStorage.getItem('auth:token')).toBe(null)
     expect(localStorage.getItem('auth.logoutAt')).not.toBeNull()
-    expect(window.location.assign).toHaveBeenCalledWith('/#/login')
+    expect(window.location.assign).toHaveBeenCalledWith('/login.html')
   })
 
   it('is idempotent', async () => {
@@ -75,6 +75,6 @@ describe('orchestratedLogout', () => {
     mod.initLogoutListener()
     window.dispatchEvent({ type: 'storage', key: 'auth.logoutAt' })
     await new Promise((r) => setTimeout(r, 0))
-    expect(window.location.assign).toHaveBeenCalledWith('/#/login')
+    expect(window.location.assign).toHaveBeenCalledWith('/login.html')
   })
 })

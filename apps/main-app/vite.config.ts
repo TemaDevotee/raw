@@ -21,6 +21,10 @@ export default defineConfig(({ mode }) => {
           target: `http://localhost:${mockPort}`,
           changeOrigin: true,
         },
+        '/auth': {
+          target: `http://localhost:${mockPort}`,
+          changeOrigin: true,
+        },
       },
     },
     preview: {
