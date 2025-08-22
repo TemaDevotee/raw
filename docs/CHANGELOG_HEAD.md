@@ -4,7 +4,6 @@ Use this section to draft release notes for the next version. Copy relevant entr
 
 ## Authentication
 
-- Unauthenticated users are redirected to `/login.html`
 
 ## Presence stacks
 
