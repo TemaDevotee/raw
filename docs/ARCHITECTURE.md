@@ -22,6 +22,7 @@ Simulator Studio in [`apps/simulator-studio/`](../apps/simulator-studio/) browse
 | [src/views/PricingView.vue](../src/views/PricingView.vue) | Upgrade plans |
 | [src/views/DashboardView.vue](../src/views/DashboardView.vue) | Placeholder dashboard |
 | [src/views/NotFoundView.vue](../src/views/NotFoundView.vue) | 404 page |
+| [src/views/LoginView.vue](../src/views/LoginView.vue) | Mock tenant selector login |
 
 ### Components
 | File | Purpose |
@@ -157,6 +158,7 @@ Simulator Studio in [`apps/simulator-studio/`](../apps/simulator-studio/) browse
 | `POST /chats/:id/unsnooze` | Unsnooze chat |
 | `GET /agents` | List agents |
 | `GET /operators` | List operators |
+| `GET /tenants` | List tenants for mock login |
 | `GET /knowledge*` | Knowledge collections and sources |
 | `POST /account/upgrade` | Upgrade pricing plan |
 `mock_backend/db.json` seeds the data and `mock_backend/server.js` serves the endpoints.
